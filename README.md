@@ -40,4 +40,4 @@ Notes:
 - You should find 10 passwords - not 9. Check it.
 - You should use setup to speed up this brute forcing as much as possible.
 
-
+**Please note:** attach the screenshot of your script results (the console) to the PR.
