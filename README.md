@@ -20,8 +20,8 @@ PASSWORDS_TO_BRUTE_FORCE = [
 ```
 Of course, your first thought was to look through rainbow tables and test your luck.
 But you visited that website, and understand, that its password field accepts only numeric symbols from `0` to `9`, and
-also there is limitation, that password always must be 8 symbols length (extremely weak security - you must agree). 
-Also, it seems, that this website doesn't use any additional security, while hashing their passwords (like salting).
+also there is a limitation, that password always must be 8 symbols length (extremely weak security - you must agree). 
+Also, it seems, that this website doesn't use any additional security while hashing their passwords (like salting).
 
 So, you as a hacker already got a point, that you can easily brute force all possible variants of passwords,
 and check the corresponding hashes using this simple `sha256_hash_str` function:
@@ -33,7 +33,7 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 ```
 
-And yes, your task is to find these passwords, and print them to console.
+And yes, your task is to find these 10 passwords (8-numeric symbols strings), and print them to console.
 
 
 Notes:
