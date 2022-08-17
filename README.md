@@ -1,6 +1,6 @@
-# Brute force passwords
+# Brute Force Passwords
 
-- **Please note:** read [the guideline](https://github.com/mate-academy/py-task-guideline/blob/main/README.md)
+**Please note:** read [the guideline](https://github.com/mate-academy/py-task-guideline/blob/main/README.md)
 before starting.
 
 Imagine yourself a hacker. You've successfully SQL-injected some website's DB and got hashed passwords of 10 users.
@@ -18,13 +18,13 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
 ```
-Of course, your first thought was to look through rainbow tables and test your luck.
-But you visited that website, and understand, that its password field accepts only numeric symbols from `0` to `9`, and
-also there is a limitation, that password always must be 8 symbols length (extremely weak security - you must agree). 
-Also, it seems, that this website doesn't use any additional security while hashing their passwords (like salting).
+Of course, your first thought was to look through rainbow tables and test your luck. 
+But you visited that website and understand that its password field accepts only numeric symbols from 0 to 9. 
+There is a limitation — the password length always must be 8 symbols (extremely weak security — you must agree). 
+Also, it seems that this website doesn't use any additional security while hashing their passwords (like salting).
 
-So, you as a hacker already got a point, that you can easily brute force all possible variants of passwords,
-and check the corresponding hashes using this simple `sha256_hash_str` function:
+So, you as a hacker already got a point, that you can easily brute force all possible variants of passwords
+and check the corresponding hashes using this `sha256_hash_str` function:
 ```python
 import sha256
 
@@ -33,11 +33,12 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 ```
 
-And yes, your task is to find these 10 passwords (8-numeric symbols strings), and print them to console.
+Your task is to find these 10 passwords (8-numeric symbols strings) and print them to the console.
 
 
 Notes:
-- You should find 10 passwords - not 9. Check it.
-- You should use setup to speed up this brute forcing as much as possible.
+- you should find `10` passwords (not `9`) — check it;
+- you should use setup to speed up this brute forcing as much as possible;
+- attach the screenshot of your script results (the console) to the PR.
 
-**Please note:** attach the screenshot of your script results (the console) to the PR.
+
