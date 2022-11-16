@@ -17,6 +17,9 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
 
+NUM_OF_CPU = multiprocessing.cpu_count() - 1
+STEP = int(10**8 / NUM_OF_CPU)
+
 
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
@@ -30,15 +33,13 @@ def check_password(start: int, end: int) -> None:
 
 
 def brute_force_password() -> None:
-    num_of_cpu = multiprocessing.cpu_count() - 1
-    step = int(10**8 / num_of_cpu)
     futures = []
-    with ProcessPoolExecutor(max_workers=num_of_cpu) as executor:
-        for i in range(num_of_cpu):
-            if i == num_of_cpu - 1:
-                futures.append(executor.submit(check_password, i * step, 10**8))
+    with ProcessPoolExecutor(max_workers=NUM_OF_CPU) as executor:
+        for i in range(NUM_OF_CPU):
+            if i == NUM_OF_CPU - 1:
+                futures.append(executor.submit(check_password, i * STEP, 10**8))
             else:
-                futures.append(executor.submit(check_password, i * step, (i + 1) * step))
+                futures.append(executor.submit(check_password, i * STEP, (i + 1) * STEP))
         wait(futures)
 
 
