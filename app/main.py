@@ -1,6 +1,8 @@
+import multiprocessing
 import time
-from hashlib import sha256
 
+from hashlib import sha256
+from itertools import product
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -20,8 +22,19 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
+def check_password(password: tuple) -> None:
+    password = "".join(password)
+    if sha256_hash_str(password) in PASSWORDS_TO_BRUTE_FORCE:
+        print(password)
+
+
 def brute_force_password() -> None:
-    pass
+    with multiprocessing.Pool(multiprocessing.cpu_count() - 1) as p:
+        # p.map(check_password, product("0123456789", repeat=8))
+        # Weird stuff seems to be required to make it work on my machine.
+        queue = p.imap(check_password, product("0123456789", repeat=8), 2000)
+        for _ in queue:
+            pass
 
 
 if __name__ == "__main__":
