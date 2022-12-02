@@ -17,7 +17,7 @@ PASSWORDS_TO_BRUTE_FORCE = [
 ]
 
 CPU_COUNT = multiprocessing.cpu_count() - 1
-NEXT_CORE = 99999999 // CPU_COUNT
+NEXT_SEGMENT = 99999999 // CPU_COUNT
 
 
 def sha256_hash_str(to_hash: str) -> str:
@@ -37,7 +37,7 @@ def brute_force_password() -> None:
     with ProcessPoolExecutor(CPU_COUNT) as executor:
 
         for i in range(10):
-            executor.submit(check_password, i * NEXT_CORE, (i + 1) * NEXT_CORE)
+            executor.submit(check_password, i * NEXT_SEGMENT, (i + 1) * NEXT_SEGMENT)
 
 
 if __name__ == "__main__":
