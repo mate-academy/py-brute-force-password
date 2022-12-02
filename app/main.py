@@ -34,7 +34,7 @@ def check_password(start, end) -> None:
 
 
 def brute_force_password() -> None:
-    with ProcessPoolExecutor(multiprocessing.cpu_count() - 1) as executor:
+    with ProcessPoolExecutor(CPU_COUNT) as executor:
 
         for i in range(CPU_COUNT):
             executor.submit(check_password, i * NEXT_CORE, (i + 1) * NEXT_CORE)
