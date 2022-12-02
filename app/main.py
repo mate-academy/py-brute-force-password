@@ -1,8 +1,10 @@
 import multiprocessing
 import time
+from concurrent.futures import ProcessPoolExecutor
 
 from hashlib import sha256
-from itertools import product
+
+DIGITS = 8
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -22,19 +24,23 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def check_password(password: tuple) -> None:
-    password = "".join(password)
-    if sha256_hash_str(password) in PASSWORDS_TO_BRUTE_FORCE:
-        print(password)
+def check_passwords(start: int, end: int) -> None:
+    for number in range(start, end):
+        password = str(number).rjust(DIGITS, "0")
+        if sha256_hash_str(password) in PASSWORDS_TO_BRUTE_FORCE:
+            print(password)
 
 
 def brute_force_password() -> None:
-    with multiprocessing.Pool(multiprocessing.cpu_count() - 1) as p:
-        # p.map(check_password, product("0123456789", repeat=8))
-        # Weird stuff seems to be required to make it work on my machine.
-        queue = p.imap(check_password, product("0123456789", repeat=8), 2000)
-        for _ in queue:
-            pass
+    cpu_count = multiprocessing.cpu_count()
+    upper_limit = 10**DIGITS
+    batch_size = upper_limit // cpu_count
+
+    with ProcessPoolExecutor(cpu_count) as executor:
+        for i in range(cpu_count):
+            executor.submit(
+                check_passwords, i * batch_size, (i + 1) * batch_size
+            )
 
 
 if __name__ == "__main__":
