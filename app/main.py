@@ -24,14 +24,14 @@ def sha256_hash_str(to_hash: str) -> str:
 
 def checkpass(start, end):
     for number in range(start, end):
-        password = str(number).rjust(8, "0")
+        password = str(number).ljust(8, "0")
 
         if sha256_hash_str(password) in PASSWORDS_TO_BRUTE_FORCE:
             print(password)
 
 
 def brute_force_password() -> None:
-    interval = 10 ** 8 // multiprocessing.cpu_count()
+    interval = 10**8 // (multiprocessing.cpu_count() - 2)
 
     with ProcessPoolExecutor(multiprocessing.cpu_count()) as executor:
 
