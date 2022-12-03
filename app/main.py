@@ -18,7 +18,7 @@ PASSWORDS_TO_BRUTE_FORCE = [
 ]
 
 
-COUNT = Value('i', 0)
+COUNT = Value("i", 0)
 
 
 def sha256_hash_str(to_hash: str) -> str:
