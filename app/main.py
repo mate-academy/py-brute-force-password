@@ -24,7 +24,7 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password(password) -> None:
+def brute_force_password(password: str) -> None:
     for pwd in itertools.product("01233456789", repeat=8):
         pwd = "".join(pwd)
         if sha256_hash_str(pwd) == password:
@@ -47,12 +47,10 @@ def brute_force_password(password) -> None:
 
 
 def main():
-
     with ProcessPoolExecutor(multiprocessing.cpu_count() - 1) as executor:
         # executor.map(brute_force_password, PASSWORDS_TO_BRUTE_FORCE)
         for pwd in PASSWORDS_TO_BRUTE_FORCE:
             executor.submit(brute_force_password, pwd)
-
 
 
 if __name__ == "__main__":
