@@ -1,6 +1,7 @@
 import itertools
-# import multiprocessing
+import multiprocessing
 import time
+# from asyncio import futures, wait
 from concurrent.futures import ProcessPoolExecutor
 
 from hashlib import sha256
@@ -46,8 +47,12 @@ def brute_force_password(password) -> None:
 
 
 def main():
-    with ProcessPoolExecutor() as executor:
-        executor.map(brute_force_password, PASSWORDS_TO_BRUTE_FORCE)
+
+    with ProcessPoolExecutor(multiprocessing.cpu_count() - 1) as executor:
+        # executor.map(brute_force_password, PASSWORDS_TO_BRUTE_FORCE)
+        for pwd in PASSWORDS_TO_BRUTE_FORCE:
+            executor.submit(brute_force_password, pwd)
+
 
 
 if __name__ == "__main__":
