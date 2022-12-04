@@ -1,12 +1,14 @@
 import itertools
 import multiprocessing
 import time
+from concurrent.futures import wait
 from concurrent.futures.process import ProcessPoolExecutor
 from hashlib import sha256
 
 PASS_LENGTH = 8
 PASS_SYMBOLS = "0123456789"
 NUM_OF_CPU = multiprocessing.cpu_count() - 1
+SEGMENT = 10 ** PASS_LENGTH // NUM_OF_CPU
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -26,16 +28,27 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def check_password(pass_) -> None:
-    for pass_attempt in itertools.product(PASS_SYMBOLS, repeat=PASS_LENGTH):
-        pass_attempt = "".join(pass_attempt)
-        if sha256_hash_str(pass_attempt) == pass_:
-            print(f"Pass successfully got: {pass_attempt}")
-            break
+def check_password(start: int, end: int) -> None:
+    for pass_attempt in range(start, end):
+        pass_str = str(pass_attempt).rjust(PASS_LENGTH, "0")
+        pass_hashed = sha256_hash_str(pass_str)
+
+        if pass_hashed in PASSWORDS_TO_BRUTE_FORCE:
+            print(f"Your pass, sir: {pass_str}")
+
 
 def brute_force_password() -> None:
-    with ProcessPoolExecutor(max_workers=NUM_OF_CPU) as executor:
-        executor.map(check_password, PASSWORDS_TO_BRUTE_FORCE)
+    futures = []
+
+    with ProcessPoolExecutor(NUM_OF_CPU) as executor:
+        for i in range(NUM_OF_CPU):
+            futures.append(executor.submit(
+                check_password,
+                i * SEGMENT,
+                (i + 1) * SEGMENT
+            ))
+
+    wait(futures)
 
 
 if __name__ == "__main__":
