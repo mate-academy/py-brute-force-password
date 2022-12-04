@@ -20,16 +20,12 @@ CPU_COUNT = multiprocessing.cpu_count()
 NEXT_SEGMENT = 99999999 // CPU_COUNT
 
 
-def sha256_hash_str(to_hash: str) -> str:
-    return sha256(to_hash.encode("utf-8")).hexdigest()
-
-
 def check_password(start: int, end: int) -> None:
     for num in range(start, end):
 
         password = str(num).rjust(8, "0")
 
-        if sha256_hash_str(password) in PASSWORDS_TO_BRUTE_FORCE:
+        if sha256(password.encode("utf-8")).hexdigest() in PASSWORDS_TO_BRUTE_FORCE:
             print(f"Brute success: {password}")
 
 
