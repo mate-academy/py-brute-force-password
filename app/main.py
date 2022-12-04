@@ -2,7 +2,6 @@ import multiprocessing
 import time
 from concurrent.futures import ProcessPoolExecutor
 from hashlib import sha256
-from multiprocessing import Value
 
 PASSWORDS_TO_BRUTE_FORCE = {
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -17,36 +16,21 @@ PASSWORDS_TO_BRUTE_FORCE = {
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 }
 
-SET_LEN = len(PASSWORDS_TO_BRUTE_FORCE)
-
-COUNT = Value("i", 0)
-
-
-def sha256_hash_str(to_hash: str) -> str:
-    return sha256(to_hash.encode("utf-8")).hexdigest()
-
 
 def check_password(start: int, end: int) -> None:
-    global COUNT
-
     for i in range(start, end):
         password = str(i).rjust(8, "0")
 
-        if sha256_hash_str(password) in PASSWORDS_TO_BRUTE_FORCE:
-            with COUNT.get_lock():
-                COUNT.value += 1
-
-            print(f"Password #{COUNT.value}: {password}")
-
-        if COUNT.value == SET_LEN:
-            break
+        if sha256(password.encode("utf-8")).hexdigest() in PASSWORDS_TO_BRUTE_FORCE:
+            print(password)
 
 
 def brute_force_password() -> None:
     cpu_number = multiprocessing.cpu_count()
     step = 10 ** 8 // cpu_number
-    with ProcessPoolExecutor(cpu_number) as executor:
-        for i in range(SET_LEN):
+    passwords_set_len = len(PASSWORDS_TO_BRUTE_FORCE)
+    with ProcessPoolExecutor(cpu_number - 1) as executor:
+        for i in range(passwords_set_len):
             executor.submit(check_password, step * i, step * (i + 1))
 
 
