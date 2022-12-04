@@ -24,7 +24,7 @@ def sha256_hash_str(to_hash: str) -> str:
 
 def checkpass(start, end):
     for number in range(start, end):
-        password = str(number).ljust(8, "0")
+        password = str(number).rjust(8, "0")
 
         if sha256_hash_str(password) in PASSWORDS_TO_BRUTE_FORCE:
             print(password)
