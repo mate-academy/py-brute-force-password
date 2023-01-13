@@ -21,20 +21,24 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def aaa(start: int, end: int):
+def check_password(start: int, end: int):
     for i in range(start, end):
         password = "{:08}".format(i)
         if sha256_hash_str(password) in PASSWORDS_TO_BRUTE_FORCE:
             print(password)
 
 
+NUM_OF_CPUS = multiprocessing.cpu_count() - 1
+POSSIBLE_NUM_COMBINATIONS = 100000000
+
+
 def brute_force_password() -> None:
     futures = []
-    slice_ = 100000000 // (multiprocessing.cpu_count() - 1)
-    period = range(0, 100000000, slice_)
-    with ProcessPoolExecutor(multiprocessing.cpu_count() - 1) as executor:
+    slice_ = POSSIBLE_NUM_COMBINATIONS // NUM_OF_CPUS
+    period = range(0, POSSIBLE_NUM_COMBINATIONS, slice_)
+    with ProcessPoolExecutor(NUM_OF_CPUS) as executor:
         for start in period:
-            futures.append(executor.submit(aaa, start, start + slice_))
+            futures.append(executor.submit(check_password, start, start + slice_))
 
 
 if __name__ == "__main__":
