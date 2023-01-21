@@ -24,29 +24,25 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def creator_str_from_int(num: int) -> str:
-    password = str(num)
-    while len(password) < 8:
-        password = "0" + password
-    return password
-
-
-def find_password_using_hash(start, end):
+def find_password_using_hash(start: int, end: int) -> None:
     for combination in range(start, end):
-        password = creator_str_from_int(combination)
+        password = str(combination).rjust(8, "0")
         hashed_password = sha256_hash_str(password)
         if hashed_password in PASSWORDS_TO_BRUTE_FORCE:
             print(password)
 
 
-def brute_force_password():
+def brute_force_password() -> None:
     bunch_size = DATA_SIZE // CPU_CORES
-    bunches = [[bunch_size * i, bunch_size * (i + 1)] for i in range(CPU_CORES)]
-    bunches[-1][1] = DATA_SIZE
     futures = []
     with ProcessPoolExecutor(CPU_CORES) as executor:
-        for start, end in bunches:
-            futures.append(executor.submit(find_password_using_hash, start, end))
+        for start, end in [
+            [bunch_size * i, bunch_size * (i + 1)]
+            for i in range(CPU_CORES)
+        ]:
+            futures.append(
+                executor.submit(find_password_using_hash, start, end)
+            )
 
     wait(futures)
 
