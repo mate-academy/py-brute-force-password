@@ -3,6 +3,9 @@ import time
 from hashlib import sha256
 from concurrent.futures import ProcessPoolExecutor, wait
 
+CPU_CORES = multiprocessing.cpu_count() - 1
+DATA_SIZE = 10**8
+
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
     "cf0b0cfc90d8b4be14e00114827494ed5522e9aa1c7e6960515b58626cad0b44",
@@ -28,23 +31,23 @@ def creator_str_from_int(num: int) -> str:
     return password
 
 
-def find_password_using_hash(num_operation):
-    password = creator_str_from_int(num_operation)
-    password_hash = sha256_hash_str(password)
-    if password_hash in PASSWORDS_TO_BRUTE_FORCE:
-        return 1
-    return 0
+def find_password_using_hash(start, end):
+    for combination in range(start, end):
+        password = creator_str_from_int(combination)
+        hashed_password = sha256_hash_str(password)
+        if hashed_password in PASSWORDS_TO_BRUTE_FORCE:
+            print(password)
 
 
-def brute_force_password() -> None:
+def brute_force_password():
+    bunch_size = DATA_SIZE // CPU_CORES
+    bunches = [[bunch_size * i, bunch_size * (i + 1)] for i in range(CPU_CORES)]
+    bunches[-1][1] = DATA_SIZE
     futures = []
-    with ProcessPoolExecutor(multiprocessing.cpu_count() - 1) as executor:
-        for x in range(100000000):
-            if find_password_using_hash(x):
-                futures.append(executor.submit(find_password_using_hash, x))
-                print(creator_str_from_int(x))
-            if len(futures) == len(PASSWORDS_TO_BRUTE_FORCE):
-                break
+    with ProcessPoolExecutor(CPU_CORES) as executor:
+        for start, end in bunches:
+            futures.append(executor.submit(find_password_using_hash, start, end))
+
     wait(futures)
 
 
