@@ -49,7 +49,7 @@ def brute_force_password() -> None:
 
 
 if __name__ == "__main__":
-    print(NUM_OF_CPU)
+    print(f"count of cores: {NUM_OF_CPU}")
     start_time = time.perf_counter()
     brute_force_password()
     end_time = time.perf_counter()
