@@ -27,6 +27,8 @@ def sha256_hash_str(to_hash: str) -> str:
 
 def determine_password(start_password: int, end_password: int) -> None:
     for password in range(start_password, end_password + 1):
+        if len(str(password)) < 8:
+            password = str(password).rjust(8, "0")
         if sha256_hash_str(str(password)) in PASSWORDS_TO_BRUTE_FORCE:
             print(f'Password: {password}')
 
@@ -37,7 +39,7 @@ def brute_force_password() -> None:
     with ProcessPoolExecutor(CPU_COUNT) as executor:
         for i in range(CPU_COUNT):
             futures.append(executor.submit(
-                determine_password, i * BATCH_SIZE, (i + 1) * BATCH_SIZE)
+                determine_password, i * BATCH_SIZE, (i + 1) * BATCH_SIZE )
             )
 
     wait(futures)
