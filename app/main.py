@@ -1,3 +1,4 @@
+import multiprocessing
 import time
 from concurrent.futures import ProcessPoolExecutor
 from hashlib import sha256
@@ -23,21 +24,22 @@ def sha256_hash_str(to_hash: str) -> str:
 
 
 def brute_force_password(single_string: str) -> None:
-    for sample_password in product("0987654321", repeat=8):
+    for sample_password in product("0123456789", repeat=8):
         sample_password = "".join(sample_password)
         if sha256_hash_str(sample_password) == single_string:
             print("Form this string: " + single_string)
             print("password: " + "".join(sample_password))
+            return
 
 
-def process_executor() -> None:
-    with ProcessPoolExecutor() as executor:
+def process_pool_executor() -> None:
+    with ProcessPoolExecutor(multiprocessing.cpu_count() - 1) as executor:
         executor.map(brute_force_password, PASSWORDS_TO_BRUTE_FORCE)
 
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
-    process_executor()
+    process_pool_executor()
     end_time = time.perf_counter()
 
     print("Elapsed:", end_time - start_time)
