@@ -22,7 +22,7 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def check_password(hash_password):
+def check_password(hash_password: str) -> None:
     for password in itertools.product("0123456789", repeat=8):
         if sha256_hash_str("".join(password)) == hash_password:
             print("".join(password))
