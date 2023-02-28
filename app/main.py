@@ -1,7 +1,11 @@
+import multiprocessing
+from multiprocessing import Pool
 import time
 from hashlib import sha256
+from typing import Generator
 
-
+CPUS_NUMBER = multiprocessing.cpu_count()
+COMBINATIONS = 100000000
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
     "cf0b0cfc90d8b4be14e00114827494ed5522e9aa1c7e6960515b58626cad0b44",
@@ -20,8 +24,24 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
+def password_generator(start: int, end: int) -> Generator[str, None, None]:
+    for password in range(start, end):
+        yield str(password).zfill(8)
+
+
+def find_password(start: int, end: int) -> None:
+    for password in password_generator(start, end):
+        if sha256_hash_str(password) in PASSWORDS_TO_BRUTE_FORCE:
+            print("Password:", password)
+
+
 def brute_force_password() -> None:
-    pass
+    blocks = COMBINATIONS // CPUS_NUMBER
+    block_starts = range(0, COMBINATIONS, blocks)
+    with Pool(CPUS_NUMBER) as pool:
+        pool.starmap(
+            find_password, [(start, start + blocks) for start in block_starts]
+        )
 
 
 if __name__ == "__main__":
