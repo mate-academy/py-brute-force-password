@@ -48,11 +48,11 @@ def brute_force_password() -> None:
         processes.append(process)
         process.start()
 
-        for process in processes:
-            process.join()
+    for process in processes:
+        process.join()
 
-        while not result_queue.empty():
-            passwords.append(result_queue.get())
+    while not result_queue.empty():
+        passwords.append(result_queue.get())
 
     print(passwords)
 
