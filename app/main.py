@@ -1,10 +1,10 @@
+import concurrent.futures
 import multiprocessing
-from multiprocessing import Pool
 import time
 from hashlib import sha256
 from typing import Generator
 
-CPUS_NUMBER = multiprocessing.cpu_count()
+CPUS_NUMBER = multiprocessing.cpu_count() - 1
 COMBINATIONS = 100000000
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -36,12 +36,14 @@ def find_password(start: int, end: int) -> None:
 
 
 def brute_force_password() -> None:
-    blocks = COMBINATIONS // CPUS_NUMBER
-    block_starts = range(0, COMBINATIONS, blocks)
-    with Pool(CPUS_NUMBER) as pool:
-        pool.starmap(
-            find_password, [(start, start + blocks) for start in block_starts]
-        )
+    with concurrent.futures.ProcessPoolExecutor(CPUS_NUMBER) as executor:
+        blocks = COMBINATIONS // CPUS_NUMBER
+        futures = [
+            executor.submit(
+                find_password, i * blocks, (i + 1) * blocks
+            ) for i in range(CPUS_NUMBER)
+        ]
+        concurrent.futures.wait(futures)
 
 
 if __name__ == "__main__":
