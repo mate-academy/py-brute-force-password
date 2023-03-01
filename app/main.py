@@ -1,8 +1,7 @@
-import itertools
 import time
-from concurrent.futures import ProcessPoolExecutor, wait
 from hashlib import sha256
-from multiprocessing import cpu_count
+import multiprocessing
+from multiprocessing import Process, Queue
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -22,21 +21,40 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def check_password(hash_password: str) -> None:
-    for password in itertools.product("0123456789", repeat=8):
-        if sha256_hash_str("".join(password)) == hash_password:
-            print("".join(password))
-            break
+def check_password(
+        start_range: int,
+        end_range: int,
+        result_queue: Queue
+) -> None:
+    for i in range(start_range, end_range):
+        password = str(i).zfill(8)
+        hashed_password = sha256_hash_str(password)
+        if hashed_password in PASSWORDS_TO_BRUTE_FORCE:
+            result_queue.put(password)
 
 
 def brute_force_password() -> None:
+    processes = []
+    result_queue = multiprocessing.Queue()
     passwords = []
 
-    with ProcessPoolExecutor(cpu_count() - 1) as executor:
-        for password in PASSWORDS_TO_BRUTE_FORCE:
-            passwords.append(executor.submit(check_password, password))
+    for i in range(10):
+        start_range = i * 10000000
+        end_range = (i + 1) * 10000000
+        process = Process(
+            target=check_password,
+            args=(start_range, end_range, result_queue)
+        )
+        processes.append(process)
+        process.start()
 
-    wait(passwords)
+        for process in processes:
+            process.join()
+
+        while not result_queue.empty():
+            passwords.append(result_queue.get())
+
+    print(passwords)
 
 
 if __name__ == "__main__":
