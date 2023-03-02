@@ -4,6 +4,7 @@ import time
 from hashlib import sha256
 from typing import Generator
 
+
 CPUS_NUMBER = multiprocessing.cpu_count() - 1
 COMBINATIONS = 100000000
 PASSWORDS_TO_BRUTE_FORCE = [
@@ -30,9 +31,13 @@ def password_generator(start: int, end: int) -> Generator[str, None, None]:
 
 
 def find_password(start: int, end: int) -> None:
+    result = []
     for password in password_generator(start, end):
         if sha256_hash_str(password) in PASSWORDS_TO_BRUTE_FORCE:
+            result.append(password)
             print("Password:", password)
+            if len(result) == len(PASSWORDS_TO_BRUTE_FORCE):
+                return
 
 
 def brute_force_password() -> None:
