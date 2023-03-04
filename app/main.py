@@ -26,9 +26,8 @@ def brute_force_password(data: list) -> None:
         num_str = str(num)
         password = "0" * (8 - len(num_str)) + num_str
         hash_pass = sha256_hash_str(password)
-        for hash_ in PASSWORDS_TO_BRUTE_FORCE:
-            if hash_pass == hash_:
-                print("Password(s) found:", password)
+        if hash_pass in PASSWORDS_TO_BRUTE_FORCE:
+            print("Password(s) found:", password)
 
 
 def pool_handler() -> None:
