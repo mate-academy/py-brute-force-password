@@ -20,15 +20,6 @@ PASSWORDS_TO_BRUTE_FORCE = [
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
-# def brute_force_password() -> None:
-#     for num in range(0, 100000000):
-#         num_str = str(num)
-#         password = "0" * (8 - len(num_str)) + num_str
-#         hash_pass = sha256_hash_str(password)
-#         for hash_ in PASSWORDS_TO_BRUTE_FORCE:
-#             if hash_pass == hash_:
-#                 print("Password(s) found:", password)
-
 
 def brute_force_password(data: list) -> None:
     for num in range(data[0], data[1]):
@@ -43,7 +34,7 @@ def brute_force_password(data: list) -> None:
 def pool_handler() -> None:
     chunk_size = 100000
     items = [[i, i + chunk_size] for i in range(0, 100000000, chunk_size)]
-    pool_ = multiprocessing.Pool(8)
+    pool_ = multiprocessing.Pool(multiprocessing.cpu_count())
 
     pool_.map(brute_force_password, items)
 
