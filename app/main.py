@@ -1,5 +1,5 @@
 import time
-import asyncio
+import multiprocessing
 from hashlib import sha256
 
 
@@ -20,30 +20,37 @@ PASSWORDS_TO_BRUTE_FORCE = [
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
+# def brute_force_password() -> None:
+#     for num in range(0, 100000000):
+#         num_str = str(num)
+#         password = "0" * (8 - len(num_str)) + num_str
+#         hash_pass = sha256_hash_str(password)
+#         for hash_ in PASSWORDS_TO_BRUTE_FORCE:
+#             if hash_pass == hash_:
+#                 print("Password(s) found:", password)
 
-async def brute_force_password(start: int, end: int) -> None:
-    for num in range(start, end):
+
+def brute_force_password(data: list) -> None:
+    for num in range(data[0], data[1]):
         num_str = str(num)
         password = "0" * (8 - len(num_str)) + num_str
         hash_pass = sha256_hash_str(password)
         for hash_ in PASSWORDS_TO_BRUTE_FORCE:
             if hash_pass == hash_:
                 print("Password(s) found:", password)
-                return
 
 
-async def main() -> None:
-    tasks = []
-    chunk_size = 10000
-    for i in range(0, 100000000, chunk_size):
-        task = asyncio.create_task(brute_force_password(i, i + chunk_size))
-        tasks.append(task)
-    await asyncio.gather(*tasks)
+def pool_handler() -> None:
+    chunk_size = 100000
+    items = [[i, i + chunk_size] for i in range(0, 100000000, chunk_size)]
+    pool_ = multiprocessing.Pool(8)
+
+    pool_.map(brute_force_password, items)
 
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
-    asyncio.run(main())
+    pool_handler()
     end_time = time.perf_counter()
 
     print("Elapsed:", end_time - start_time)
