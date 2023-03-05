@@ -1,3 +1,4 @@
+
 import time
 import multiprocessing
 from hashlib import sha256
@@ -21,26 +22,47 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password(data: list) -> None:
-    for num in range(data[0], data[1]):
-        num_str = str(num)
-        password = "0" * (8 - len(num_str)) + num_str
-        hash_pass = sha256_hash_str(password)
-        if hash_pass in PASSWORDS_TO_BRUTE_FORCE:
-            print("Password(s) found:", password)
-
-
-def pool_handler() -> None:
-    chunk_size = 100000
-    items = [[i, i + chunk_size] for i in range(0, 100000000, chunk_size)]
-    pool_ = multiprocessing.Pool(multiprocessing.cpu_count())
-
-    pool_.map(brute_force_password, items)
+def brute_force_password(password_to_check, queue_) -> None:
+    password_to_check_finish = password_to_check[0] + "9" * 7
+    count = 0
+    while password_to_check != password_to_check_finish:
+        count += 1
+        count_pointer = len(str(count))
+        pointer = len(password_to_check) - count_pointer
+        first = password_to_check[:pointer]
+        second = password_to_check[-count_pointer:]
+        if sha256_hash_str(password_to_check) in PASSWORDS_TO_BRUTE_FORCE:
+            print(password_to_check)
+            queue_.put(password_to_check)
+        password_to_check = first + str(int(second) + 1)
 
 
 if __name__ == "__main__":
+    passwords = [
+        "00000000",
+        "10000000",
+        "20000000",
+        "30000000",
+        "40000000",
+        "50000000",
+        "60000000",
+        "70000000",
+        "80000000",
+        "90000000",
+    ]
     start_time = time.perf_counter()
-    pool_handler()
+    process_list = []
+    queue = multiprocessing.Queue()
+    for password in passwords:
+        task = multiprocessing.Process(target=brute_force_password, args=(password, queue))
+        process_list.append(task)
+        task.start()
+    PASSWORDS_TO_BRUTE_FORCE_LENGTH = len(PASSWORDS_TO_BRUTE_FORCE)
+    while queue.qsize() != PASSWORDS_TO_BRUTE_FORCE_LENGTH:
+        time.sleep(1)
+    for process in process_list:
+        if process.is_alive():
+            process.kill()
     end_time = time.perf_counter()
 
     print("Elapsed:", end_time - start_time)
