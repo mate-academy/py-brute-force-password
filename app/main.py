@@ -1,6 +1,8 @@
+import itertools
+import multiprocessing
 import time
 from hashlib import sha256
-
+from typing import List, Optional, Iterable
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -21,7 +23,40 @@ def sha256_hash_str(to_hash: str) -> str:
 
 
 def brute_force_password() -> None:
-    pass
+    digits = "0123456789"
+    passwords = set()
+    part_size = 1000000
+    pool_size = (multiprocessing.cpu_count() - 1)
+    parts = ("".join(combination) for combination in itertools.product(digits, repeat=8))
+
+    with multiprocessing.Pool(processes=pool_size) as pool:
+        for matching_password in pool.imap_unordered(process_line, line(parts, part_size)):
+            if matching_password is not None:
+                passwords.add(matching_password)
+
+    if len(passwords) == len(PASSWORDS_TO_BRUTE_FORCE):
+        print(passwords)
+    else:
+        print("No matching passwords found")
+
+
+def process_line(part_passwords: List[str]) -> Optional[str]:
+    for password in part_passwords:
+        hashed_password = sha256_hash_str(password)
+        if hashed_password in PASSWORDS_TO_BRUTE_FORCE:
+            return password
+    return None
+
+
+def line(iterable: Iterable, part_size: int) -> Iterable[List[str]]:
+    lines = []
+    for item in iterable:
+        lines.append(item)
+        if len(lines) == part_size:
+            yield lines
+            lines = []
+    if lines:
+        yield lines
 
 
 if __name__ == "__main__":
