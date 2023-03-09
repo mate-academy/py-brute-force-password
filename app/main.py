@@ -28,7 +28,7 @@ def get_password(start_password: int, end_password: int) -> None:
         if len(str(password)) < 8:
             password = str(password).rjust(8, "0")
         if sha256_hash_str(str(password)) in PASSWORDS_TO_BRUTE_FORCE:
-            print(f'Password: {password}')
+            print(f"Password: {password}")
 
 
 def brute_force_password() -> None:
@@ -41,7 +41,7 @@ def brute_force_password() -> None:
     wait(futures)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     start_time = time.perf_counter()
     brute_force_password()
     end_time = time.perf_counter()
