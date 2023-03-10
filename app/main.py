@@ -22,7 +22,7 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def create_password(start, end):
+def create_password(start: int, end: int) -> None:
     for combination in itertools.islice(itertools.product(
             range(0, 10), repeat=8), start, end
     ):
@@ -34,7 +34,7 @@ def create_password(start, end):
 def brute_force_password(processes=None):
     processes = multiprocessing.cpu_count()
     with ProcessPoolExecutor(max_workers=processes - 1) as executor:
-        chunk_size = 1000000
+        chunk_size = (10 ** 8) // (processes - 1)
         futures = []
         for i in range(0, 10 ** 8, chunk_size):
             future = executor.submit(create_password, i, i + chunk_size)
