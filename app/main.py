@@ -24,7 +24,7 @@ def sha256_hash_str(to_hash: str) -> str:
 
 def print_passwords(start: int, stop: int) -> None:
     for num in range(start, stop):
-        password = '{0:08}'.format(num)
+        password = "{0:08}".format(num)
         password_hash = sha256_hash_str(password)
         if password_hash in PASSWORDS_TO_BRUTE_FORCE:
             print(f"{password} / {password_hash}")
