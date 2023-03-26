@@ -27,12 +27,12 @@ def create_password(start: int, end: int) -> None:
     for combination in itertools.islice(itertools.product(
             range(0, 10), repeat=8), start, end
     ):
-        password = ''.join(str(x) for x in list(combination))
+        password = "".join(str(x) for x in list(combination))
         if sha256_hash_str(password) in PASSWORDS_TO_BRUTE_FORCE:
             print(password)
 
 
-def brute_force_password(processes=None):
+def brute_force_password(processes: int = None) -> None:
     processes = multiprocessing.cpu_count()
     with ProcessPoolExecutor(max_workers=processes - 1) as executor:
         chunk_size = (10 ** 8) // (processes - 1)
@@ -47,4 +47,3 @@ if __name__ == "__main__":
     brute_force_password()
     end_time = time.perf_counter()
     print("Elapsed:", end_time - start_time)
-
