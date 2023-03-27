@@ -18,20 +18,19 @@ PASSWORDS_TO_BRUTE_FORCE = [
 ]
 
 CORES_AVAILABLE = multiprocessing.cpu_count() - 1
-
+POSSIBLE_PASSWORDS_AMOUNT = 10**8
 
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
 def check_password(start, end, cores_available):
-
     for password in range(start, end, cores_available):
-        int_formatted = "{0:08}".format(password)
-        password_hashed = sha256_hash_str(int_formatted)
+        int_8_digit_format = "{0:08}".format(password)
+        password_hashed = sha256_hash_str(int_8_digit_format)
 
         if password_hashed in PASSWORDS_TO_BRUTE_FORCE:
-            print(int_formatted)
+            print(int_8_digit_format)
 
 
 def brute_force_password() -> None:
@@ -43,7 +42,7 @@ def brute_force_password() -> None:
                 executor.submit(
                     check_password,
                     process,
-                    10**8,
+                    POSSIBLE_PASSWORDS_AMOUNT,
                     CORES_AVAILABLE,
                 )
             )
