@@ -31,7 +31,6 @@ def brute_force_password() -> None:
     futures = []
     with ProcessPoolExecutor(cpu_count() - 1) as executor:
         futures.extend(executor.submit(find_password, password) for password in PASSWORDS_TO_BRUTE_FORCE)
-
     wait(futures)
 
 
