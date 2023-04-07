@@ -15,6 +15,7 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "7e8f0ada0a03cbee48a0883d549967647b3fca6efeb0a149242f19e4b68d53d6",
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
+TIMES = 100000000
 
 
 def sha256_hash_str(to_hash: str) -> str:
@@ -22,7 +23,7 @@ def sha256_hash_str(to_hash: str) -> str:
 
 
 def find_password(password: str) -> None:
-    for i in range(100000000):
+    for i in range(TIMES):
         if sha256_hash_str("{:08}".format(i)) == password:
             print("{:08}".format(i))
 
