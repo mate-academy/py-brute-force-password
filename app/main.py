@@ -39,12 +39,9 @@ def brute(start: int,
         current_combo_hashed = sha256_hash_str(current_combo)
         if current_combo_hashed in PASSWORDS_TO_BRUTE_FORCE:
             print(f"Password! {current_combo} with hash {current_combo_hashed}")
-            print("Before manager: ")
             with password_count_current.get_lock():
                 password_count_current.value += 1
                 print(password_count_current.value)
-                print("Inside manager: ")
-
                 if password_count_current.value == password_count:
                     return
 
@@ -68,4 +65,3 @@ if __name__ == "__main__":
     brute_force_password()
     end_time = time.perf_counter()
     print("Elapsed:", end_time - start_time)
-
