@@ -22,19 +22,23 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def check_password_hash(cur_password_to_check: str) -> None:
-    for i in range(100_000_000):
-        current_variant = str(i).zfill(8)
-        if sha256_hash_str(current_variant) == cur_password_to_check:
+def check_password_hash(cycle_start: int, cycle_end: int) -> None:
+    for i in range(cycle_start, cycle_end):
+        current_variant = "{:08d}".format(i)
+        if sha256_hash_str(current_variant) in PASSWORDS_TO_BRUTE_FORCE:
             print(current_variant)
-            return
 
 
 def brute_force_password() -> None:
     futures = []
-    with ProcessPoolExecutor(multiprocessing.cpu_count() - 1) as executer:
-        for passwd in PASSWORDS_TO_BRUTE_FORCE:
-            futures.append(executer.submit(check_password_hash, passwd))
+    cpus = multiprocessing.cpu_count()
+    cycle_per_cpu = int(10 ** 8 / cpus)
+    cycle_start, cycle_end = 0, cycle_per_cpu
+    with ProcessPoolExecutor(cpus) as executor:
+        for _ in range(cpus):
+            futures.append(executor.submit(check_password_hash, cycle_start, cycle_end))
+            cycle_start += cycle_per_cpu
+            cycle_end += cycle_per_cpu
     wait(futures)
 
 
