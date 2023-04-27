@@ -17,6 +17,18 @@ PASSWORDS_TO_BRUTE_FORCE = {
 }
 
 
+def wait_ten_pass(tasks: [multiprocessing.Process]) -> None:
+    while True:
+        with open("pass.txt", "r") as file:
+            pass_count = len(file.readlines())
+        if pass_count == 10:
+            for task in tasks:
+                task.kill()
+            break
+        else:
+            time.sleep(0.1)
+
+
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
@@ -26,15 +38,18 @@ def find_password(step: int) -> None:
         number_hash = sha256_hash_str(str(number).zfill(8))
         if number_hash in PASSWORDS_TO_BRUTE_FORCE:
             print(f"{str(number).zfill(8)}: {number_hash}")
+            with open("pass.txt", "a") as file:
+                file.write(f"{number}\n")
 
 
 def brute_force_password() -> None:
     tasks = []
 
-    for step in range(1, 11):
+    for step in range(1, 9):
         tasks.append(multiprocessing.Process(target=find_password, args=(step, )))
         tasks[-1].start()
-
+    tasks.append(multiprocessing.Process(target=wait_ten_pass, args=(tasks.copy(), )))
+    tasks[-1].start()
     for task in tasks:
         task.join()
 
