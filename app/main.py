@@ -39,7 +39,6 @@ def brute_force_password() -> None:
 
         for i in range(cpu_number):
             executor.submit(password_checker, i * num_p, (i + 1) * num_p)
-            print(i * num_p, (i + 1) * num_p)
 
 
 if __name__ == "__main__":
