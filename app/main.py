@@ -25,16 +25,24 @@ def formatto(number: int) -> str:
     return "{:08}".format(number)
 
 
-def brute(start: int, end: int) -> None:
+block = int(100000000 / multiprocessing.cpu_count())
+password_count = len(PASSWORDS_TO_BRUTE_FORCE)
+password_count_current = multiprocessing.Value("i", 0)
+
+
+def brute(start: int,
+          end: int,
+          password_count_current: multiprocessing.Value) -> None:
 
     for number in range(start, end):
         current_combo = formatto(number)
         current_combo_hashed = sha256_hash_str(current_combo)
         if current_combo_hashed in PASSWORDS_TO_BRUTE_FORCE:
             print(f"Password! {current_combo} with hash {current_combo_hashed}")
-
-
-block = int(100000000 / multiprocessing.cpu_count())
+            password_count_current.value += 1
+            print(password_count_current.value)
+            if password_count_current.value == password_count:
+                return
 
 
 def brute_force_password() -> None:
@@ -42,7 +50,8 @@ def brute_force_password() -> None:
     tasks = []
     # my cpu count = 4
     for i in range(multiprocessing.cpu_count()):
-        process = multiprocessing.Process(target=brute, args=(i * block, (i + 1) * block))
+        process = multiprocessing.Process(target=brute,
+                                          args=(i * block, (i + 1) * block, password_count_current))
         tasks.append(process)
         process.start()
 
