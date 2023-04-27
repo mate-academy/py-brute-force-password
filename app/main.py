@@ -1,6 +1,7 @@
+import concurrent.futures
+import itertools
 import time
 from hashlib import sha256
-
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -21,7 +22,13 @@ def sha256_hash_str(to_hash: str) -> str:
 
 
 def brute_force_password() -> None:
-    pass
+    with concurrent.futures.ProcessPoolExecutor() as executor:
+        for password in itertools.product("0123456789", repeat=8):
+            password_str = "".join(password)
+            hash_str = sha256_hash_str(password_str)
+            if hash_str in PASSWORDS_TO_BRUTE_FORCE:
+                print(f"Found password: {password_str}")
+        executor.shutdown()
 
 
 if __name__ == "__main__":
