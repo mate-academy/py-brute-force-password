@@ -1,3 +1,5 @@
+import concurrent.futures
+import multiprocessing
 import time
 from hashlib import sha256
 
@@ -20,13 +22,18 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
-    pass
+def brute_force_password(chunk: int) -> None:
+    for number in range(chunk - 1_000_000, chunk + 1):
+        if sha256_hash_str(f"{number:08}") in PASSWORDS_TO_BRUTE_FORCE:
+            print(f"Password: {number:08}")
 
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
-    brute_force_password()
-    end_time = time.perf_counter()
 
+    with concurrent.futures.ProcessPoolExecutor() as executor:
+        for i in range(1, 100):
+            executor.submit(brute_force_password, i * 1_000_000)
+
+    end_time = time.perf_counter()
     print("Elapsed:", end_time - start_time)
