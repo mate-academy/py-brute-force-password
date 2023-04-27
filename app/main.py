@@ -1,5 +1,7 @@
 import time
+import multiprocessing
 from hashlib import sha256
+import itertools
 
 
 PASSWORDS_TO_BRUTE_FORCE = [
@@ -20,8 +22,24 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
+def password_checker() -> None:
+    digits = [str(i) for i in range(10)]
+    combinations = itertools.product(digits, repeat=8)
+
+    for c in combinations:
+        number_check = sha256_hash_str(''.join(c))
+        if number_check in PASSWORDS_TO_BRUTE_FORCE:
+            print(''.join(c))
+
+
 def brute_force_password() -> None:
-    pass
+    tasks = []
+
+    tasks.append(multiprocessing.Process(target=password_checker))
+    tasks[-1].start()
+
+    for task in tasks:
+        task.join()
 
 
 if __name__ == "__main__":
