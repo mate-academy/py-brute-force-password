@@ -27,10 +27,13 @@ def brute_force_password(intervals: int) -> None:
     for combination in range(10 ** 7 * (intervals - 1), 10 ** 7 * intervals):
         hashed_password = sha256_hash_str(str(combination).zfill(8))
         if hashed_password in PASSWORDS_TO_BRUTE_FORCE:
-            print(f"Password found:{str(combination).zfill(8)} {hashed_password}")
+            print(
+                f"Password found:{str(combination).zfill(8)} "
+                f"({hashed_password})"
+            )
 
 
-def main_pool_executor():
+def main_pool_executor() -> None:
     futures = []
 
     with ProcessPoolExecutor(multiprocessing.cpu_count() - 1) as executor:
