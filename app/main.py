@@ -1,6 +1,7 @@
 import time
 from hashlib import sha256
-
+from multiprocessing import Pool, cpu_count, Manager
+from concurrent.futures import ProcessPoolExecutor, wait
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -20,8 +21,37 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
+def threads_find_password(start, end):
+    for num in range(start, end):
+
+        check_password = "{:08d}".format(num)
+        if sha256_hash_str(check_password) in PASSWORDS_TO_BRUTE_FORCE:
+            print(check_password)
+
+
+
+def divide_into_parts(n, num_parts):
+    """ Разбивает число n на num_parts частей и возвращает генератор кортежей с началом и концом каждого диапазона. """
+    part_size = n // num_parts  # вычисляем размер каждой части
+    remainder = n % num_parts  # вычисляем остаток
+    start = 0
+    for i in range(num_parts):
+        if i < remainder:
+            end = start + part_size + 1  # добавляем единицу к размеру диапазона
+        else:
+            end = start + part_size
+        yield start, end
+        start = end
+
+
 def brute_force_password() -> None:
-    pass
+    futures = []
+    cpus = cpu_count() * 2 - 1
+    with ProcessPoolExecutor(cpus) as executor:
+        for part in divide_into_parts(1_000_000_00, cpus):
+            futures.append(executor.submit(threads_find_password, *part))
+
+    wait(futures)
 
 
 if __name__ == "__main__":
