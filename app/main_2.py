@@ -1,9 +1,8 @@
+import time
 from hashlib import sha256
-from multiprocessing import active_children, cpu_count, Manager, Pool
-from time import perf_counter
+import multiprocessing
 
-CPU_COUNT = cpu_count()
-
+CPU_COUNT = multiprocessing.cpu_count()
 PASSWORDS_TO_BRUTE_FORCE = {
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
     "cf0b0cfc90d8b4be14e00114827494ed5522e9aa1c7e6960515b58626cad0b44",
@@ -22,30 +21,20 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def password(lt) -> None:
-    if lt[1][0] == 10:
-        return
-    for number in range(lt[0] * (10 ** 6), (lt[0] + 1) * (10 ** 6)):
+def password(first_chars: int) -> None:
+    for number in range(first_chars * (10 ** 7), (first_chars + 1) * (10 ** 7)):
         number_hash = sha256_hash_str(str(number).zfill(8))
         if number_hash in PASSWORDS_TO_BRUTE_FORCE:
             print(f"{str(number).zfill(8)}: {number_hash}")
-            lt[1][0] += 1
-            if lt[1][0] == 10:
-                active = active_children()
-                for child in active:
-                    child.terminate()
 
 
 def brute_force_password() -> None:
-
-    with Pool(processes=int(CPU_COUNT * 0.75)) as pool:
-        manager = Manager()
-        tracker = manager.list([0])
-        pool.map(password, [(i, tracker) for i in range(100)])
+    with multiprocessing.Pool(processes=int(CPU_COUNT * 0.75)) as pool:
+        pool.map(password, range(10))
 
 
 if __name__ == "__main__":
-    start_time = perf_counter()
+    start_time = time.perf_counter()
     brute_force_password()
-    end_time = perf_counter()
+    end_time = time.perf_counter()
     print("Elapsed:", end_time - start_time)
