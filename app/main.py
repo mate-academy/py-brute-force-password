@@ -1,5 +1,6 @@
 import time
 from hashlib import sha256
+import multiprocessing
 
 
 PASSWORDS_TO_BRUTE_FORCE = [
@@ -20,13 +21,38 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
+def formatto(number: int) -> str:
+    return "{:08}".format(number)
+
+
+def brute(start: int, end: int) -> None:
+
+    for number in range(start, end):
+        current_combo = formatto(number)
+        current_combo_hashed = sha256_hash_str(current_combo)
+        if current_combo_hashed in PASSWORDS_TO_BRUTE_FORCE:
+            print(f"Password! {current_combo} with hash {current_combo_hashed}")
+
+
+block = int(100000000 / multiprocessing.cpu_count())
+
+
 def brute_force_password() -> None:
-    pass
+
+    tasks = []
+    # my cpu count = 4
+    for i in range(multiprocessing.cpu_count()):
+        process = multiprocessing.Process(target=brute, args=(i * block, (i + 1) * block))
+        tasks.append(process)
+        process.start()
+
+    for task in tasks:
+        task.join()
 
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
     brute_force_password()
     end_time = time.perf_counter()
-
     print("Elapsed:", end_time - start_time)
+
