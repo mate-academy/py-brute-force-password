@@ -35,12 +35,12 @@ def speed_up_brute_force():
     for i in range(num_processes):
         start = i * range_size
         stop = (i + 1) * range_size if i < num_processes - 1 else 10 ** 8
-        p = multiprocessing.Process(target=brute_force_password, args=(start, stop, PASSWORDS_TO_BRUTE_FORCE))
-        processes.append(p)
-        p.start()
+        process = multiprocessing.Process(target=brute_force_password, args=(start, stop, PASSWORDS_TO_BRUTE_FORCE))
+        processes.append(process)
+        process.start()
 
-    for p in processes:
-        p.join()
+    for process in processes:
+        process.join()
 
 
 if __name__ == "__main__":
