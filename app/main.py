@@ -1,4 +1,3 @@
-import ctypes
 import multiprocessing
 import time
 from concurrent.futures import ProcessPoolExecutor, wait
@@ -35,7 +34,7 @@ def brute_force_password() -> None:
     futures = []
     with ProcessPoolExecutor(multiprocessing.cpu_count() - 1) as executor:
         if multiprocessing.cpu_count() - 1 >= 10:
-            for i in range(multiprocessing.cpu_count() - 1):
+            for i in range(10):
                 futures.append(executor.submit(find_password, i))
         else:
             start = 0
