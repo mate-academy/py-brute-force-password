@@ -34,7 +34,7 @@ def run_multiprocessing() -> None:
 
     print("CPU count:", cpu)
 
-    for i in range(11):
+    for i in range(1, 11):
         tasks.append(
             Process(target=brute_force_password, args=(i * 10000000,))
         )
