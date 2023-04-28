@@ -33,10 +33,18 @@ def find_password(i: int) -> None:
 
 def brute_force_password() -> None:
     futures = []
-
     with ProcessPoolExecutor(multiprocessing.cpu_count() - 1) as executor:
-        for i in range(9):
-            futures.append(executor.submit(find_password, i))
+        if multiprocessing.cpu_count() - 1 >= 10:
+            for i in range(multiprocessing.cpu_count() - 1):
+                futures.append(executor.submit(find_password, i))
+        else:
+            start = 0
+            count = 10
+            while count > 0:
+                for i in range(start, multiprocessing.cpu_count() - 1):
+                    futures.append(executor.submit(find_password, i))
+                start += multiprocessing.cpu_count() - 1
+                count -= multiprocessing.cpu_count() - 1
 
     wait(futures)
 
