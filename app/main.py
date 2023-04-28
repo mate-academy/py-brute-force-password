@@ -1,4 +1,4 @@
-import multiprocessing
+import multiprocessing, os
 import time
 from hashlib import sha256
 
@@ -16,12 +16,13 @@ PASSWORDS_TO_BRUTE_FORCE = {
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 }
 
+counter = multiprocessing.Value("i", 0)
+lock = multiprocessing.Lock()
+
 
 def wait_ten_pass(tasks: [multiprocessing.Process]) -> None:
     while True:
-        with open("pass.txt", "r") as file:
-            pass_count = len(file.readlines())
-        if pass_count == 10:
+        if counter.value == 10:
             for task in tasks:
                 task.kill()
             break
@@ -37,9 +38,9 @@ def find_password(step: int) -> None:
     for number in range(10 ** 7 * (step - 1), 10 ** 7 * step):
         number_hash = sha256_hash_str(str(number).zfill(8))
         if number_hash in PASSWORDS_TO_BRUTE_FORCE:
-            print(f"{str(number).zfill(8)}: {number_hash}")
-            with open("pass.txt", "a") as file:
-                file.write(f"{number}\n")
+            with lock:
+                print(f"{str(number).zfill(8)}: {number_hash}")
+                counter.value += 1
 
 
 def brute_force_password() -> None:
@@ -48,6 +49,7 @@ def brute_force_password() -> None:
     for step in range(1, 9):
         tasks.append(multiprocessing.Process(target=find_password, args=(step, )))
         tasks[-1].start()
+
     tasks.append(multiprocessing.Process(target=wait_ten_pass, args=(tasks.copy(), )))
     tasks[-1].start()
     for task in tasks:
@@ -58,5 +60,4 @@ if __name__ == "__main__":
     start_time = time.perf_counter()
     brute_force_password()
     end_time = time.perf_counter()
-
     print("Elapsed:", end_time - start_time)
