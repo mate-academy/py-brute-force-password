@@ -23,8 +23,8 @@ def sha256_hash_str(to_hash: str) -> str:
 
 
 def find_password(start: int, end: int) -> None:
-    for i in range(start, end):
-        password = f"{i:08}"
+    for password_number in range(start, end):
+        password = f"{password_number:08}"
         hashed_password = sha256_hash_str(password)
         if hashed_password in PASSWORDS_TO_BRUTE_FORCE:
             print(f"Password found: {password} for hash: {hashed_password}")
@@ -34,8 +34,8 @@ def brute_force_password() -> None:
     futures = []
 
     with ProcessPoolExecutor(multiprocessing.cpu_count() - 1) as executor:
-        for i in range(10):
-            futures.append(executor.submit(find_password, i * 10**7, (i + 1) * 10**7))
+        for chunk_number in range(10):
+            futures.append(executor.submit(find_password, chunk_number * 10**7, (chunk_number + 1) * 10**7))
 
     wait(futures)
 
