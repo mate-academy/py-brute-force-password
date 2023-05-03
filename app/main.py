@@ -24,8 +24,8 @@ def sha256_hash_str(to_hash: str) -> str:
 
 
 def brute_force_password(part: int) -> None:
-    for i in range(part - 10000000, part):
-        password = "{:08d}".format(i)
+    for number in range(part - 10000000, part):
+        password = "{:08d}".format(number)
         hash_password = sha256_hash_str(password)
 
         if hash_password in PASSWORDS_TO_BRUTE_FORCE:
@@ -36,8 +36,8 @@ def process_pool_executor() -> None:
     futures = []
 
     with ProcessPoolExecutor(multiprocessing.cpu_count() - 1) as executor:
-        for i in range(11):
-            futures.append(executor.submit(brute_force_password, i * 10000000))
+        for number in range(11):
+            futures.append(executor.submit(brute_force_password, number * 10000000))
 
     wait(futures)
 
