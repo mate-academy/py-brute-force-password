@@ -22,7 +22,10 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password(you_hash: str, password_length: int) -> None:
+def brute_force_password(
+        you_hash: str,
+        password_length: int
+) -> None:
     for i in product("0123456789", repeat=password_length):
         password = "".join(list(i))
         password_hash = sha256_hash_str(password)
