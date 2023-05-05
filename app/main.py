@@ -15,6 +15,7 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "7e8f0ada0a03cbee48a0883d549967647b3fca6efeb0a149242f19e4b68d53d6",
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
+CPU = multiprocessing.cpu_count()
 
 
 def sha256_hash_str(to_hash: str) -> str:
@@ -23,25 +24,29 @@ def sha256_hash_str(to_hash: str) -> str:
 
 def brute_force_password(step) -> None:
     for i in range(step - 10000000, step + 1):
-        if sha256_hash_str(f"{i:08}") in PASSWORDS_TO_BRUTE_FORCE:
-            print(f"Password found: {i:08}")
+        password = str(i).rjust(8, "0")
+        if sha256_hash_str(password) in PASSWORDS_TO_BRUTE_FORCE:
+            print(f"Password found: {password}")
 
 
 def run_multiprocessing() -> None:
-    tasks = []
+    step_size = 10000000
+    steps = range(step_size, 100000000, step_size)
+    num_steps = len(steps)
+    step_ranges = [(steps[i-1], steps[i]) for i in range(1, num_steps)]
+    step_ranges.append((steps[-1], 100000000))
 
-    cpu = multiprocessing.cpu_count()
+    print("CPU count:", CPU)
 
-    print("CPU count:", cpu)
+    processes = []
 
-    for i in range(1, 11):
-        tasks.append(
-            Process(target=brute_force_password, args=(i * 10000000,))
-        )
-        tasks[-1].start()
+    for start, end in step_ranges:
+        p = Process(target=brute_force_password, args=(end,))
+        p.start()
+        processes.append(p)
 
-    for task in tasks:
-        task.join()
+    for process in processes:
+        process.join()
 
 
 if __name__ == "__main__":
