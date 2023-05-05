@@ -39,18 +39,16 @@ def brute_force_password() -> None:
     num_combinations = 1000000000
     proc_divider = num_combinations // num_processes
 
-    futures = []
     with ProcessPoolExecutor(num_processes) as executor:
-        for start_index in range(0, num_combinations, proc_divider):
-            futures.append(
-                executor.submit(find_password, start_index, start_index + proc_divider)
-            )
-    wait(futures)
+        wait(
+            executor.submit(find_password, start_index, start_index + proc_divider)
+            for start_index in range(0, num_combinations, proc_divider)
+        )
 
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
     brute_force_password()
-    end_time = time.perf_counter()
+    end_time = time
 
     print("Elapsed:", end_time - start_time)
