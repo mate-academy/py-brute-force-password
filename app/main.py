@@ -22,7 +22,7 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password(step) -> None:
+def brute_force_password(step: int) -> None:
     for i in range(step - 10000000, step + 1):
         password = str(i).rjust(8, "0")
         if sha256_hash_str(password) in PASSWORDS_TO_BRUTE_FORCE:
@@ -33,7 +33,7 @@ def run_multiprocessing() -> None:
     step_size = 10000000
     steps = range(step_size, 100000000, step_size)
     num_steps = len(steps)
-    step_ranges = [(steps[i-1], steps[i]) for i in range(1, num_steps)]
+    step_ranges = [(steps[i - 1], steps[i]) for i in range(1, num_steps)]
     step_ranges.append((steps[-1], 100000000))
 
     print("CPU count:", CPU)
@@ -41,9 +41,9 @@ def run_multiprocessing() -> None:
     processes = []
 
     for start, end in step_ranges:
-        p = Process(target=brute_force_password, args=(end,))
-        p.start()
-        processes.append(p)
+        proc = Process(target=brute_force_password, args=(end,))
+        proc.start()
+        processes.append(proc)
 
     for process in processes:
         process.join()
