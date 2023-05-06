@@ -30,16 +30,19 @@ def find_password(start: int, end: int):
             print(password, hashed_password)
 
 def brute_force_password() -> None:
-    futures = []
-
     with ProcessPoolExecutor(multiprocessing.cpu_count() - 1) as executor:
+        password_ranges = []
+
         for i in range(10):
             password_range = range(i * 10_000_000, (i + 1) * 10_000_000)
-            futures.append(
-                executor.submit(find_password, password_range.start, password_range.stop)
-            )
+            password_ranges.append(password_range)
 
-    wait(futures)
+        futures = [
+            executor.submit(find_password, password_range.start, password_range.stop)
+            for password_range in password_ranges
+        ]
+
+        wait(futures)
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
