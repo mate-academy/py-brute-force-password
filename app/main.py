@@ -23,19 +23,15 @@ def sha256_hash_str(to_hash: str) -> str:
 
 def find_password(step: int) -> None:
     for number in range(10 ** 7 * (step - 1), 10 ** 7 * step):
-        number_hash = sha256_hash_str(str(number).zfill(8))
+        zero_fill = str(number).zfill(8)
+        number_hash = sha256_hash_str(zero_fill)
         if number_hash in PASSWORDS_TO_BRUTE_FORCE:
-            print(f"{str(number).zfill(8)}: {number_hash}")
+            print(f"{zero_fill}: {number_hash}")
 
 
 def brute_force_password() -> None:
-    futures = []
-
-    with ProcessPoolExecutor(multiprocessing.cpu_count()) as executor:
-        for i in range(1, 11):
-            futures.append(executor.submit(find_password, i))
-
-    wait(futures)
+    with ProcessPoolExecutor(multiprocessing.cpu_count() - 1) as executor:
+        wait(executor.submit(find_password, i) for i in range(1, 11))
 
 
 if __name__ == "__main__":
