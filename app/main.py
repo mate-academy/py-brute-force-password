@@ -1,8 +1,8 @@
+import itertools
 import multiprocessing
 import time
 from concurrent.futures import ProcessPoolExecutor
 from hashlib import sha256
-import itertools
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -44,8 +44,7 @@ def main():
     ]
 
     with ProcessPoolExecutor() as executor:
-        for _ in executor.map(brute_force_password, ranges):
-            pass
+        executor.map(brute_force_password, ranges)
 
 
 if __name__ == "__main__":
