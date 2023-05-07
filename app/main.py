@@ -32,19 +32,14 @@ def check_password(start, stop):
 
 
 def brute_force_password() -> None:
-    futures = []
-
     total_combinations = 10 ** 8
-    group_size = (total_combinations + 10) //(multiprocessing.cpu_count() - 1)
+    group_size = (total_combinations + 10) // (multiprocessing.cpu_count() - 1)
 
     with ProcessPoolExecutor() as executor:
         for i in range(11):
             start = i * group_size
             stop = min((i + 1) * group_size, total_combinations)
-            future = executor.submit(check_password, start, stop)
-            futures.append(future)
-
-    wait(futures)
+            executor.submit(check_password, start, stop)
 
 
 if __name__ == "__main__":
