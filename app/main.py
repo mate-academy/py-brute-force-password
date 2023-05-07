@@ -22,14 +22,14 @@ def sha256_hash_str(to_hash: str) -> str:
 
 
 def get_password(num: int) -> None:
-    ans = []
+    result = []
     for number in range(num, num + 10000001):
         if (
             sha256_hash_str(f"{number:08}") in PASSWORDS_TO_BRUTE_FORCE
-            and f"{number:08}" not in ans
+            and f"{number:08}" not in result
         ):
             print(f"{number:08} : {sha256_hash_str(str(number))}")
-            ans.append(f"{number:08}")
+            result.append(f"{number:08}")
 
 
 def brute_force_password() -> None:
