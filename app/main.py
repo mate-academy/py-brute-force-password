@@ -34,7 +34,6 @@ def brute_force_password(start: int, end: int) -> None:
 
 
 def run_multiprocessing():
-    future = []
 
     password_to_brut_force = len(PASSWORDS_TO_BRUTE_FORCE)
 
@@ -48,9 +47,9 @@ def run_multiprocessing():
         for i in range(cpu):
             start = i * interval
             end = (i + 1) * interval
-            future.append(executor.submit(brute_force_password, start, end))
+            executor.submit(brute_force_password, start, end)
 
-    wait(future)
+
 
 
 if __name__ == "__main__":
