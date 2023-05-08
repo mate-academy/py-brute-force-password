@@ -31,7 +31,7 @@ def find_password(start: int, end: int) -> None:
 def brute_force_password() -> None:
     cpu_number = multiprocessing.cpu_count()
     step = 10**8 // cpu_number
-    with ProcessPoolExecutor(cpu_number - 1) as executor:
+    with ProcessPoolExecutor(cpu_number) as executor:
         for i in range(len(PASSWORDS_TO_BRUTE_FORCE)):
             executor.submit(find_password, step * i, step * (i + 1))
 
