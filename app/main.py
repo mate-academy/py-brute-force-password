@@ -24,20 +24,19 @@ def sha256_hash_str(to_hash: str) -> str:
 def threads_find_password(start, end):
     for num in range(start, end):
 
-        check_password = "{:08d}".format(num)
+        check_password = str(num).rjust(8, '0')
         if sha256_hash_str(check_password) in PASSWORDS_TO_BRUTE_FORCE:
             print(check_password)
 
 
 
 def divide_into_parts(n, num_parts):
-    """ Разбивает число n на num_parts частей и возвращает генератор кортежей с началом и концом каждого диапазона. """
-    part_size = n // num_parts  # вычисляем размер каждой части
-    remainder = n % num_parts  # вычисляем остаток
+    part_size = n // num_parts
+    remainder = n % num_parts
     start = 0
     for i in range(num_parts):
         if i < remainder:
-            end = start + part_size + 1  # добавляем единицу к размеру диапазона
+            end = start + part_size + 1
         else:
             end = start + part_size
         yield start, end
@@ -45,13 +44,12 @@ def divide_into_parts(n, num_parts):
 
 
 def brute_force_password() -> None:
-    futures = []
     cpus = cpu_count() * 2 - 1
     with ProcessPoolExecutor(cpus) as executor:
         for part in divide_into_parts(1_000_000_00, cpus):
-            futures.append(executor.submit(threads_find_password, *part))
+            executor.submit(threads_find_password, *part)
 
-    wait(futures)
+        executor.shutdown(wait=True)
 
 
 if __name__ == "__main__":
