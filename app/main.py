@@ -35,13 +35,7 @@ def brute_force_password() -> None:
 
     with ProcessPoolExecutor(max_workers=number_cpu) as executor:
         for process in range(number_cpu):
-            start = process
-            end = total_passwords
-            step = number_cpu
-
-            futures.append(executor.submit(password_decode, start, end, step))
-
-    as_completed(futures)
+            futures.append(executor.submit(password_decode, process, total_passwords, number_cpu))
 
 
 if __name__ == "__main__":
