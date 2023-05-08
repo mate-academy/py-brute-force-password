@@ -1,4 +1,6 @@
 import time
+from concurrent.futures import ProcessPoolExecutor, wait, as_completed
+
 from hashlib import sha256
 import multiprocessing
 
@@ -43,7 +45,7 @@ def brute(start: int,
                 password_count_current.value += 1
                 print(password_count_current.value)
                 if password_count_current.value == password_count:
-                    return
+                    break
 
 
 def brute_force_password() -> None:
@@ -58,6 +60,16 @@ def brute_force_password() -> None:
 
     for task in tasks:
         task.join()
+
+
+def brute_pool_executor() -> None:
+    futures = []
+
+    with ProcessPoolExecutor(multiprocessing.cpu_count()) as executor:
+        for i in range(multiprocessing.cpu_count()):
+            futures.append(executor.submit(brute, i * block, (i + 1) * block, password_count_current))
+
+    wait(futures)
 
 
 if __name__ == "__main__":
