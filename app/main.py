@@ -1,3 +1,6 @@
+import os
+import signal
+
 import win32con
 import win32process
 import win32api
@@ -28,7 +31,7 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def check_range(start, end):
+def check_range(start, end, pid):
     for i in range(start, end):
         result = sha256_hash_str(str(i).zfill(8))
         if result in PASSWORDS_TO_BRUTE_FORCE:
@@ -36,14 +39,19 @@ def check_range(start, end):
                 counter.value += 1
                 print(f"{result} representation before hashing is: {i}")
                 if counter.value == len(PASSWORDS_TO_BRUTE_FORCE):
-                    return
-
+                    for child_pid in os.listdir("/proc"):
+                        try:
+                            if int(child_pid) != pid:
+                                os.kill(int(child_pid), signal.SIGTERM)
+                        except TimeoutError:
+                            ...
+                    break
 
 def brute_force_password() -> None:
     processes = []
     chunk_size = 12500000
     for i in range(0, 100000000, chunk_size):
-        p = Process(target=check_range, args=(i, i+chunk_size))
+        p = Process(target=check_range, args=(i, i+chunk_size, os.getpid()))
         p.start()
         p_priority = win32process.REALTIME_PRIORITY_CLASS
         handle = win32api.OpenProcess(win32con.PROCESS_ALL_ACCESS, False, p.pid)
