@@ -47,6 +47,7 @@ def check_range(start, end, pid):
                             ...
                     break
 
+
 def brute_force_password() -> None:
     processes = []
     chunk_size = 12500000
