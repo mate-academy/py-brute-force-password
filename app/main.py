@@ -30,9 +30,10 @@ def values(start: int, end: int) -> None:
 
 
 def brute_force_password() -> None:
-    step = 10 ** 8 // multiprocessing.cpu_count()
-    with ProcessPoolExecutor(multiprocessing.cpu_count()) as executor:
-        for i in range(multiprocessing.cpu_count()):
+    multiproc = multiprocessing.cpu_count()
+    step = 10 ** 8 // multiproc
+    with ProcessPoolExecutor(multiproc) as executor:
+        for i in range(multiproc):
             executor.submit(values, step * i, step * (i + 1))
 
 
