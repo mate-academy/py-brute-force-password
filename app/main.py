@@ -30,13 +30,9 @@ def brute_force_password(target: int) -> None:
 
 
 def main_pool_executor() -> None:
-    futures = []
-
     with ProcessPoolExecutor(multiprocessing.cpu_count() - 1) as executor:
         for i in range(11):
-            futures.append(executor.submit(brute_force_password, i * 10000000))
-
-    wait(futures)
+            executor.submit(brute_force_password, i * 10000000)
 
 
 if __name__ == "__main__":
