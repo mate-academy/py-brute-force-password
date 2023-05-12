@@ -66,7 +66,7 @@ def brute_pool_executor() -> None:
     futures = []
 
     with ProcessPoolExecutor(multiprocessing.cpu_count()) as executor:
-        for i in range(multiprocessing.cpu_count()):
+        for i in range(10):
             futures.append(executor.submit(brute, i * block, (i + 1) * block, password_count_current))
 
     wait(futures)
@@ -74,6 +74,6 @@ def brute_pool_executor() -> None:
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
-    brute_force_password()
+    brute_pool_executor()
     end_time = time.perf_counter()
     print("Elapsed:", end_time - start_time)
