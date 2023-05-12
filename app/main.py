@@ -1,5 +1,8 @@
 import time
+from concurrent.futures import ProcessPoolExecutor, wait, as_completed
+
 from hashlib import sha256
+import multiprocessing
 
 
 PASSWORDS_TO_BRUTE_FORCE = [
@@ -20,13 +23,57 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
+def formatto(number: int) -> str:
+    return "{:08}".format(number)
+
+
+block = int(100000000 / multiprocessing.cpu_count())
+password_count = len(PASSWORDS_TO_BRUTE_FORCE)
+password_count_current = multiprocessing.Value("i", 0)
+
+
+def brute(start: int,
+          end: int,
+          password_count_current: multiprocessing.Value) -> None:
+
+    for number in range(start, end):
+        current_combo = formatto(number)
+        current_combo_hashed = sha256_hash_str(current_combo)
+        if current_combo_hashed in PASSWORDS_TO_BRUTE_FORCE:
+            print(f"Password! {current_combo} with hash {current_combo_hashed}")
+            with password_count_current.get_lock():
+                password_count_current.value += 1
+                print(password_count_current.value)
+                if password_count_current.value == password_count:
+                    break
+
+
 def brute_force_password() -> None:
-    pass
+
+    tasks = []
+    # my cpu count = 4
+    for i in range(multiprocessing.cpu_count()):
+        process = multiprocessing.Process(target=brute,
+                                          args=(i * block, (i + 1) * block, password_count_current))
+        tasks.append(process)
+        process.start()
+
+    for task in tasks:
+        task.join()
+
+
+def brute_pool_executor() -> None:
+    futures = []
+
+    with ProcessPoolExecutor(multiprocessing.cpu_count()) as executor:
+        for i in range(10):
+            futures.append(executor.submit(brute, i * block, (i + 1) * block, password_count_current))
+
+    wait(futures)
 
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
-    brute_force_password()
+    brute_pool_executor()
     end_time = time.perf_counter()
-
     print("Elapsed:", end_time - start_time)
