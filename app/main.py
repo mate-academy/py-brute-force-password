@@ -40,16 +40,11 @@ def generate_combinations(start_index, end_index):
 
 
 def brute_force_password() -> None:
-    futures = []
     cpu_cores = multiprocessing.cpu_count()
     with ProcessPoolExecutor(cpu_cores) as executor:
         step = TOTAL_COMBINATIONS // cpu_cores
         for start in range(0, TOTAL_COMBINATIONS + 1, step):
-            futures.append(
-                executor.submit(generate_combinations, start, start + step)
-            )
-
-    wait(futures)
+            executor.submit(generate_combinations, start, start + step)
 
 
 if __name__ == "__main__":
