@@ -23,11 +23,11 @@ def sha256_hash_str(to_hash: str) -> str:
 
 
 def create_password(start: int, end: int) -> None:
-    for _ in range(start, end):
-        password = "{:08d}".format(_)
+    for len_password in range(start, end):
+        password = "{:08d}".format(len_password)
         hash_password = sha256_hash_str(password)
         if hash_password in PASSWORDS_TO_BRUTE_FORCE:
-            print(password)
+            print(f"{password} corresponds to {hash_password}")
 
 
 def brute_force_password() -> None:
@@ -35,9 +35,9 @@ def brute_force_password() -> None:
     with ProcessPoolExecutor(cpu_number) as executor:
         range_pass = 100000000 // cpu_number
         for i in range(cpu_number):
-            executor.submit(create_password,
-                            i * range_pass,
-                            (i + 1) * range_pass)
+            executor.submit(
+                create_password, i * range_pass, (i + 1) * range_pass
+            )
 
 
 if __name__ == "__main__":
