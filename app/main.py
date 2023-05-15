@@ -23,8 +23,8 @@ def sha256_hash_str(to_hash: str) -> str:
 
 
 def create_password(start: int, end: int) -> None:
-    for len_password in range(start, end):
-        password = "{:08d}".format(len_password)
+    for integer_password in range(start, end):
+        password = "{:08d}".format(integer_password)
         hash_password = sha256_hash_str(password)
         if hash_password in PASSWORDS_TO_BRUTE_FORCE:
             print(f"{password} corresponds to {hash_password}")
