@@ -24,7 +24,7 @@ def sha256_hash_str(to_hash: str) -> str:
 
 def check_password(passwords: Sequence[int], passwords_hashed: list) -> None:
     for password in passwords:
-        password = f"{password:03}"
+        password = str(password).rjust(8, "0")
         hashed_possible_password = sha256_hash_str(password)
         if hashed_possible_password in passwords_hashed:
             print(hashed_possible_password, "-", password)
