@@ -1,6 +1,5 @@
 import time
 from hashlib import sha256
-import itertools
 
 
 PASSWORDS_TO_BRUTE_FORCE = [
@@ -22,16 +21,14 @@ def sha256_hash_str(to_hash: str) -> str:
 
 
 def brute_force_password() -> None:
-    all_possible_passwords = itertools.product("0123456789", repeat=8)
-
     count = 0
 
-    for password in all_possible_passwords:
-        str_password = "".join(password)
-        password_hash = sha256_hash_str(str_password)
+    for i in range(10**8):
+        password = str(i).zfill(8)
+        password_hash = sha256_hash_str(password)
 
         if password_hash in PASSWORDS_TO_BRUTE_FORCE:
-            print(str_password)
+            print(password)
             count += 1
 
         if count == 10:
