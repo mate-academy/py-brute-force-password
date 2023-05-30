@@ -28,21 +28,13 @@ def find_password(start: int, end: int) -> None:
         hash_password = sha256_hash_str(temp_pass)
         if hash_password in PASSWORDS_TO_BRUTE_FORCE:
             print(hash_password, temp_pass)
-            return
+            break
 
 
 def brute_force_password() -> None:
-    futures = []
     with ProcessPoolExecutor(multiprocessing.cpu_count() - 1) as executor:
         for i in range(10):
-            futures.append(
-                executor.submit(
-                    find_password,
-                    i * 10000000,
-                    (i + 1) * 10000000
-                )
-            )
-    wait(futures)
+            find_password(i * 10000000, (i + 1) * 10000000)
 
 
 if __name__ == "__main__":
