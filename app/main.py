@@ -1,3 +1,4 @@
+import asyncio
 import time
 from hashlib import sha256
 
@@ -20,13 +21,33 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
-    pass
+async def unhashed_password_async(start: int, end: int) -> None:
+    for num in range(start, end):
+        password_to_try = "{:08}".format(num)
+        if sha256_hash_str(password_to_try) in PASSWORDS_TO_BRUTE_FORCE:
+            print(password_to_try)
 
 
-if __name__ == "__main__":
+async def brute_force_password_async() -> None:
+    big_num = 10 ** 7
+
+    tasks = []
+    for i in range(10):
+        task = asyncio.create_task(
+            unhashed_password_async(i * big_num, (i + 1) * big_num)
+        )
+        tasks.append(task)
+
+    await asyncio.gather(*tasks)
+
+
+def run_brute_force_password_async() -> None:
     start_time = time.perf_counter()
-    brute_force_password()
+    asyncio.run(brute_force_password_async())
     end_time = time.perf_counter()
 
     print("Elapsed:", end_time - start_time)
+
+
+if __name__ == "__main__":
+    run_brute_force_password_async()
