@@ -36,7 +36,7 @@ def generate_password_combinations():
 def brute_force_password() -> None:
     found_passwords = []
     with concurrent.futures.ProcessPoolExecutor(multiprocessing.cpu_count() - 1) as executor:
-        results = executor.map(check_password, generate_password_combinations(), chunksize=100_000)
+        results = executor.map(check_password, generate_password_combinations(), chunksize=25_000)
         for password in results:
             if password:
                 found_passwords.append(password)
