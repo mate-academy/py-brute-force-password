@@ -28,7 +28,7 @@ def brute_force_password() -> None:
 
     futures = []
     with ProcessPoolExecutor(max_processes) as executor:
-        for i in range(10):
+        for i in range(max_processes):
             futures.append(
                 executor.submit(
                     find_passwords,
