@@ -17,15 +17,17 @@ PASSWORDS_TO_BRUTE_FORCE = [
 ]
 
 
-def sha256_hash_str(to_hash: str) -> str:
-    return sha256(to_hash.encode("utf-8")).hexdigest()
+def sha256_hash_str(to_hash: str, index: int) -> str:
+    result = sha256(to_hash.encode("utf-8")).hexdigest()
+    print(index + 1, result)
+    return result
 
 
 def brute_force_password() -> None:
     tasks = []
 
-    for password in PASSWORDS_TO_BRUTE_FORCE:
-        tasks.append(threading.Thread(target=sha256_hash_str, args=[password]))
+    for index, password in enumerate(PASSWORDS_TO_BRUTE_FORCE):
+        tasks.append(threading.Thread(target=sha256_hash_str, args=[password, index]))
         tasks[-1].start()
 
     for task in tasks:
