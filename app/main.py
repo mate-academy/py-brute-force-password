@@ -1,3 +1,4 @@
+import threading
 import time
 from hashlib import sha256
 
@@ -21,7 +22,14 @@ def sha256_hash_str(to_hash: str) -> str:
 
 
 def brute_force_password() -> None:
-    pass
+    tasks = []
+
+    for password in PASSWORDS_TO_BRUTE_FORCE:
+        tasks.append(threading.Thread(target=sha256_hash_str, args=[password]))
+        tasks[-1].start()
+
+    for task in tasks:
+        task.join()
 
 
 if __name__ == "__main__":
