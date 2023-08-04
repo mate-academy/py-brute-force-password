@@ -1,6 +1,8 @@
+import itertools
 import time
 from hashlib import sha256
-
+import multiprocessing
+from typing import Iterator
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -20,8 +22,69 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
+def iterate_through(
+        iterator_object_: Iterator,
+        found_passwords: multiprocessing.Value,
+        initial_passwords_count: multiprocessing.Value,
+        stop_event: multiprocessing.Event
+) -> None:
+    for password_candidate in iterator_object_:
+        password_candidate_str = "".join(password_candidate)
+        hashed_password = sha256_hash_str(password_candidate_str)
+
+        if hashed_password in PASSWORDS_TO_BRUTE_FORCE:
+            print(password_candidate_str)
+            found_passwords.value += 1
+
+            if found_passwords.value == initial_passwords_count.value:
+                stop_event.set()
+                print(
+                    "Initial: ", initial_passwords_count.value,
+                    "Found: ", found_passwords.value
+                )
+
+
 def brute_force_password() -> None:
-    pass
+    cores = multiprocessing.cpu_count()
+    cpu_core_count = cores - 1
+    cpu_core_count_minus_one = range(
+        1, cores
+    )
+    possible_digits = "0123456789"
+    password_length = 8
+    tasks = []
+    password_candidates = itertools.product(
+        possible_digits, repeat=password_length
+    )
+
+    manager = multiprocessing.Manager()
+    found_passwords = manager.Value("i", 0)
+    initial_passwords_count = manager.Value("i", 10)
+    stop_event = manager.Event()
+
+    password_options = [
+        itertools.islice(
+            password_candidates,
+            i,
+            None,
+            cpu_core_count
+        ) for i in cpu_core_count_minus_one
+    ]
+
+    for i in cpu_core_count_minus_one:
+        tasks.append(multiprocessing.Process(
+            target=iterate_through, args=(
+                password_options[i - 1],
+                found_passwords,
+                initial_passwords_count,
+                stop_event
+            )
+        )
+        )
+        tasks[-1].start()
+
+    for task in tasks:
+        task.join()
 
 
 if __name__ == "__main__":
