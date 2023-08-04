@@ -2,6 +2,7 @@ import itertools
 import time
 from hashlib import sha256
 import multiprocessing
+from typing import Iterator
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -22,11 +23,11 @@ def sha256_hash_str(to_hash: str) -> str:
 
 
 def iterate_through(
-        iterator_object_,
-        found_passwords,
-        initial_passwords_count,
-        stop_event
-):
+        iterator_object_: Iterator,
+        found_passwords: multiprocessing.Value,
+        initial_passwords_count: multiprocessing.Value,
+        stop_event: multiprocessing.Event
+) -> None:
 
     for password_candidate in iterator_object_:
         password_candidate_str = "".join(password_candidate)
@@ -59,8 +60,8 @@ def brute_force_password() -> None:
     )
 
     manager = multiprocessing.Manager()
-    found_passwords = manager.Value('i', 0)
-    initial_passwords_count = manager.Value('i', 10)
+    found_passwords = manager.Value("i", 0)
+    initial_passwords_count = manager.Value("i", 10)
     stop_event = manager.Event()
 
     for i in cpu_core_count_minus_one:
