@@ -28,7 +28,6 @@ def iterate_through(
         initial_passwords_count: multiprocessing.Value,
         stop_event: multiprocessing.Event
 ) -> None:
-
     for password_candidate in iterator_object_:
         password_candidate_str = "".join(password_candidate)
         hashed_password = sha256_hash_str(password_candidate_str)
@@ -54,7 +53,6 @@ def brute_force_password() -> None:
     possible_digits = "0123456789"
     password_length = 8
     tasks = []
-    password_options = []
     password_candidates = itertools.product(
         possible_digits, repeat=password_length
     )
@@ -64,11 +62,14 @@ def brute_force_password() -> None:
     initial_passwords_count = manager.Value("i", 10)
     stop_event = manager.Event()
 
-    for i in cpu_core_count_minus_one:
-        password_option = itertools.islice(
-            password_candidates, i, None, cpu_core_count
-        )
-        password_options.append(password_option)
+    password_options = [
+        itertools.islice(
+            password_candidates,
+            i,
+            None,
+            cpu_core_count
+        ) for i in cpu_core_count_minus_one
+    ]
 
     for i in cpu_core_count_minus_one:
         tasks.append(multiprocessing.Process(
