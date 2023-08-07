@@ -16,25 +16,14 @@ PASSWORDS_TO_BRUTE_FORCE = [
 ]
 
 
-def sha256_hash_str(to_hash: str) -> str:
-    return sha256(to_hash.encode("utf-8")).hexdigest()
-
-
-def check_password(password: str) -> str | None:
-    hashed_password = sha256_hash_str(password)
-    if hashed_password in PASSWORDS_TO_BRUTE_FORCE:
-        return password
-    return None
-
-
 def brute_force_password(password_range: int) -> list[str]:
     start, end = password_range
     found_passwords = []
     for i in range(start, end):
         password = str(i).zfill(8)
-        found_password = check_password(password)
-        if found_password:
-            found_passwords.append(found_password)
+        hashed_password = sha256(password.encode("utf-8")).hexdigest()
+        if hashed_password in PASSWORDS_TO_BRUTE_FORCE:
+            found_passwords.append(password)
             if len(found_passwords) == len(PASSWORDS_TO_BRUTE_FORCE):
                 break
     return found_passwords
@@ -51,16 +40,20 @@ if __name__ == "__main__":
     chunk_ranges = [
         (
             i * chunk_size,
-            (i + 1) * chunk_size) for i in range(num_processes)
+            (i + 1) * chunk_size
+        ) for i in range(num_processes)
     ]
 
     results = pool.map(brute_force_password, chunk_ranges)
-    found_passwords = [password for result in results for password in result]
+    all_found_passwords = []
+    for result in results:
+        for password in result:
+            all_found_passwords.append(password)
 
     pool.close()
     pool.join()
 
     end_time = time.perf_counter()
 
-    print("Passwords found:", found_passwords)
+    print("Passwords found:", all_found_passwords)
     print("Elapsed:", end_time - start_time)
