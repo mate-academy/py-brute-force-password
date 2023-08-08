@@ -17,6 +17,8 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
 
+PASSWORD_LENGTH = 8
+
 
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
@@ -24,7 +26,7 @@ def sha256_hash_str(to_hash: str) -> str:
 
 def try_passwords(start: int, end: int) -> None:
     for i in range(start, end + 1):
-        password = str(i).zfill(8)
+        password = str(i).zfill(PASSWORD_LENGTH)
         password_hash = sha256_hash_str(password)
         if password_hash in PASSWORDS_TO_BRUTE_FORCE:
             print(f"Password found: {password} = {password_hash}")
@@ -32,8 +34,7 @@ def try_passwords(start: int, end: int) -> None:
 
 def brute_force_password() -> None:
     processes = multiprocessing.cpu_count() - 1
-    password_length = 8
-    splits = 10 ** password_length // processes
+    splits = 10 ** PASSWORD_LENGTH // processes
 
     futures = []
 
