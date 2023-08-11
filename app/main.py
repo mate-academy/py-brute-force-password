@@ -1,6 +1,7 @@
 import time
 import multiprocessing
 from hashlib import sha256
+
 from concurrent.futures import ProcessPoolExecutor, wait
 
 PASSWORDS_TO_BRUTE_FORCE = [
