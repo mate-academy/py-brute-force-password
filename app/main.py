@@ -44,7 +44,6 @@ def brute_force_password() -> None:
                     (process + 1) * step
                 )
             )
-
     wait(futures)
 
 
