@@ -1,5 +1,8 @@
 import time
 from hashlib import sha256
+import threading
+import asyncio
+import multiprocessing
 
 
 PASSWORDS_TO_BRUTE_FORCE = [
@@ -15,18 +18,87 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
 
+PASS_LENGTH = 8
+START_NUM = 0
+END_NUM = 100000000
+DIVISOR = 12
+SCOPE = END_NUM / DIVISOR
+
 
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
+def brute_force_password(start_num: int, end_num: int) -> None:
+
+    for i in range(start_num, end_num):
+        str_i = str(i).zfill(PASS_LENGTH)
+        hash_i = sha256_hash_str(str_i)
+        if hash_i in PASSWORDS_TO_BRUTE_FORCE:
+            print(str_i)
+
+
+def threads_force_password() -> None:
+    tasks = []
+
+    for i in range(DIVISOR):
+        start = int(i * SCOPE)
+        # print("s: ", start)
+        end = int(start + SCOPE)
+        # print("e: ", end)
+        tasks.append(threading.Thread(target=brute_force_password, args=(start, end)))
+        tasks[-1].start()
+
+    for task in tasks:
+        task.join()
+
+
+def processes_force_password() -> None:
+    tasks = []
+
+    for i in range(DIVISOR):
+        start = int(i * SCOPE)
+        end = int(start + SCOPE)
+
+        tasks.append(multiprocessing.Process(
+            target=brute_force_password, args=(start, end)
+        ))
+        tasks[-1].start()
+
+    for task in tasks:
+        task.join()
+
+
+async def async_sha256_hash_str(to_hash: str) -> str:
+    return sha256(to_hash.encode("utf-8")).hexdigest()
+
+
+async def async_force_password(start_num: int, end_num: int) -> None:
+
+    for i in range(start_num, end_num):
+        str_i = str(i).zfill(PASS_LENGTH)
+        hash_i = sha256_hash_str(str_i)
+        if hash_i in PASSWORDS_TO_BRUTE_FORCE:
+            print(str_i)
+
+
+async def async_check_password() -> None:
     pass
 
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
-    brute_force_password()
+    threads_force_password()
     end_time = time.perf_counter()
+    print("Elapsed:", end_time - start_time)
 
+    # start_time = time.perf_counter()
+    # processes_force_password()
+    # end_time = time.perf_counter()
+    # print("Elapsed:", end_time - start_time)
+
+
+    start_time = time.perf_counter()
+    threads_force_password()
+    end_time = time.perf_counter()
     print("Elapsed:", end_time - start_time)
