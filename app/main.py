@@ -22,7 +22,7 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def check_password(start, end) -> None:
+def check_password(start: int, end: int) -> None:
     for number in range(start, end):
         str_pass = str(number).zfill(8)
         str_hash = sha256_hash_str(str_pass)
