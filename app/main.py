@@ -32,7 +32,7 @@ def check_password(start: int, end: int) -> None:
 def brute_force_password() -> None:
     chunk_size = 10_000_000
     tasks = []
-    print(multiprocessing.cpu_count())
+
     for i in range(multiprocessing.cpu_count()):
         tasks.append(
             multiprocessing.Process(
