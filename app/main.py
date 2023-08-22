@@ -21,12 +21,12 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def check_password(password):
+def check_password(password: str) -> str:
     if sha256_hash_str(password) in PASSWORDS_TO_BRUTE_FORCE:
         return password
 
 
-def brute_force_passwords(start, end):
+def brute_force_passwords(start: int, end: int) -> [str, None]:
     for num in range(start, end):
         password = str(num).zfill(8)
         if check_password(password):
@@ -34,9 +34,9 @@ def brute_force_passwords(start, end):
     return None
 
 
-def brute_force_password():
-    num_processes = cpu_count()  # Number of available CPU cores
-    chunk_size = 10000000  # Number of combinations each process will check
+def brute_force_password() -> None:
+    num_processes = cpu_count()
+    chunk_size = 10000000
     pool = Pool(num_processes)
 
     ranges = [(i * chunk_size, (i + 1) * chunk_size) for i in range(num_processes)]
