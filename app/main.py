@@ -22,22 +22,23 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def find_pass(hash_pass: str) -> str:
+def find_pass() -> None:
+    counter = 0
     for password in product("0123456789", repeat=8):
-        if sha256_hash_str("".join(password)) == hash_pass:
-            return "".join(password)
+        if sha256_hash_str("".join(password)) in PASSWORDS_TO_BRUTE_FORCE:
+            print("".join(password))
+            counter += 1
+            if counter == 10:
+                break
 
 
 def brute_force_password() -> None:
     futures = []
 
     with ProcessPoolExecutor(multiprocessing.cpu_count() - 1) as executor:
-        for password in PASSWORDS_TO_BRUTE_FORCE:
-            futures.append(executor.submit(find_pass, password))
+        futures.append(executor.submit(find_pass))
 
-    results = wait(futures)
-    for result in results.done:
-        print(result.result())
+    wait(futures)
 
 
 if __name__ == "__main__":
