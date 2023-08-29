@@ -22,7 +22,7 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def check_password(num_start: int, num_end: int):
+def check_password(num_start: int, num_end: int) -> None:
     for number in range(num_start, num_end):
         hash_check = sha256_hash_str(str(number).zfill(8))
 
@@ -35,7 +35,11 @@ def brute_force_password() -> None:
 
     with ProcessPoolExecutor(multiprocessing.cpu_count() - 1) as executor:
         for i in range(10):
-            futures.append(executor.submit(check_password, i * 10000000, (i + 1) * 10000000))
+            futures.append(
+                executor.submit(
+                    check_password, i * 10000000, (i + 1) * 10000000
+                )
+            )
 
     wait(futures)
 
