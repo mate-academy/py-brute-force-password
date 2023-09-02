@@ -1,5 +1,7 @@
 import time
 from hashlib import sha256
+from concurrent.futures import ProcessPoolExecutor, wait
+from multiprocessing import cpu_count
 
 
 PASSWORDS_TO_BRUTE_FORCE = [
@@ -20,8 +22,27 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
+def check_in_list(start: int, end: int) -> None:
+    for i in range(start, end):
+        hashed_pass = sha256_hash_str(str(i))
+        if hashed_pass in PASSWORDS_TO_BRUTE_FORCE:
+            print(f"password[{PASSWORDS_TO_BRUTE_FORCE.index(hashed_pass)}]: {i}")
+
+
 def brute_force_password() -> None:
-    pass
+    futures = []
+
+    with ProcessPoolExecutor(cpu_count() - 1) as executor:
+        for num in range(10):
+            futures.append(
+                executor.submit(
+                    check_in_list,
+                    10**7 + (num * 10**7),
+                    10**7 + ((num + 1) * 10**7),
+                )
+            )
+
+    wait(futures)
 
 
 if __name__ == "__main__":
