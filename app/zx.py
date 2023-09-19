@@ -41,7 +41,7 @@ def main_processes():
     passwords_per_thread = int(len(list_) / num_threads)
     for b in range(num_threads):
         info = list_[b * passwords_per_thread:passwords_per_thread * (b + 1)]
-        tasks.append(threading.Thread(target=brute_force_password, args=(info, b)))
+        tasks.append(multiprocessing.Process(target=brute_force_password, args=(info, b)))
         tasks[-1].start()
 
     for task in tasks:
