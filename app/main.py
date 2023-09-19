@@ -25,23 +25,25 @@ def sha256_hash_str(to_hash: str) -> str:
 
 
 
-def brute_force_password(info, proces_id):
-    print(f"start {proces_id}")
-    for i in info:
-        password_str = "".join(map(str, i))
+def brute_force_password(task_id):
+    print(f"task {task_id} started")
+
+    passwords = product(range(10), repeat=7)
+    for password in passwords:
+        password_str = str(task_id) + "".join(map(str, password))
         hashed_password = sha256_hash_str(password_str)
         if hashed_password in PASSWORDS_TO_BRUTE_FORCE:
-            print(f"{proces_id}Found password: {password_str}")
+            print(f"Task-{task_id} Found password: {password_str}")
+        else:
+            pass
 
 num_threads = 10
 
 def main_processes():
     tasks = []
-    list_ = list(product(range(10), repeat=8))
-    passwords_per_thread = int(len(list_) / num_threads)
+
     for b in range(num_threads):
-        info = list_[b * passwords_per_thread:passwords_per_thread * (b + 1)]
-        tasks.append(threading.Thread(target=brute_force_password, args=(info, b)))
+        tasks.append(multiprocessing.Process(target=brute_force_password, args=(b,)))
         tasks[-1].start()
 
     for task in tasks:
