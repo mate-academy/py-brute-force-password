@@ -5,6 +5,7 @@ from concurrent.futures import ProcessPoolExecutor
 from hashlib import sha256
 from itertools import product
 from multiprocessing import Process
+from multiprocessing.shared_memory import ShareableList
 from threading import Thread
 
 PASSWORDS_TO_BRUTE_FORCE = [
@@ -25,31 +26,20 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-count = 0
-
-
 def check_password_match(start: int, end: int) -> None:
-    if start == 0:
-        for i in range(1, end):
-            if sha256_hash_str(f"{i:08}") in PASSWORDS_TO_BRUTE_FORCE:
-                print(f"{i:08}")
 
     for i in range(start, end):
-        if sha256_hash_str(str(i)) in PASSWORDS_TO_BRUTE_FORCE:
-            print(i)
+        if sha256_hash_str(f"{i:08}") in PASSWORDS_TO_BRUTE_FORCE:
+            print(f"{i:08}")
 
 
 def brute_force_password() -> None:
-    futures = []
-
     with ProcessPoolExecutor(multiprocessing.cpu_count() - 1) as executor:
         for i in range(0, 10):
-            futures.append(
-                executor.submit(
-                    check_password_match,
-                    i * 10_000_000,
-                    (i + 1) * 10_000_000
-                )
+            executor.submit(
+                check_password_match,
+                i * 10_000_000,
+                (i + 1) * 10_000_000,
             )
 
 
