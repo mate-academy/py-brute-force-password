@@ -30,7 +30,7 @@ def brute_force_password(my_range: tuple) -> None:
             print(password)
 
 
-def main_multiprocessor_executor(ranges: list[tuple]):
+def main_multiprocessor_executor(ranges: list[tuple]) -> None:
     futures = []
     with ProcessPoolExecutor(multiprocessing.cpu_count() - 1) as executor:
         for my_range in ranges:
@@ -39,7 +39,7 @@ def main_multiprocessor_executor(ranges: list[tuple]):
     wait(futures)
 
 
-def main_multiprocessing(my_ranges: list[tuple]):
+def main_multiprocessing(my_ranges: list[tuple]) -> None:
     tasks = []
     for my_range in my_ranges:
         tasks.append(
