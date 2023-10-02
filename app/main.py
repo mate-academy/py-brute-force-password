@@ -1,6 +1,7 @@
 import multiprocessing
 import time
 from hashlib import sha256
+from concurrent.futures import ProcessPoolExecutor, wait
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -14,18 +15,7 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "7e8f0ada0a03cbee48a0883d549967647b3fca6efeb0a149242f19e4b68d53d6",
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
-RANGES = [
-    (0, 10000000),
-    (10000000, 20000000),
-    (20000000, 30000000),
-    (30000000, 40000000),
-    (40000000, 50000000),
-    (50000000, 60000000),
-    (60000000, 70000000),
-    (70000000, 80000000),
-    (80000000, 90000000),
-    (90000000, 100000000),
-]
+RANGES = [(x, x + 10000000) for x in range(100000000) if x % 10000000 == 0]
 
 
 def sha256_hash_str(to_hash: str) -> str:
@@ -34,13 +24,22 @@ def sha256_hash_str(to_hash: str) -> str:
 
 def brute_force_password(my_range: tuple) -> None:
     for i in range(my_range[0], my_range[1]):
-        password = str(f"{i:08}")
+        password = f"{i:08}"
         num = sha256_hash_str(password)
         if str(num) in PASSWORDS_TO_BRUTE_FORCE:
             print(password)
 
 
-def main_multiprocessing(my_ranges: list[tuple]) -> None:
+def main_multiprocessor_executor(ranges: list[tuple]):
+    futures = []
+    with ProcessPoolExecutor(multiprocessing.cpu_count() - 1) as executor:
+        for my_range in ranges:
+            futures.append(executor.submit(brute_force_password, my_range))
+
+    wait(futures)
+
+
+def main_multiprocessing(my_ranges: list[tuple]):
     tasks = []
     for my_range in my_ranges:
         tasks.append(
@@ -57,7 +56,7 @@ def main_multiprocessing(my_ranges: list[tuple]) -> None:
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
-    main_multiprocessing(my_ranges=RANGES)
+    main_multiprocessor_executor(ranges=RANGES)
     end_time = time.perf_counter()
 
     print("Elapsed:", end_time - start_time)
