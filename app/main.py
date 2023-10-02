@@ -15,6 +15,7 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
 RANGES = [
+    (0, 10000000),
     (10000000, 20000000),
     (20000000, 30000000),
     (30000000, 40000000),
@@ -25,7 +26,6 @@ RANGES = [
     (80000000, 90000000),
     (90000000, 100000000),
 ]
-GLOBAL_COUNT = 0
 
 
 def sha256_hash_str(to_hash: str) -> str:
@@ -34,9 +34,10 @@ def sha256_hash_str(to_hash: str) -> str:
 
 def brute_force_password(my_range: tuple) -> None:
     for i in range(my_range[0], my_range[1]):
-        num = sha256_hash_str(str(i))
+        password = str(f"{i:08}")
+        num = sha256_hash_str(password)
         if str(num) in PASSWORDS_TO_BRUTE_FORCE:
-            print(i)
+            print(password)
 
 
 def main_multiprocessing(my_ranges: list[tuple]) -> None:
