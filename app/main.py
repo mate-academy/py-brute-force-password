@@ -15,7 +15,8 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "7e8f0ada0a03cbee48a0883d549967647b3fca6efeb0a149242f19e4b68d53d6",
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
-RANGES = [(x, x + 10000000) for x in range(100000000) if x % 10000000 == 0]
+EIGHT_DIGITS_NUMBER = 10000000
+RANGES = [(i * EIGHT_DIGITS_NUMBER, (i + 1) * EIGHT_DIGITS_NUMBER) for i in range(10)]
 
 
 def sha256_hash_str(to_hash: str) -> str:
