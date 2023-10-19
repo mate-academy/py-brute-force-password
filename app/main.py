@@ -37,7 +37,7 @@ def brute_force_password() -> None:
         for i in range(10):
             futures.append(
                 executor.submit(
-                    match_passwords, i * 10_000_000, (i + 1) * 10_000_000
+                    match_passwords, i * 10000000, (i + 1) * 10000000
                 )
             )
 
