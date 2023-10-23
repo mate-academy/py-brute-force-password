@@ -37,19 +37,6 @@ class BrutForceFunctionality:
         """
         Initializes class instances
         """
-        # I came up with this solution from start but didn't understand why it's working incorrect
-        # for example: if you debug it you will find that number '00000010' = '00000011'.
-        # This behaviour isn't clear for me
-        self.possible_passwords = self._get_all_possible_passwords()
-
-    @staticmethod
-    def _get_all_possible_passwords() -> List:
-        """
-        Gets all possible passwords
-        :return: All possible passwords
-        """
-        return ["".join(password) for password in combinations_with_replacement(
-            BrutInfo.POSSIBLE_SYMBOLS.value, BrutInfo.LENGTH_OF_PASSWORD.value)]
 
     @staticmethod
     def __sha256_hash_str(to_hash: str) -> str:
