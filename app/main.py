@@ -95,7 +95,6 @@ class BrutForceFunctionality:
                 features.append(executor.submit(
                     self.fill_password_and_check_it, number_to_find_from, max_number_to_find))
             wait(features)
-        print()
 
 
 if __name__ == "__main__":
