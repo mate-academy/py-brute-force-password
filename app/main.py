@@ -36,7 +36,7 @@ def get_password(start: int, stop: int) -> None:
 
 def brute_force_password() -> None:
     futures = []
-    step = 10**7
+    step = 10 ** 8 // multiprocessing.cpu_count()
     with ProcessPoolExecutor(multiprocessing.cpu_count()) as executor:
         for start in range(0, 10 ** 8, step):
             futures.append(executor.submit(get_password, start, start + step))
