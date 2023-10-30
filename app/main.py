@@ -23,8 +23,8 @@ def sha256_hash_str(to_hash: str) -> str:
 def brute_force_password() -> None:
     count = 0
 
-    for i in range(10000000, 100000000):
-        password = str(i)
+    for i in range(100000000):
+        password = f"{i:08d}"
         hash_val = sha256_hash_str(password)
 
         if hash_val in PASSWORDS_TO_BRUTE_FORCE:
@@ -34,18 +34,6 @@ def brute_force_password() -> None:
 
             if not PASSWORDS_TO_BRUTE_FORCE:
                 break
-    if PASSWORDS_TO_BRUTE_FORCE:
-        for i in range(10000000, 100000000):
-            password = "0" + str(i)[1:]
-            hash_val = sha256_hash_str(password)
-
-            if hash_val in PASSWORDS_TO_BRUTE_FORCE:
-                count += 1
-                print(f"Password {count}: {password} - Hash: {hash_val}")
-                PASSWORDS_TO_BRUTE_FORCE.remove(hash_val)
-
-                if not PASSWORDS_TO_BRUTE_FORCE:
-                    break
 
 
 if __name__ == "__main__":
