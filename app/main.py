@@ -53,4 +53,4 @@ if __name__ == "__main__":
     bruto_force_pool_executor()
     end_time = time.perf_counter()
 
-    print("Elapsed:", end_time - start_time)
+    print("Elapsed: ", end_time - start_time)
