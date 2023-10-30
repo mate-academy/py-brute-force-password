@@ -40,14 +40,11 @@ def brute_force_password() -> None:
     with ProcessPoolExecutor(max_workers=num_processes) as executor:
         attempts = [
             executor.submit(searching_password, start, start + password_range)
-            for start in range(0, len(PASSWORDS_TO_BRUTE_FORCE) * password_range, password_range)
+            for start in range(
+                0, len(PASSWORDS_TO_BRUTE_FORCE)
+                * password_range, password_range)
         ]
         wait(attempts)
-
-    found_passwords = [result for attempt in attempts for result in (attempt.result() or [])]
-
-    for idx, (hashed_password, password) in enumerate(found_passwords[:10], start=1):
-        print(f"{idx} Password: {password}\nHash: {hashed_password}\n{'-' * 70}")
 
 
 if __name__ == "__main__":
