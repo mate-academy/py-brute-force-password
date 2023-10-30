@@ -2,7 +2,7 @@ from concurrent.futures import ProcessPoolExecutor, wait
 import multiprocessing
 import time
 from hashlib import sha256
-from itertools import product
+
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -22,7 +22,7 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password(start: int, end: int):
+def brute_force_password(start: int, end: int) -> None:
     for raw_password in range(start, end):
         password = f"{raw_password:0>8}"
         hashed_password = sha256_hash_str(password)
@@ -30,12 +30,14 @@ def brute_force_password(start: int, end: int):
             print(f"{password} hashed as {hashed_password}")
 
 
-def main_multiprocess_executor():
+def main_multiprocess_executor() -> None:
     results = []
     with ProcessPoolExecutor(multiprocessing.cpu_count() - 1) as executor:
         gap = 10 ** 7
         for step in range(10):
-            results.append(executor.submit(brute_force_password, step * gap, (step + 1) * gap))
+            results.append(executor.submit(
+                brute_force_password, step * gap, (step + 1) * gap)
+            )
     wait(results)
 
 
