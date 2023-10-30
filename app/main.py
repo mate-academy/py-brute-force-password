@@ -1,5 +1,6 @@
 import time
 from hashlib import sha256
+from itertools import product
 
 
 PASSWORDS_TO_BRUTE_FORCE = [
@@ -21,7 +22,14 @@ def sha256_hash_str(to_hash: str) -> str:
 
 
 def brute_force_password() -> None:
-    pass
+    for password in product(range(10), repeat=8):
+        password = ''.join(map(str, password))
+        hashed_password = sha256_hash_str(password)
+        if hashed_password in PASSWORDS_TO_BRUTE_FORCE:
+            print(f'Found password: {password} for hash: {hashed_password}')
+            PASSWORDS_TO_BRUTE_FORCE.remove(hashed_password)
+            if not PASSWORDS_TO_BRUTE_FORCE:
+                break
 
 
 if __name__ == "__main__":
