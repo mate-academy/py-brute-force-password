@@ -29,7 +29,7 @@ def check_password(start: int, end: int) -> None:
         if password_hash in PASSWORDS_TO_BRUTE_FORCE:
             print(f"Password: {password} - hash: "
                   f"index {PASSWORDS_TO_BRUTE_FORCE.index(password_hash)}"
-                  f"({password_hash})")
+                  f" ({password_hash})")
 
 
 def brute_force_password() -> None:
