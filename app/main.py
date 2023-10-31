@@ -1,5 +1,6 @@
 import time
-from concurrent.futures import ProcessPoolExecutor, wait
+import multiprocessing
+from concurrent.futures import ProcessPoolExecutor
 from hashlib import sha256
 
 PASSWORDS_TO_BRUTE_FORCE = [
@@ -15,35 +16,52 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
 
+TOTAL_ITERATIONS = 100_000_000
+NUM_PROCESSES = multiprocessing.cpu_count()
+
 
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password(hash_password) -> None:
-    i = 0
-    while True:
+def create_ranges(total_iterations: int, num_processes: int) -> list:
+    intervals = []
+    interval_size = total_iterations // num_processes
+
+    for i in range(num_processes):
+        start = i * interval_size
+        end = (
+            (i + 1) * interval_size
+            if i < num_processes - 1
+            else total_iterations
+        )
+        intervals.append([start, end])
+
+    return intervals
+
+
+def brute_force_password(diapason: list) -> None:
+    for i in range(diapason[0], diapason[1]):
         number = f"{i:08}"
         hash_str = sha256_hash_str(number)
-        if hash_str == hash_password:
+        if hash_str in PASSWORDS_TO_BRUTE_FORCE:
             print(f"password: {number}, hash: {hash_str}")
-            break
-        i += 1
 
 
-def main_multiprocess_executor() -> None:
-    futures = []
+def distribute_ranges_and_execute_brute_force(
+        total_iterations: int,
+        num_processes: int
+) -> None:
 
-    with ProcessPoolExecutor() as executor:
-        for password in PASSWORDS_TO_BRUTE_FORCE:
-            futures.append(executor.submit(brute_force_password, password))
+    ranges = create_ranges(total_iterations, num_processes)
 
-    wait(futures)
+    with ProcessPoolExecutor(num_processes) as executor:
+        executor.map(brute_force_password, ranges)
 
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
-    main_multiprocess_executor()
+    distribute_ranges_and_execute_brute_force(TOTAL_ITERATIONS, NUM_PROCESSES)
     end_time = time.perf_counter()
 
     print("Elapsed:", end_time - start_time)
