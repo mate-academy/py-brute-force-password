@@ -1,6 +1,7 @@
 import time
 from hashlib import sha256
-
+import multiprocessing
+from typing import Callable
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -16,17 +17,59 @@ PASSWORDS_TO_BRUTE_FORCE = [
 ]
 
 
+def timer(func: Callable) -> Callable:
+    def wrapper() -> Callable:
+        start_time = time.perf_counter()
+        func()
+        end_time = time.perf_counter()
+        print("Elapsed:", end_time - start_time)
+        return func
+
+    return wrapper
+
+
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
 def brute_force_password() -> None:
-    pass
+    multiprocess_run()
+
+
+@timer
+def multiprocess_run() -> None:
+    cpus = multiprocessing.cpu_count()
+    step = (99999999 // cpus) + 1
+    tasks = []
+    for i in range(cpus):
+        start = step * i
+        end = step * (i + 1) + 1
+        task = multiprocessing.Process(
+            target=decrypt,
+            args=(
+                PASSWORDS_TO_BRUTE_FORCE,
+                str(start),
+                str(end),
+            ),
+        )
+        task.start()
+        tasks.append(task)
+    for task in tasks:
+        task.join()
+
+
+def decrypt(
+        target: list,
+        password: str,
+        limit: str,
+) -> None:
+    while password != limit:
+        if len(password) < 8:
+            password = password.zfill(8)
+        if sha256_hash_str(password) in target:
+            print(password)
+        password = str(int(password) + 1)
 
 
 if __name__ == "__main__":
-    start_time = time.perf_counter()
     brute_force_password()
-    end_time = time.perf_counter()
-
-    print("Elapsed:", end_time - start_time)
