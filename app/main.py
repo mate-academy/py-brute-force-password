@@ -37,29 +37,38 @@ def brute_force_password() -> None:
 
 
 @timer
-def sync_run() -> None:
-    for element in PASSWORDS_TO_BRUTE_FORCE:
-        decrypt(element)
-
-
-@timer
 def multiprocess_run() -> None:
+    cpus = multiprocessing.cpu_count()
+    step = (99999999 // cpus) + 1
     tasks = []
-    for element in PASSWORDS_TO_BRUTE_FORCE:
-        tasks.append(multiprocessing.Process(target=decrypt, args=(element,)))
-        tasks[-1].start()
-
+    for i in range(cpus):
+        start = step * i
+        end = step * (i + 1) + 1
+        task = multiprocessing.Process(
+            target=decrypt,
+            args=(
+                PASSWORDS_TO_BRUTE_FORCE,
+                str(start),
+                str(end),
+            ),
+        )
+        task.start()
+        tasks.append(task)
     for task in tasks:
         task.join()
 
 
-def decrypt(target_password: str) -> None:
-    password = "00000000"
-    while sha256_hash_str(password) != target_password:
-        password = str(int(password) + 1)
+def decrypt(
+        target: list,
+        password: str,
+        limit: str,
+) -> None:
+    while password != limit:
         if len(password) < 8:
-            password = "0" * (8 - len(password)) + password
-    print(password)
+            password = password.zfill(8)
+        if sha256_hash_str(password) in target:
+            print(password)
+        password = str(int(password) + 1)
 
 
 if __name__ == "__main__":
