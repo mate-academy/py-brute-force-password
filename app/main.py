@@ -21,11 +21,14 @@ def sha256_hash_str(to_hash: str) -> str:
 
 
 def brute_force_password() -> None:
+    counter = 1
+
     for password_candidate in product("0123456789", repeat=8):
         password_str = "".join(password_candidate)
         hashed_password = sha256_hash_str(password_str)
         if hashed_password in PASSWORDS_TO_BRUTE_FORCE:
-            print(f"Password found: {password_str}")
+            print(f"{counter}): {password_str}")
+            counter += 1
             PASSWORDS_TO_BRUTE_FORCE.remove(hashed_password)
         if not PASSWORDS_TO_BRUTE_FORCE:
             break
