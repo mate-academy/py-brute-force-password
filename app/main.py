@@ -2,6 +2,7 @@ import time
 from concurrent.futures import ProcessPoolExecutor, wait
 from hashlib import sha256
 from multiprocessing import cpu_count
+from typing import Generator
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -33,18 +34,22 @@ def find_password(start: int, end: int) -> None:
             )
 
 
+def chunk_range(total: int, chunks: int) -> Generator:
+    chunk_size = total // chunks
+    for i in range(chunks):
+        start = i * chunk_size
+        end = start + chunk_size + (total % chunks if i == chunks - 1 else 0)
+        yield start, end
+
+
 def brute_force_password() -> None:
     futures = []
+    max_value = 10**8
+    processors = cpu_count() - 1
 
-    with ProcessPoolExecutor(cpu_count() - 1) as executor:
-        for num in range(len(PASSWORDS_TO_BRUTE_FORCE)):
-            futures.append(
-                executor.submit(
-                    find_password,
-                    num * 10**7,
-                    num * 10**7 + 10**7
-                )
-            )
+    with ProcessPoolExecutor(processors) as executor:
+        for start, end in chunk_range(max_value, processors):
+            futures.append(executor.submit(find_password, start, end))
         wait(futures)
 
 
