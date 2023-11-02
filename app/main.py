@@ -1,3 +1,4 @@
+import multiprocessing
 import time
 from hashlib import sha256
 from concurrent.futures import ProcessPoolExecutor, wait
@@ -31,10 +32,11 @@ def brute_force_password(start: int, end: int) -> dict:
 
 
 def main_multiprocess_executor() -> dict:
-    chunk_size = 10_000_000
+    num_cores = multiprocessing.cpu_count()
+    chunk_size = 100_000_000 // num_cores
     futures = []
-    with ProcessPoolExecutor() as executor:
-        for i in range(10):
+    with ProcessPoolExecutor(max_workers=num_cores) as executor:
+        for i in range(num_cores):
             start = i * chunk_size
             end = (i + 1) * chunk_size
             futures.append(executor.submit(brute_force_password, start, end))
