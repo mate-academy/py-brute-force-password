@@ -1,6 +1,7 @@
 import multiprocessing
 import time
 from hashlib import sha256
+import os
 
 
 PASSWORDS_TO_BRUTE_FORCE = [
@@ -29,7 +30,7 @@ def find_password(start: int, end: int) -> None:
 
 
 def brute_force_password() -> None:
-    cores = 3
+    cores = os.cpu_count()
     number_of_processes = 100_000_000 // cores
 
     processes = []
