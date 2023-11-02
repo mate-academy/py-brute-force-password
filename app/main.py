@@ -1,5 +1,6 @@
 import time
 from hashlib import sha256
+from concurrent.futures import ProcessPoolExecutor, wait
 
 
 PASSWORDS_TO_BRUTE_FORCE = [
@@ -20,8 +21,19 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
+def finding_the_password(num: int) -> None:
+    for password in range(num * 10_000_000, num * 10_000_000 + 10_000_000):
+        str_pass = str(password).zfill(8)
+        if sha256_hash_str(str_pass) in PASSWORDS_TO_BRUTE_FORCE:
+            print(f"Password is {str_pass}")
+
+
 def brute_force_password() -> None:
-    pass
+    futures = []
+    with ProcessPoolExecutor() as executor:
+        for num in range(10):
+            futures.append(executor.submit(finding_the_password, num))
+    wait(futures)
 
 
 if __name__ == "__main__":
