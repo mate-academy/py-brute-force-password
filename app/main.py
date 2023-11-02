@@ -42,7 +42,7 @@ def brute_force_password(ind, combinations) -> None:
 def main_multiprocess_executor() -> None:
     futures = []
     with ProcessPoolExecutor(multiprocessing.cpu_count() - 1) as executor:
-        for num in range(0, 9):
+        for num in range(9):
             futures.append(executor.submit(brute_force_password, num, COMBINATIONS))
         wait(futures)
 
