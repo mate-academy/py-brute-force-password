@@ -34,6 +34,7 @@ def brute_force_password() -> None:
 
 
 def find_password(start, stop):
+    passwords = []
     for password in range(start, stop):
         password = str(password)
 
@@ -42,6 +43,9 @@ def find_password(start, stop):
 
         if sha256_hash_str(password) in PASSWORDS_TO_BRUTE_FORCE:
             print(password)
+            passwords.append(password)
+            if len(passwords) == 10:
+                return
 
 
 if __name__ == "__main__":
