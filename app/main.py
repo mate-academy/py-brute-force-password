@@ -17,7 +17,9 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
 
-RANGE_PER_ONE_PROCESS = 10000000
+CPU_COUNT = multiprocessing.cpu_count()
+
+RANGE_PER_ONE_PROCESS = 100000000 // (CPU_COUNT - 1)
 
 
 def sha256_hash_str(to_hash: str) -> str:
@@ -35,8 +37,8 @@ def compare_hash(start: int, stop: int) -> None:
 def brute_force_password() -> None:
     tasks = []
 
-    with ProcessPoolExecutor(multiprocessing.cpu_count() - 1) as executor:
-        for i in range(1, 11):
+    with ProcessPoolExecutor(CPU_COUNT - 1) as executor:
+        for i in range(1, CPU_COUNT):
             stop = i * RANGE_PER_ONE_PROCESS
             start = (i - 1) * RANGE_PER_ONE_PROCESS
             tasks.append(executor.submit(compare_hash, start, stop))
