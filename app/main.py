@@ -1,6 +1,11 @@
 import time
+from concurrent.futures import ProcessPoolExecutor
 from hashlib import sha256
 import multiprocessing
+
+from typing import Sequence
+
+SequenceInt = Sequence[int]
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -20,7 +25,7 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def check_password(password_str: str, target_hashes: str) -> None:
+def check_password(password_str: str, target_hashes: list[str]) -> None:
     hashed_password = sha256_hash_str(password_str)
     if hashed_password in target_hashes:
         index = target_hashes.index(hashed_password)
@@ -28,25 +33,35 @@ def check_password(password_str: str, target_hashes: str) -> None:
         target_hashes[index] = None
 
 
-def brute_force_password_parallel() -> None:
+def brute_force_password_parallel(range_list: list) -> None:
     target_hashes = list(PASSWORDS_TO_BRUTE_FORCE)
-    processes = []
-    for password in range(100000000):
+    for password in range(range_list[0], range_list[1]):
         password_str = f"{password:08d}"
-        processes.append(
-            multiprocessing.Process(
-                target=check_password, args=(password_str, target_hashes)
-            )
-        )
-
-    for process in processes:
-        process.start()
-        process.join()
+        check_password(password_str, target_hashes)
 
 
-if __name__ == "__main":
+def split_range(total_iteration: int, num_processes: int) -> list[list[int]]:
+    interval = []
+    interval_size = total_iteration // num_processes
+    for i in range(num_processes):
+        start = i * interval_size
+        finish = (i + 1) * interval_size
+        if i >= num_processes - 1:
+            finish = total_iteration
+        interval.append([start, finish])
+    return interval
+
+
+def main_multiprocess_executor() -> None:
+    cpu_count = multiprocessing.cpu_count() - 1
+    with ProcessPoolExecutor(cpu_count) as executor:
+        intervals = split_range(100000000, cpu_count)
+        executor.map(brute_force_password_parallel, intervals)
+
+
+if __name__ == "__main__":
     start_time = time.perf_counter()
-    brute_force_password_parallel()
+    main_multiprocess_executor()
     end_time = time.perf_counter()
 
     print("Elapsed:", end_time - start_time)
