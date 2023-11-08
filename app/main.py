@@ -1,3 +1,4 @@
+from concurrent.futures import ProcessPoolExecutor, as_completed
 import time
 from hashlib import sha256
 
@@ -20,13 +21,40 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
-    pass
+def brute_force_password(start: int, end: int) -> list:
+    found = []
+    for i in range(start, end):
+        password = str(i).zfill(8)
+        hashed_password = sha256_hash_str(password)
+        if hashed_password in PASSWORDS_TO_BRUTE_FORCE:
+            found.append((password, hashed_password))
+    if found:
+        return found
+
+
+def main() -> None:
+    start_time = time.perf_counter()
+    num_steps = 10 ** 6
+
+    with ProcessPoolExecutor() as executor:
+        futures = [
+            executor.submit(
+                brute_force_password,
+                start,
+                start + num_steps
+            )
+            for start in range(0, 100000000, num_steps)
+        ]
+
+        for future in as_completed(futures):
+            result = future.result()
+            if result is not None:
+                for password, hash_value in result:
+                    print(f"Found password: {password} for hash: {hash_value}")
+
+    end_time = time.perf_counter()
+    print(f"Elapsed: {end_time - start_time}")
 
 
 if __name__ == "__main__":
-    start_time = time.perf_counter()
-    brute_force_password()
-    end_time = time.perf_counter()
-
-    print("Elapsed:", end_time - start_time)
+    main()
