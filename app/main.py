@@ -22,20 +22,26 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def find_eight_digit_password(hash_string: str) -> None:
-    for password in range(99999999):
-        if sha256_hash_str(str(password)) == hash_string:
-            print(f"{password:08d}")
-            break
+def find_eight_digit_password(start: int, end: int) -> None:
+    for password in range(start, end):
+        hash_string = sha256_hash_str(f"{password:08d}")
+        if hash_string in PASSWORDS_TO_BRUTE_FORCE:
+            print(f"{password:08d} for hash {hash_string}")
 
 
 def brute_force_password() -> None:
     futures = []
+    number_of_cores = multiprocessing.cpu_count() - 1
+    split_point = 100000000 // number_of_cores + 1
 
-    with ProcessPoolExecutor(multiprocessing.cpu_count() - 1) as executor:
-        for password_hash in PASSWORDS_TO_BRUTE_FORCE:
+    with ProcessPoolExecutor(number_of_cores) as executor:
+        for i in range(number_of_cores):
             futures.append(
-                executor.submit(find_eight_digit_password, password_hash)
+                executor.submit(
+                    find_eight_digit_password,
+                    i * split_point,
+                    (i + 1) * split_point
+                )
             )
 
     wait(futures)
