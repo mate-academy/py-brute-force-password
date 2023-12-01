@@ -1,6 +1,11 @@
+import itertools
 import time
-from hashlib import sha256
-
+import random
+import hashlib
+import multiprocessing
+from concurrent.futures import ProcessPoolExecutor
+from math import ceil
+from multiprocessing.connection import wait
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -17,11 +22,24 @@ PASSWORDS_TO_BRUTE_FORCE = [
 
 
 def sha256_hash_str(to_hash: str) -> str:
-    return sha256(to_hash.encode("utf-8")).hexdigest()
+    return hashlib.sha256(to_hash.encode("utf-8")).hexdigest()
+
+
+def brute_force_single_password(start: int, end: int) -> None:
+    for num in range(start, end):
+        guess = f"{num}".zfill(8)
+        if sha256_hash_str(guess) in PASSWORDS_TO_BRUTE_FORCE:
+            print(guess + "  as  " + sha256_hash_str(guess))
 
 
 def brute_force_password() -> None:
-    pass
+    futures = []
+    with ProcessPoolExecutor() as executor:
+        gap = 10_000_000
+        for i in range(10):
+            futures.append(
+                executor.submit(brute_force_single_password, gap * i, gap * (i + 1))
+            )
 
 
 if __name__ == "__main__":
