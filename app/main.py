@@ -1,3 +1,4 @@
+import asyncio
 import multiprocessing
 import time
 from hashlib import sha256
@@ -17,33 +18,27 @@ PASSWORDS_TO_BRUTE_FORCE = [
 ]
 
 
-def sha256_hash_str(to_hash: str) -> str:
+async def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def check_password(start: int, end: int) -> None:
+async def check_password(start: int, end: int) -> None:
     for i in range(start, end):
         password_candidate = str(i).zfill(8)
-        hashed_password = sha256_hash_str(password_candidate)
+        hashed_password = await sha256_hash_str(password_candidate)
         if hashed_password in PASSWORDS_TO_BRUTE_FORCE:
             print(f"Password: {password_candidate}")
+            break
 
 
-def brute_force_password() -> None:
-    tasks = []
-
-    for i in range(len(PASSWORDS_TO_BRUTE_FORCE)):
-        thread = multiprocessing.Process(target=check_password, args=(i * 10000000, (i + 1) * 10000000))
-        tasks.append(thread)
-        tasks[-1].start()
-
-    for task in tasks:
-        task.join()
+async def brute_force_password() -> None:
+    async with asyncio.TaskGroup() as tg:
+        [tg.create_task(check_password(i * 10000000, (i + 1) * 10000000)) for i in range(len(PASSWORDS_TO_BRUTE_FORCE))]
 
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
-    brute_force_password()
+    asyncio.run(brute_force_password())
     end_time = time.perf_counter()
 
     print("Elapsed:", end_time - start_time)
