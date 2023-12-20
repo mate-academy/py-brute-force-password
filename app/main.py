@@ -1,6 +1,6 @@
 import time
+from concurrent.futures import ProcessPoolExecutor, wait
 from hashlib import sha256
-
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -20,8 +20,37 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
+def check_password(start: int, stop: int) -> int:
+    found_passwords = 0
+    for number in range(start, stop):
+        password_candidate = f"{number:08}"
+        hashed_password = sha256_hash_str(password_candidate)
+        if hashed_password in PASSWORDS_TO_BRUTE_FORCE:
+            print(password_candidate)
+            found_passwords += 1
+    return found_passwords
+
+
+def calculate_clusters(total_range: int, number_of_clusters: int) -> list:
+    each_cluster = total_range // number_of_clusters
+    return [
+        (cluster, min(cluster + each_cluster, total_range))
+        for cluster in range(0, total_range, each_cluster)
+    ]
+
+
 def brute_force_password() -> None:
-    pass
+    total_range = 100000000
+    number_of_clusters = 240
+
+    clusters = calculate_clusters(total_range, number_of_clusters)
+
+    tasks = []
+    with ProcessPoolExecutor() as executor:
+        for start, stop in clusters:
+            tasks.append(executor.submit(check_password, start, stop))
+
+    wait(tasks)
 
 
 if __name__ == "__main__":
