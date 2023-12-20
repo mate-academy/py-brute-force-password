@@ -1,6 +1,8 @@
+import multiprocessing
 import time
 from hashlib import sha256
 
+import numpy
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -16,12 +18,36 @@ PASSWORDS_TO_BRUTE_FORCE = [
 ]
 
 
+COUNTER = 0
+
+
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
+def compare_passwords(num: list) -> None:
+    global COUNTER
+
+    if COUNTER == 10:
+        return None
+
+    for variant in range(num, (num + 30000), 1):
+        password = str(variant).zfill(8)
+        hashed_password = sha256_hash_str(password)
+        if hashed_password in PASSWORDS_TO_BRUTE_FORCE:
+            print(f"Password {password} matches hashed password {hashed_password}")
+            COUNTER += 1
+            break
+
+
 def brute_force_password() -> None:
-    pass
+    tasks = []
+
+    for num in range(0, 10**8, 30000):
+
+        tasks.append(multiprocessing.Process(target=compare_passwords, args=(num,)))
+        tasks[-1].start()
+        tasks[-1].join()
 
 
 if __name__ == "__main__":
