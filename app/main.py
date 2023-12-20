@@ -1,8 +1,10 @@
+import itertools
+import multiprocessing
 import time
 from hashlib import sha256
 
 
-PASSWORDS_TO_BRUTE_FORCE = [
+PASSWORDS_TO_BRUTE_FORCE = {
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
     "cf0b0cfc90d8b4be14e00114827494ed5522e9aa1c7e6960515b58626cad0b44",
     "e34efeb4b9538a949655b788dcb517f4a82e997e9e95271ecd392ac073fe216d",
@@ -13,20 +15,52 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "1273682fa19625ccedbe2de2817ba54dbb7894b7cefb08578826efad492f51c9",
     "7e8f0ada0a03cbee48a0883d549967647b3fca6efeb0a149242f19e4b68d53d6",
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
-]
+}
+
+digits = "0123456789"
 
 
-def sha256_hash_str(to_hash: str) -> str:
-    return sha256(to_hash.encode("utf-8")).hexdigest()
+def sha256_hash_str(
+    password: str,
+    result_queue: multiprocessing.Queue
+) -> None:
+    for part in itertools.product(digits, repeat=8):
+        password_try = "".join(part)
+        hashed_try = sha256(password_try.encode("utf-8")).hexdigest()
+        if hashed_try in password:
+            result_queue.put((password_try, hashed_try))
+            break
 
 
-def brute_force_password() -> None:
-    pass
+def brute_force_password() -> list:
+    processes = []
+    result_queue = multiprocessing.Queue()
+
+    for password in PASSWORDS_TO_BRUTE_FORCE:
+        process = multiprocessing.Process(
+            target=sha256_hash_str,
+            args=(password, result_queue)
+        )
+        process.start()
+        processes.append(process)
+
+    for process in processes:
+        process.join()
+
+    results = []
+
+    while not result_queue.empty():
+        results.append(result_queue.get())
+
+    return results
 
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
-    brute_force_password()
+    results = brute_force_password()
     end_time = time.perf_counter()
+
+    for password, hashed_password in results:
+        print(f"Found password: {password} for hash: {hashed_password}")
 
     print("Elapsed:", end_time - start_time)
