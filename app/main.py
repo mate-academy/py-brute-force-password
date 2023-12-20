@@ -32,9 +32,18 @@ def brute_force_password(cell, hash) -> None:
 
 
 def main():
-    with ProcessPoolExecutor() as executor:
-        for hash in PASSWORDS_TO_BRUTE_FORCE:
-            executor.submit(brute_force_password, 8, hash)
+    tasks = []
+
+    for hash in PASSWORDS_TO_BRUTE_FORCE:
+        password = mp.Process(target=brute_force_password, args=(8, hash))
+        tasks.append(password)
+
+        tasks[-1].start()
+
+    for task in tasks:
+        task.join()
+
+    print(f"You found {len(tasks)} passwords!")
 
 
 if __name__ == "__main__":
