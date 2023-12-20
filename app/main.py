@@ -1,3 +1,4 @@
+import threading
 import time
 from hashlib import sha256
 
@@ -20,13 +21,27 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
-    for i in range(10**8):
+def check_password(start: int, end: int) -> None:
+    for i in range(start, end):
         password_candidate = str(i).zfill(8)
-        hashed_candidate = sha256_hash_str(password_candidate)
+        hashed_password = sha256_hash_str(password_candidate)
+        if hashed_password in PASSWORDS_TO_BRUTE_FORCE:
+            print(f"Password: {password_candidate}")
 
-        if hashed_candidate in PASSWORDS_TO_BRUTE_FORCE:
-            print(f"Password found: {password_candidate}")
+
+def brute_force_password() -> None:
+    thread_list = []
+    num_threads = 10
+
+    for i in range(num_threads):
+        thread = threading.Thread(target=check_password, args=(i * 10000000, (i + 1) * 10000000))
+        thread_list.append(thread)
+
+    for thread in thread_list:
+        thread.start()
+
+    for thread in thread_list:
+        thread.join()
 
 
 if __name__ == "__main__":
