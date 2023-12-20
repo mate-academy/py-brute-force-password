@@ -23,32 +23,21 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password(cell, hash) -> None:
+def brute_force_password(cell, hash_list) -> None:
+    counter = 0
     for to_check in map(str, np.arange(10 ** cell)):
-        to_check = to_check.zfill(8)
-        if sha256_hash_str(to_check) == hash:
-            print(f"Found password: {to_check} responding to hash {hash}")
+        if counter == len(hash_list):
             break
-
-
-def main():
-    tasks = []
-
-    for hash in PASSWORDS_TO_BRUTE_FORCE:
-        password = mp.Process(target=brute_force_password, args=(8, hash))
-        tasks.append(password)
-
-        tasks[-1].start()
-
-    for task in tasks:
-        task.join()
-
-    print(f"You found {len(tasks)} passwords!")
+        else:
+            to_check = to_check.zfill(8)
+            if sha256_hash_str(to_check) in hash_list:
+                print(f"Found password: {to_check}")
+                counter += 1
 
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
-    main()
+    brute_force_password(8, PASSWORDS_TO_BRUTE_FORCE)
     end_time = time.perf_counter()
 
     print("Elapsed:", end_time - start_time)
