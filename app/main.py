@@ -15,31 +15,31 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "7e8f0ada0a03cbee48a0883d549967647b3fca6efeb0a149242f19e4b68d53d6",
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
-PASSWORDS = []
+
 
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
-def found_password(password_to_force):
+
+def found_password() -> None:
     for i in range(10 ** 8):
         password = f"{i:08d}"
         hashed_password = sha256_hash_str(password)
-        if hashed_password == password_to_force:
-            print(hashed_password)
-            PASSWORDS.append(password)
-            break
+        if hashed_password in PASSWORDS_TO_BRUTE_FORCE:
+            print(password)
+
+
 def brute_force_password() -> None:
     futures = []
     with ProcessPoolExecutor(multiprocessing.cpu_count()) as executor:
-        for password in PASSWORDS_TO_BRUTE_FORCE:
-            futures.append(executor.submit(brute_force_password, password))
+        for _ in PASSWORDS_TO_BRUTE_FORCE:
+            futures.append(executor.submit(brute_force_password))
     wait(futures)
 
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
     brute_force_password()
-    print(PASSWORDS)
     end_time = time.perf_counter()
 
     print("Elapsed:", end_time - start_time)
