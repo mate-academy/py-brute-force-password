@@ -21,7 +21,12 @@ def sha256_hash_str(to_hash: str) -> str:
 
 
 def brute_force_password() -> None:
-    pass
+    for i in range(10**8):
+        password_candidate = str(i).zfill(8)
+        hashed_candidate = sha256_hash_str(password_candidate)
+
+        if hashed_candidate in PASSWORDS_TO_BRUTE_FORCE:
+            print(f"Password found: {password_candidate}")
 
 
 if __name__ == "__main__":
