@@ -37,11 +37,11 @@ def brute_force(start_num: int) -> None:
 def brute_force_password() -> None:
     tasks = []
 
-    for n in range(0, 100_000_000, 10_000_000):
+    for num in range(0, 100_000_000, 10_000_000):
         tasks.append(
             multiprocessing.Process(
                 target=brute_force,
-                args=(n, )
+                args=(num, )
             )
         )
         tasks[-1].start()
