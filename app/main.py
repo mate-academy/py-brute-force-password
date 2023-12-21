@@ -1,8 +1,8 @@
 import multiprocessing
 import time
 from hashlib import sha256
+import numpy as np
 
-import numpy
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -18,36 +18,34 @@ PASSWORDS_TO_BRUTE_FORCE = [
 ]
 
 
-COUNTER = 0
+STEP = 1000000
 
 
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def compare_passwords(num: list) -> None:
-    global COUNTER
-
-    if COUNTER == 10:
-        return None
-
-    for variant in range(num, (num + 30000), 1):
-        password = str(variant).zfill(8)
-        hashed_password = sha256_hash_str(password)
+def compare_passwords(num: int) -> None:
+    for variant in np.arange(num, (num + STEP), 1):
+        hashed_password = sha256_hash_str(str(variant).zfill(8))
         if hashed_password in PASSWORDS_TO_BRUTE_FORCE:
-            print(f"Password {password} matches hashed password {hashed_password}")
-            COUNTER += 1
-            break
+            print(
+                f"{PASSWORDS_TO_BRUTE_FORCE.index(hashed_password) + 1} "
+                f"Password {str(variant).zfill(8)} matches "
+                f"hashed password {hashed_password}"
+            )
 
 
 def brute_force_password() -> None:
     tasks = []
 
-    for num in range(0, 10**8, 30000):
+    for num in np.arange(0, 10**8, STEP):
 
         tasks.append(multiprocessing.Process(target=compare_passwords, args=(num,)))
         tasks[-1].start()
-        tasks[-1].join()
+
+    for task in tasks:
+        task.join()
 
 
 if __name__ == "__main__":
