@@ -1,5 +1,11 @@
+import multiprocessing
 import time
+
 from hashlib import sha256
+
+import numpy as np
+
+from concurrent.futures import ProcessPoolExecutor, wait
 
 
 PASSWORDS_TO_BRUTE_FORCE = [
@@ -16,12 +22,32 @@ PASSWORDS_TO_BRUTE_FORCE = [
 ]
 
 
+STEP = 500000
+
+
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
+def compare_passwords(num: int) -> None:
+    for variant in np.arange(num, (num + STEP), 1):
+        hashed_password = sha256_hash_str(str(variant).zfill(8))
+        if hashed_password in PASSWORDS_TO_BRUTE_FORCE:
+            print(
+                f"{PASSWORDS_TO_BRUTE_FORCE.index(hashed_password) + 1} "
+                f"Password {str(variant).zfill(8)} matches "
+                f"hashed password {hashed_password}"
+            )
+
+
 def brute_force_password() -> None:
-    pass
+    tasks = []
+
+    with ProcessPoolExecutor(multiprocessing.cpu_count() - 1) as executor:
+        for num in np.arange(0, 10**8, STEP):
+            tasks.append(executor.submit(compare_passwords, num))
+
+    wait(tasks)
 
 
 if __name__ == "__main__":
