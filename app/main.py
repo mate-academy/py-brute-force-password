@@ -21,24 +21,27 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force(hashed_pass: str) -> None:
-    number = 0
+def brute_force(start_num: int) -> None:
     password = "00000000"
-    while sha256_hash_str(password) != hashed_pass:
-        number += 1
-        password = f"{password[0:-len(str(number))]}{str(number)}"
 
-    print(password)
+    for i in range(start_num, start_num + 10_000_000):
+        password = f"{str(password)[0:-len(str(i))]}{str(i)}"
+        hashed_pass = sha256_hash_str(password)
+
+        if hashed_pass in PASSWORDS_TO_BRUTE_FORCE:
+            print(f"{password} - {hashed_pass}")
+
+        i += 1
 
 
 def brute_force_password() -> None:
     tasks = []
 
-    for password in PASSWORDS_TO_BRUTE_FORCE:
+    for n in range(0, 100_000_000, 10_000_000):
         tasks.append(
             multiprocessing.Process(
                 target=brute_force,
-                args=(password,)
+                args=(n, )
             )
         )
         tasks[-1].start()
