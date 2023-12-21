@@ -1,7 +1,11 @@
 import multiprocessing
 import time
+
 from hashlib import sha256
+
 import numpy as np
+
+from concurrent.futures import ProcessPoolExecutor, wait
 
 
 PASSWORDS_TO_BRUTE_FORCE = [
@@ -18,7 +22,7 @@ PASSWORDS_TO_BRUTE_FORCE = [
 ]
 
 
-STEP = 1000000
+STEP = 500000
 
 
 def sha256_hash_str(to_hash: str) -> str:
@@ -39,13 +43,11 @@ def compare_passwords(num: int) -> None:
 def brute_force_password() -> None:
     tasks = []
 
-    for num in np.arange(0, 10**8, STEP):
+    with ProcessPoolExecutor(multiprocessing.cpu_count() - 1) as executor:
+        for num in np.arange(0, 10**8, STEP):
+            tasks.append(executor.submit(compare_passwords, num))
 
-        tasks.append(multiprocessing.Process(target=compare_passwords, args=(num,)))
-        tasks[-1].start()
-
-    for task in tasks:
-        task.join()
+    wait(tasks)
 
 
 if __name__ == "__main__":
