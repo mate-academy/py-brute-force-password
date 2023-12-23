@@ -22,7 +22,7 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password(start, end) -> None:
+def brute_force_password(start: int, end: int) -> None:
     for i in range(start, end):
         password = f"{i:08d}"
         hashed_password = sha256_hash_str(password)
@@ -31,7 +31,7 @@ def brute_force_password(start, end) -> None:
             print(f"Found {hashed_password} -> {password}")
 
 
-def brute_force_password_parallel():
+def brute_force_password_parallel() -> None:
     num_processes = multiprocessing.cpu_count()
     pool_size = 10**8 // num_processes
     processes = []
