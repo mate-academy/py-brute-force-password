@@ -28,7 +28,7 @@ def to_str(num: int) -> str:
     return ans
 
 
-def find_pass(start, end):
+def find_pass(start: int, end: int) -> None:
     for i in range(start, end + 1):
         password = to_str(i)
         hash_ = sha256_hash_str(password)
@@ -52,5 +52,4 @@ if __name__ == "__main__":
     start_time = time.perf_counter()
     brute_force_password()
     end_time = time.perf_counter()
-
     print("Elapsed:", end_time - start_time)
