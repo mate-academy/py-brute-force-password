@@ -1,6 +1,7 @@
+from concurrent.futures import ProcessPoolExecutor, wait
 import time
+import multiprocessing
 from hashlib import sha256
-
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -15,18 +16,51 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
 
+INTERVALS = [
+    (0, 10_000_000),
+    (10_000_000, 20_000_000),
+    (20_000_000, 30_000_000),
+    (30_000_000, 40_000_000),
+    (40_000_000, 50_000_000),
+    (50_000_000, 60_000_000),
+    (60_000_000, 70_000_000),
+    (70_000_000, 80_000_000),
+    (80_000_000, 90_000_000),
+    (90_000_000, 100_000_000),
+]
+
 
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
-    pass
+def brute_force_password(start: int, end: int) -> None:
+    print(f"Starting task...")
+    for i in range(start, end):
+        password = str(i)
+        if len(password) < 8:
+            password = "0" * (8 - len(str(i))) + str(i)
+        guess_password = sha256_hash_str(password)
+        for num, hashed_pass in enumerate(PASSWORDS_TO_BRUTE_FORCE):
+            if guess_password == hashed_pass:
+                print(f"{num}. Correct password: {password}")
+
+def main_processes() -> None:
+    tasks = []
+
+    with ProcessPoolExecutor(multiprocessing.cpu_count() - 2) as executor:
+        for intervals in INTERVALS:
+            tasks.append(
+                executor.submit(brute_force_password, *intervals)
+            )
+
+    wait(tasks)
 
 
 if __name__ == "__main__":
+    print("Start...")
     start_time = time.perf_counter()
-    brute_force_password()
+    main_processes()
     end_time = time.perf_counter()
 
     print("Elapsed:", end_time - start_time)
