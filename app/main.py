@@ -1,6 +1,11 @@
 import multiprocessing
 import time
 from hashlib import sha256
+from multiprocessing.managers import ValueProxy
+from typing import List, Tuple
+
+
+Range = List[Tuple[int, int]]
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -19,8 +24,12 @@ NUMMER_OF_PROCESSES = 32  # number of chunks
 
 
 class PasswordCracker:
-    def __init__(self, passwords_hash_list, num_passwords_to_iterate,
-                 num_processes):
+    def __init__(
+        self,
+        passwords_hash_list: List[str],
+        num_passwords_to_iterate: int,
+        num_processes: int
+    ) -> None:
         self.passwords_hash_list = passwords_hash_list
         self.passwords_hash_count = len(passwords_hash_list)
         self.num_passwords_to_iterate = num_passwords_to_iterate
@@ -29,8 +38,13 @@ class PasswordCracker:
     def sha256_hash_str(self, to_hash: str) -> str:
         return sha256(to_hash.encode("utf-8")).hexdigest()
 
-    def print_correct_password(self, start, end,
-                               passwords_cracked, lock) -> None:
+    def print_correct_password(
+            self,
+            start: int,
+            end: int,
+            passwords_cracked: ValueProxy,
+            lock: multiprocessing.Lock
+    ) -> None:
         with lock:
             if passwords_cracked.value >= self.passwords_hash_count:
                 return
@@ -44,7 +58,8 @@ class PasswordCracker:
                     if passwords_cracked.value >= self.passwords_hash_count:
                         break
 
-    def calculate_ranges(self, num_processes):
+    def calculate_ranges(self, num_processes: int) -> Range:
+        """Make num_processes ranges of as even sizes as possible"""
         chunk_size = max(self.num_passwords_to_iterate // num_processes, 1)
         remainder = self.num_passwords_to_iterate % num_processes
         start = 0
@@ -57,6 +72,7 @@ class PasswordCracker:
 
     def brute_force_password(self) -> None:
         with multiprocessing.Manager() as manager:
+            # passwords_cracked - counter for stopping unnecessary computations
             passwords_cracked = manager.Value("i", 0)
             lock = manager.Lock()
 
