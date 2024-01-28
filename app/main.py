@@ -39,14 +39,13 @@ def check_password_range(start: int, end: int) -> None:
 
 def brute_force_password() -> None:
     operations = 10 ** 8
-    # Only use 3 cores, so my mac is still usable
-    cpus = multiprocessing.cpu_count() - 5
+    cpus = multiprocessing.cpu_count() * 0.4
     ops_per_process = operations // cpus
     futures = []
     with ProcessPoolExecutor(cpus) as executor:
-        for i in range(cpus):
-            start = i * ops_per_process
-            end = start + ops_per_process if i != cpus - 1 else operations
+        for core in range(cpus):
+            start = core * ops_per_process
+            end = start + ops_per_process if core != cpus - 1 else operations
             futures.append(executor.submit(check_password_range, start, end))
             if not PASSWORDS_TO_BRUTE_FORCE:
                 break
