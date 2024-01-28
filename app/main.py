@@ -1,6 +1,8 @@
+from concurrent.futures import ProcessPoolExecutor, wait
 import time
-from hashlib import sha256
-
+import multiprocessing
+import hashlib
+from itertools import product
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -17,16 +19,42 @@ PASSWORDS_TO_BRUTE_FORCE = [
 
 
 def sha256_hash_str(to_hash: str) -> str:
-    return sha256(to_hash.encode("utf-8")).hexdigest()
+    return hashlib.sha256(to_hash.encode("utf-8")).hexdigest()
+
+
+def check_password_range(start: int, end: int) -> None:
+    possibles = [comb for comb in product("0123456789", repeat=8)][start:end]
+    for possible in possibles:
+        for password in PASSWORDS_TO_BRUTE_FORCE:
+            poss_password = sha256_hash_str("".join(possible))
+            if password == poss_password:
+                print(
+                    f"Password {password}"
+                    f" is: {''.join(possible)}"
+                )
+                PASSWORDS_TO_BRUTE_FORCE.remove(password)
+                if not PASSWORDS_TO_BRUTE_FORCE:
+                    return
 
 
 def brute_force_password() -> None:
-    pass
+    operations = 10 ** 8
+    # Only use 3 cores, so my mac is still usable
+    cpus = multiprocessing.cpu_count() - 5
+    ops_per_process = operations // cpus
+    futures = []
+    with ProcessPoolExecutor(cpus) as executor:
+        for i in range(cpus):
+            start = i * ops_per_process
+            end = start + ops_per_process if i != cpus - 1 else operations
+            futures.append(executor.submit(check_password_range, start, end))
+            if not PASSWORDS_TO_BRUTE_FORCE:
+                break
+    wait(futures)
 
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
     brute_force_password()
     end_time = time.perf_counter()
-
     print("Elapsed:", end_time - start_time)
