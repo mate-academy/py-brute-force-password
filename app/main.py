@@ -39,7 +39,7 @@ def check_password_range(start: int, end: int) -> None:
 
 def brute_force_password() -> None:
     operations = 10 ** 8
-    cpus = multiprocessing.cpu_count() * 0.4
+    cpus = int(multiprocessing.cpu_count() * 0.4)
     ops_per_process = operations // cpus
     futures = []
     with ProcessPoolExecutor(cpus) as executor:
