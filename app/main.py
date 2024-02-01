@@ -21,9 +21,8 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def find_password(start_end_tuple):
-    start, end = start_end_tuple
-    for number in range(start, end):
+def find_password(start_num: int, end_num: int):
+    for number in range(start_num, end_num):
         password = f"{number:08d}"
         hashed_password = sha256_hash_str(password)
         if hashed_password in PASSWORDS_TO_BRUTE_FORCE:
@@ -31,17 +30,15 @@ def find_password(start_end_tuple):
 
 
 def brute_force_password() -> None:
-    numbers = 10 ** 7
-    processes = multiprocessing.cpu_count()
-
     with ProcessPoolExecutor() as executor:
-        start_end_tuple = [(i * (numbers // processes), (i + 1) * (numbers // processes)) for i in range(processes)]
-        executor.map(find_password, start_end_tuple)
+        for process in range(multiprocessing.cpu_count()):
+            start = process * (100000000 // multiprocessing.cpu_count())
+            stop = (process + 1) * (100000000 // multiprocessing.cpu_count())
+            executor.submit(find_password, start, stop)
 
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
     brute_force_password()
     end_time = time.perf_counter()
-
     print("Elapsed:", end_time - start_time)
