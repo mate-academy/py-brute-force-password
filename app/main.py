@@ -1,6 +1,6 @@
 import multiprocessing
 import time
-from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures import ProcessPoolExecutor, wait
 from hashlib import sha256
 
 PASSWORDS_TO_BRUTE_FORCE = [
@@ -30,10 +30,12 @@ def find_password(start_num: int, end_num: int):
 
 
 def brute_force_password() -> None:
+    num_processes = multiprocessing.cpu_count()
+    size = 10 * 8 // num_processes
     with ProcessPoolExecutor() as executor:
-        for process in range(multiprocessing.cpu_count()):
-            start = process * (100000000 // multiprocessing.cpu_count())
-            stop = (process + 1) * (100000000 // multiprocessing.cpu_count())
+        for i in range(num_processes):
+            start = i * size
+            stop = (i + 1) * size
             executor.submit(find_password, start, stop)
 
 
@@ -41,4 +43,6 @@ if __name__ == "__main__":
     start_time = time.perf_counter()
     brute_force_password()
     end_time = time.perf_counter()
+
     print("Elapsed:", end_time - start_time)
+
