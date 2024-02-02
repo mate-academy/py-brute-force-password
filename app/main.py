@@ -1,3 +1,4 @@
+import itertools
 import multiprocessing
 import time
 from concurrent.futures import ProcessPoolExecutor, wait
@@ -22,7 +23,9 @@ def sha256_hash_str(to_hash: str) -> str:
 
 
 def find_password(start_num: int, end_num: int):
-    for number in range(start_num, end_num):
+    for number in itertools.count(start=start_num):
+        if number >= end_num:
+            break
         password = f"{number:08d}"
         hashed_password = sha256_hash_str(password)
         if hashed_password in PASSWORDS_TO_BRUTE_FORCE:
@@ -45,4 +48,3 @@ if __name__ == "__main__":
     end_time = time.perf_counter()
 
     print("Elapsed:", end_time - start_time)
-
