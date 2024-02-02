@@ -30,12 +30,12 @@ def find_password(start_num: int, end_num: int):
 
 
 def brute_force_password() -> None:
-    num_processes = multiprocessing.cpu_count()
-    size = 10 * 8 // num_processes
+    cpu_count = multiprocessing.cpu_count()
+    size = 10 * 8 // cpu_count
     with ProcessPoolExecutor() as executor:
-        for i in range(num_processes):
-            start = i * size
-            stop = (i + 1) * size
+        for process in range(cpu_count):
+            start = process * size
+            stop = (process + 1) * size
             executor.submit(find_password, start, stop)
 
 
