@@ -1,6 +1,9 @@
+from typing import NoReturn
+
 import time
 from hashlib import sha256
-
+import multiprocessing
+from concurrent.futures import ProcessPoolExecutor, wait
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -20,8 +23,31 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
-    pass
+def find_pass(start: int, end: int) -> NoReturn:
+    for i in range(start, end):
+        pass_example = str(i)
+        while len(pass_example) < 8:
+            pass_example = "0" + pass_example
+
+        pass_to_check = sha256_hash_str(pass_example)
+
+        if pass_to_check in PASSWORDS_TO_BRUTE_FORCE:
+
+            print(f"Password {pass_example} for hash {pass_to_check}")
+
+
+def brute_force_password() -> NoReturn:
+    futures = []
+    count = multiprocessing.cpu_count() - 1
+    check_range = 100000000 // count
+
+    with ProcessPoolExecutor(count) as executor:
+        for i in range(count):
+            start = i * check_range
+            end = i * check_range + check_range
+            futures.append(executor.submit(find_pass, start, end))
+
+    wait(futures)
 
 
 if __name__ == "__main__":
