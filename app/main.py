@@ -5,6 +5,10 @@ from hashlib import sha256
 import multiprocessing
 from concurrent.futures import ProcessPoolExecutor, wait
 
+PASSWORD_LENGTH = 8
+
+TOTAL_OPERATIONS = 100000000
+
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
     "cf0b0cfc90d8b4be14e00114827494ed5522e9aa1c7e6960515b58626cad0b44",
@@ -25,10 +29,7 @@ def sha256_hash_str(to_hash: str) -> str:
 
 def find_pass(start: int, end: int) -> NoReturn:
     for i in range(start, end):
-        pass_example = str(i)
-        while len(pass_example) < 8:
-            pass_example = "0" + pass_example
-
+        pass_example = str(i).zfill(PASSWORD_LENGTH)
         pass_to_check = sha256_hash_str(pass_example)
 
         if pass_to_check in PASSWORDS_TO_BRUTE_FORCE:
@@ -39,7 +40,7 @@ def find_pass(start: int, end: int) -> NoReturn:
 def brute_force_password() -> NoReturn:
     futures = []
     count = multiprocessing.cpu_count() - 1
-    check_range = 100000000 // count
+    check_range = TOTAL_OPERATIONS // count
 
     with ProcessPoolExecutor(count) as executor:
         for i in range(count):
