@@ -28,8 +28,8 @@ def sha256_hash_str(to_hash: str) -> str:
 
 
 def find_pass(start: int, end: int) -> NoReturn:
-    for i in range(start, end):
-        pass_example = str(i).zfill(PASSWORD_LENGTH)
+    for pass_code in range(start, end):
+        pass_example = str(pass_code).zfill(PASSWORD_LENGTH)
         pass_to_check = sha256_hash_str(pass_example)
 
         if pass_to_check in PASSWORDS_TO_BRUTE_FORCE:
@@ -42,9 +42,9 @@ def brute_force_password() -> NoReturn:
     check_range = TOTAL_OPERATIONS // count
 
     with ProcessPoolExecutor(count) as executor:
-        for i in range(count):
-            start = i * check_range
-            end = i * check_range + check_range
+        for num_processes in range(count):
+            start = num_processes * check_range
+            end = num_processes * check_range + check_range
             executor.submit(find_pass, start, end)
 
 
