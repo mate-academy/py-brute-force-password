@@ -3,7 +3,7 @@ from typing import NoReturn
 import time
 from hashlib import sha256
 import multiprocessing
-from concurrent.futures import ProcessPoolExecutor, wait
+from concurrent.futures import ProcessPoolExecutor
 
 PASSWORD_LENGTH = 8
 
@@ -38,7 +38,6 @@ def find_pass(start: int, end: int) -> NoReturn:
 
 
 def brute_force_password() -> NoReturn:
-    futures = []
     count = multiprocessing.cpu_count() - 1
     check_range = TOTAL_OPERATIONS // count
 
@@ -46,9 +45,7 @@ def brute_force_password() -> NoReturn:
         for i in range(count):
             start = i * check_range
             end = i * check_range + check_range
-            futures.append(executor.submit(find_pass, start, end))
-
-    wait(futures)
+            executor.submit(find_pass, start, end)
 
 
 if __name__ == "__main__":
