@@ -21,7 +21,10 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def check_clean_password_with_hash(start_segment: int, end_segment: int) -> None:
+def check_clean_password_with_hash(
+        start_segment: int,
+        end_segment: int
+) -> None:
     for combination in range(start_segment, end_segment + 1):
         non_hashed_password = "{0:08}".format(combination)
         hashed_password = sha256_hash_str(non_hashed_password)
