@@ -39,7 +39,7 @@ def brute_force_password(passwords: List) -> None:
 
 def multiprocess() -> None:
     tasks = []
-    for i in range(5):
+    for i in range(multiprocessing.cpu_count() - 1):
         tasks.append(
             multiprocessing.Process(
                 target=brute_force_password,
