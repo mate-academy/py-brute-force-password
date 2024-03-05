@@ -1,6 +1,9 @@
+import json
 import time
 from hashlib import sha256
-
+import multiprocessing
+from itertools import product
+from concurrent.futures import ProcessPoolExecutor, wait
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -20,13 +23,56 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
-    pass
+def generate_password_dictionary() -> None:
+    print("Start create password_db")
+    password_dict = ["".join(x) for x in product("012456789", repeat=8)]
+    with open("passwords_db.json", "w") as json_file:
+        json.dump(password_dict, json_file)
+        print("Finished create password_db")
+
+
+def brute_force_password() -> dict:
+    crack_password_dict = {}
+    with open("passwords_db.json", "r") as json_file:
+        all_combinations = json.load(json_file)
+
+    for password in PASSWORDS_TO_BRUTE_FORCE:
+        for combination in all_combinations:
+            if password == sha256_hash_str(combination):
+                crack_password_dict.update({password: combination})
+                break
+        else:
+            crack_password_dict.update({password: "No valid combination"})
+
+    return crack_password_dict
+
+
+def brute_force_password_print(index: int, number: str) -> None:
+    print(f"Start task: {index}")
+    crack_password = brute_force_password()
+    print(
+        f"Result of task {index}: "
+        f"brute_force_password ({number}) = {crack_password[number]}"
+    )
+    print("**********" * 20)
+
+
+def main_multiprocessing(in_numbers: list) -> None:
+    futures = []
+    with ProcessPoolExecutor(multiprocessing.cpu_count() - 1) as executor:
+        for index, number in enumerate(in_numbers):
+            futures.append(executor.submit(brute_force_password_print, index, number))
+    wait(futures)
 
 
 if __name__ == "__main__":
-    start_time = time.perf_counter()
-    brute_force_password()
-    end_time = time.perf_counter()
 
+    start_time = time.perf_counter()
+    generate_password_dictionary()
+    end_time = time.perf_counter()
+    print("Elapsed:", end_time - start_time)
+
+    start_time = time.perf_counter()
+    main_multiprocessing(PASSWORDS_TO_BRUTE_FORCE)
+    end_time = time.perf_counter()
     print("Elapsed:", end_time - start_time)
