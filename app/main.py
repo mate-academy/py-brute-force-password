@@ -1,6 +1,9 @@
+import multiprocessing
+import numpy as np
 import time
+from concurrent.futures import ProcessPoolExecutor, wait
 from hashlib import sha256
-
+from numpy import ndarray
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -20,13 +23,37 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
-    pass
+def generate_password_list(end_range: int = 100000000) -> ndarray:
+    numbers = np.arange(end_range)
+    return numbers
+
+
+def brute_force_password(hash_password: str, combination_len: int = 8) -> dict:
+    crack_password = {}
+    for combination in generate_password_list():
+        if hash_password == sha256_hash_str(str(combination).zfill(combination_len)):
+            crack_password[hash_password] = str(combination).zfill(combination_len)
+            break
+    return crack_password
+
+
+def brute_force_password_print(index: int, number: str) -> None:
+    crack_password = brute_force_password(number)
+    print(f"Result of task {index}: {crack_password}")
+    print("*******************" * 5)
+
+
+def main_multiprocessing(in_numbers: list) -> None:
+    futures = []
+    with ProcessPoolExecutor(multiprocessing.cpu_count() - 1) as executor:
+        for index, number in enumerate(in_numbers):
+            futures.append(executor.submit(brute_force_password_print, index, number))
+    wait(futures)
 
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
-    brute_force_password()
+    generate_password_list()
+    main_multiprocessing(PASSWORDS_TO_BRUTE_FORCE)
     end_time = time.perf_counter()
-
     print("Elapsed:", end_time - start_time)
