@@ -1,8 +1,9 @@
 import time
 from hashlib import sha256
-
 from concurrent.futures import ProcessPoolExecutor, wait
 import multiprocessing as mlt
+
+import numpy as np
 
 
 PASSWORDS_TO_BRUTE_FORCE = [
@@ -23,34 +24,37 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password(sha_pass: str) -> str:
-    password = "00000000"
-    while True:
-        new_sha = sha256_hash_str(password)
-        if new_sha == sha_pass:
+def brute_force_password(start: int, stop: int) -> str:
+    for num in map(str, np.arange(start=start, stop=stop)):
+        password = num.zfill(8)
+        sha_password = sha256_hash_str(password)
+        if sha_password in PASSWORDS_TO_BRUTE_FORCE:
             return password
 
-        password = str(int(password) + 1).zfill(8)
-        if password == "100000000":
-            break
 
-
-def main_multiprocessing_executor(sha_data: list) -> list[str]:
+def main_multiprocessing_executor() -> list[str]:
     futures = []
+    step = 1_000_000
     with ProcessPoolExecutor(
             max_workers=mlt.cpu_count() - 1
     ) as executor:
-        for sha_pass in sha_data:
-            futures.append(executor.submit(brute_force_password, sha_pass))
+        for rng in range(0, 99_000_000, step):
+            futures.append(
+                executor.submit(
+                    brute_force_password,
+                    rng,
+                    rng + step
+                )
+            )
 
     wait(futures)
 
-    return [future.result() for future in futures]
+    return [future.result() for future in futures if future.result()]
 
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
-    result = main_multiprocessing_executor(PASSWORDS_TO_BRUTE_FORCE)
+    result = main_multiprocessing_executor()
     print(result)
     end_time = time.perf_counter()
 
