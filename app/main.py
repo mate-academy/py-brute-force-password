@@ -30,6 +30,7 @@ def brute_force_password() -> None:
                 print("All passwords found.")
                 break
 
+
 if __name__ == "__main__":
     start_time = time.perf_counter()
     brute_force_password()
