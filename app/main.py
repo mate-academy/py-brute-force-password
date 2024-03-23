@@ -1,7 +1,6 @@
 import time
 from hashlib import sha256
 
-
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
     "cf0b0cfc90d8b4be14e00114827494ed5522e9aa1c7e6960515b58626cad0b44",
@@ -21,7 +20,15 @@ def sha256_hash_str(to_hash: str) -> str:
 
 
 def brute_force_password() -> None:
-    pass
+    for i in range(100000000):
+        password = str(i).zfill(8)
+        hashed_password = sha256_hash_str(password)
+        if hashed_password in PASSWORDS_TO_BRUTE_FORCE:
+            print(f"Password found: {password}")
+            PASSWORDS_TO_BRUTE_FORCE.remove(hashed_password)
+            if not PASSWORDS_TO_BRUTE_FORCE:
+                print("All passwords found.")
+                break
 
 
 if __name__ == "__main__":
