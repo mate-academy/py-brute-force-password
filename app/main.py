@@ -23,17 +23,17 @@ def sha256_hash_str(to_hash: str) -> str:
 
 
 def find_password(start: int, end: int) -> None:
-    for i in range(start, end):
-        if sha256_hash_str(f"{i:08d}") in PASSWORDS_TO_BRUTE_FORCE:
-            print(f"Password found {i:08d}")
+    for password in range(start, end):
+        if sha256_hash_str(f"{password:08d}") in PASSWORDS_TO_BRUTE_FORCE:
+            print(f"Password found {password:08d}")
 
 
 def brute_force_password() -> None:
     cpus = multiprocessing.cpu_count()
     size = 100_000_000 // cpus
     with ProcessPoolExecutor(max_workers=cpus) as executor:
-        for i in range(cpus):
-            start = i * size
+        for process in range(cpus):
+            start = process * size
             end = start + size
             executor.submit(find_password, start, end)
 
