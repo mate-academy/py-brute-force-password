@@ -1,5 +1,7 @@
 import time
 from hashlib import sha256
+import itertools
+from multiprocessing import Pool
 
 
 PASSWORDS_TO_BRUTE_FORCE = [
@@ -20,8 +22,24 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
+def check_passwords(passwords):
+    found_passwords = []
+    for password_candidate in passwords:
+        password_str = "".join(password_candidate)
+        hashed_password = sha256_hash_str(password_str)
+        if hashed_password in PASSWORDS_TO_BRUTE_FORCE:
+            found_passwords.append(password_str)
+    return found_passwords
+
+
 def brute_force_password() -> None:
-    pass
+    chunk_size = 10000  # Adjust the chunk size as needed
+    all_passwords = itertools.product("0123456789", repeat=8)
+    with Pool() as pool:
+        results = pool.imap_unordered(check_passwords, iter(lambda: list(itertools.islice(all_passwords, chunk_size)), []))
+        for found_passwords in results:
+            for password in found_passwords:
+                print("Password found:", password)
 
 
 if __name__ == "__main__":
