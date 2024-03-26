@@ -18,7 +18,6 @@ PASSWORDS_TO_BRUTE_FORCE = [
 ]
 
 
-
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
