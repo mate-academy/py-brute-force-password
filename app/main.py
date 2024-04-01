@@ -22,8 +22,8 @@ def sha256_hash_str(to_hash: str) -> str:
 
 
 def brute_force_password(start: int, end: int) -> None:
-    for i in range(start, end):
-        password = f"{i:08d}"
+    for num_process in range(start, end):
+        password = f"{num_process:08d}"
         hashed_password = sha256_hash_str(password)
 
         if hashed_password in PASSWORDS_TO_BRUTE_FORCE:
@@ -35,9 +35,9 @@ def brute_force_password_parallel() -> None:
     pool_size = 10 ** 8 // num_processes
     processes = []
     with ProcessPoolExecutor() as executor:
-        for i in range(num_processes):
-            start = i * pool_size
-            end = (i + 1) * pool_size
+        for num_process in range(num_processes):
+            start = num_process * pool_size
+            end = (num_process + 1) * pool_size
             processes.append(
                 executor.submit(brute_force_password, start, end)
             )
@@ -47,7 +47,7 @@ def brute_force_password_parallel() -> None:
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
-    # brute_force_password_parallel()
+    brute_force_password_parallel()
     end_time = time.perf_counter()
 
     print("Elapsed:", end_time - start_time)
