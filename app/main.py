@@ -22,12 +22,13 @@ def sha256_hash_str(to_hash: str) -> str:
 
 
 def check_password_range(start, end):
+    found_passwords = []
     for i in range(start, end):
         password = str(i).zfill(8)
         hashed_password = sha256_hash_str(password)
         if hashed_password in PASSWORDS_TO_BRUTE_FORCE:
-            return password, hashed_password
-    return None
+            found_passwords.append((password, hashed_password))
+    return found_passwords
 
 
 def brute_force_password() -> None:
@@ -40,8 +41,8 @@ def brute_force_password() -> None:
         end = (i + 1) * range_size
         ranges.append((start, end))
     with Pool(cpu_count() - 1) as pool:
-        for result in pool.starmap(check_password_range, ranges):
-            if result is not None:
+        for result_list in pool.starmap(check_password_range, ranges):
+            for result in result_list:
                 print(f"Found password: {result[0]} for hash: {result[1]}")
 
 
