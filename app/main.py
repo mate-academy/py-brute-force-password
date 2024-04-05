@@ -1,7 +1,6 @@
 import multiprocessing
 import time
 from concurrent.futures import ProcessPoolExecutor, wait
-from ctypes import c_int
 from hashlib import sha256
 
 
