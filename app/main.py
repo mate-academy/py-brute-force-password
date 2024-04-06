@@ -26,7 +26,7 @@ def sha256_hash_str(to_hash: str) -> str:
 def brute_force_password(hashed_password: str) -> None:
     print("Looking for password of", hashed_password)
     for num in range(100_000_000):
-        option = f"{num:08d}"
+        option = f"{num: 08d}"
 
         if hashed_password == sha256_hash_str(option):
             print(f"{hashed_password} == {option}")
