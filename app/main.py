@@ -18,36 +18,35 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
 
+CPU_POWER = 100_000_000 // multiprocessing.cpu_count()
+
 
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password(hashed_password: str) -> None:
-    print("Looking for password of", hashed_password)
-    for num in range(100_000_000):
-        option = f"{num: 08d}"
+def brute_force_password(cpu_power_range) -> None:
+    for num in range(cpu_power_range, cpu_power_range + CPU_POWER):
+        option = f"{num:08d}"
+        hashed_option = sha256_hash_str(option)
 
-        if hashed_password == sha256_hash_str(option):
-            print(f"{hashed_password} == {option}")
-            return
-
-    print(f"Password for hash {hashed_password} was not found!")
+        if hashed_option in PASSWORDS_TO_BRUTE_FORCE:
+            print(f"{hashed_option} == {option}")
 
 
-def main_multiprocess_executor(passwords: list) -> None:
+def main_multiprocess_executor() -> None:
     futures = []
 
-    with ProcessPoolExecutor(multiprocessing.cpu_count()) as executor:
-        for password in passwords:
-            futures.append(executor.submit(brute_force_password, password))
+    with ProcessPoolExecutor() as executor:
+        for cpu_power_range in range(1, 100_000_000, CPU_POWER):
+            futures.append(executor.submit(brute_force_password, cpu_power_range))
 
     wait(futures)
 
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
-    main_multiprocess_executor(PASSWORDS_TO_BRUTE_FORCE)
+    main_multiprocess_executor()
     end_time = time.perf_counter()
 
     print("Elapsed:", end_time - start_time)
