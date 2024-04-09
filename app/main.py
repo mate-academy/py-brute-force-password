@@ -25,7 +25,7 @@ def sha256_hash_str(to_hash: str) -> str:
 def find_password(start: int, end: int) -> None:
     for password in range(start, end):
         str_password = str(password).zfill(8)
-        hashed_password = sha256(str_password.encode()).hexdigest()
+        hashed_password = sha256_hash_str(str_password)
         if hashed_password in PASSWORDS_TO_BRUTE_FORCE:
             print(
                 f"Found password: {str_password}\n"
