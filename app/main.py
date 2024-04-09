@@ -45,14 +45,8 @@ def brute_force_password() -> None:
 
     with ProcessPoolExecutor(NUM_CORES) as executor:
         for core_index in range(NUM_CORES):
-            if core_index == 0:
-                start = 0
-            else:
-                start = core_index * PASSWORDS_PER_CORE + 1
-            if core_index != NUM_CORES - 1:
-                end = PASSWORDS_PER_CORE * (core_index + 1) + 1
-            else:
-                end = NUM_PASSWORDS + 1
+            start = core_index * PASSWORDS_PER_CORE
+            end = (core_index + 1) * PASSWORDS_PER_CORE
 
             futures.append(executor.submit(get_password, start, end))
 
