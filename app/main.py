@@ -35,7 +35,7 @@ def main_multiprocess_executor() -> None:
     futures = []
 
     with ProcessPoolExecutor(num_cpus) as executor:
-        for i in range(num_cpus):
+        for i in range(len(PASSWORDS_TO_BRUTE_FORCE)):
             start = i * chunk_size
             end = start + chunk_size
             futures.append(executor.submit(brute_force_password, start, end))
