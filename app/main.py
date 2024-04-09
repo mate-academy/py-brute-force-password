@@ -33,10 +33,8 @@ def check_passwords(start: int, end: int) -> None:
 
 
 def brute_force_password() -> None:
-    num_passwords = 10
-    len_password = 8
     num_processes = multiprocessing.cpu_count() - 1
-    passwords_per_core = num_passwords ** len_password // num_processes
+    passwords_per_core = 10 ** 8 // num_processes
 
     futures = []
     with ProcessPoolExecutor(num_processes) as executor:
