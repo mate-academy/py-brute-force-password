@@ -39,7 +39,7 @@ def brute_force_password() -> None:
     passwords_per_core = num_passwords ** len_password // num_processes
 
     futures = []
-    with ProcessPoolExecutor(multiprocessing.cpu_count() - 1) as executor:
+    with ProcessPoolExecutor(num_processes) as executor:
         for i in range(num_processes):
             start = i * passwords_per_core
             end = (i + 1) * passwords_per_core
