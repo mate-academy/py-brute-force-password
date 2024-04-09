@@ -1,7 +1,7 @@
-import time
-from hashlib import sha256
-from concurrent.futures import ProcessPoolExecutor, wait
 import multiprocessing
+import time
+from concurrent.futures import ProcessPoolExecutor, wait
+from hashlib import sha256
 
 
 PASSWORDS_TO_BRUTE_FORCE = [
@@ -19,7 +19,7 @@ PASSWORDS_TO_BRUTE_FORCE = [
 
 CPU_COUNT = multiprocessing.cpu_count()
 
-RANGE_PER_ONE_PROCESS = 100000000 // (CPU_COUNT - 1)
+RANGE_PER_ONE_PROCESS = 100_000_000 // (CPU_COUNT - 1)
 
 
 def sha256_hash_str(to_hash: str) -> str:
