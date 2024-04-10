@@ -1,8 +1,7 @@
-from concurrent.futures import ProcessPoolExecutor, wait
-import time
-from hashlib import sha256
 import multiprocessing as mp
-
+import time
+from concurrent.futures import ProcessPoolExecutor, wait
+from hashlib import sha256
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -37,11 +36,11 @@ def brute_force_password(password_len: int) -> None:
     futures = []
     size = 10 ** (password_len - 1)
 
-    with ProcessPoolExecutor(mp.cpu_count()) as e:
-        for num in range(password_len):
+    with ProcessPoolExecutor(mp.cpu_count()) as executor:
+        for num in range(10):
             start = num * size
             end = start + size
-            futures.append(e.submit(password_checker, start, end))
+            futures.append(executor.submit(password_checker, start, end))
 
     wait(futures)
 
