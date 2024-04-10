@@ -1,6 +1,6 @@
 import time
-import multiprocessing
 from concurrent.futures import ProcessPoolExecutor, wait
+import multiprocessing
 from hashlib import sha256
 
 
@@ -24,9 +24,10 @@ def sha256_hash_str(to_hash: str) -> str:
 
 def brute_force_password(start: int, end: int) -> None:
     for num in range(start, end):
-        hashed_password = sha256_hash_str(str(num).zfill(8))
+        str_from_num = str(num).zfill(8)
+        hashed_password = sha256_hash_str(str_from_num)
         if hashed_password in PASSWORDS_TO_BRUTE_FORCE:
-            print(f"{str(num).zfill(8)} = {hashed_password}")
+            print(f"{str_from_num} = {hashed_password}")
 
 
 def main_multiprocess_executor() -> None:
