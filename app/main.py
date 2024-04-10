@@ -1,8 +1,6 @@
+import asyncio
 import time
 from hashlib import sha256
-from concurrent.futures import ProcessPoolExecutor, wait
-import multiprocessing
-
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -15,6 +13,7 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "1273682fa19625ccedbe2de2817ba54dbb7894b7cefb08578826efad492f51c9",
     "7e8f0ada0a03cbee48a0883d549967647b3fca6efeb0a149242f19e4b68d53d6",
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
+    "3f08d8fadb4b67fb056623565edbbc2c788091d78fd24cbc473fce3043ce3473",
 ]
 
 
@@ -22,7 +21,10 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def crack_password(start: int, end: int) -> None:
+async def crack_password(
+        password_ranges: tuple[int, int]
+) -> None:
+    start, end = password_ranges
     for password in range(start, end):
         formatted_password = str(password).zfill(8)
         hashed_password = sha256_hash_str(formatted_password)
@@ -31,22 +33,22 @@ def crack_password(start: int, end: int) -> None:
             print(f"Password: {formatted_password} -> Hash: {hashed_password}")
 
 
-def brute_force_password() -> None:
-    futures = []
+async def brute_force_password() -> None:
+    tasks = []
 
-    with ProcessPoolExecutor(multiprocessing.cpu_count()) as executor:
-        range_factor = 10000000
+    range_factor = 12_500_000
+    ranges = [(i * range_factor, (i + 1) * range_factor) for i in range(8)]
 
-        for factor in range(8):
-            start = factor * range_factor
-            end = (factor + 1) * range_factor
-            futures.append(executor.submit(crack_password, start, end))
-    wait(futures)
+    for password_range in ranges:
+        task = crack_password(password_range)
+        tasks.append(task)
+
+    await asyncio.gather(*tasks)
 
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
-    brute_force_password()
+    asyncio.run(brute_force_password())
     end_time = time.perf_counter()
 
     print("Elapsed:", end_time - start_time)
