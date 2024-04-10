@@ -21,11 +21,11 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def crack_password(start, end) -> None:
+def crack_password(start: int, end: int) -> None:
 
     for i in range(start, end):
         password = str(i).zfill(8)
-        hashed = sha256_hash_str(str(password))
+        hashed = sha256_hash_str(password)
         if hashed in PASSWORDS_TO_BRUTE_FORCE:
             print(f"Found password: {password}")
 
