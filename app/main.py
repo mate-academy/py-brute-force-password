@@ -34,13 +34,15 @@ def brute_force_password(start: int, end: int, passwords: list[str]) -> None:
 
 def main(passwords: list[str]) -> None:
     futures = []
-    with ProcessPoolExecutor(multiprocessing.cpu_count() - 1) as executor:
-        for i in range(10 ** 6, 10 ** 8 + 1, 10 ** 7):
+    available_cpu = multiprocessing.cpu_count() - 1
+    with ProcessPoolExecutor(available_cpu) as executor:
+        step = 99 * 10 ** 6 // available_cpu + 1
+        for i in range(10 ** 6, 10 ** 8 + 1, step):
             futures.append(
                 executor.submit(
                     brute_force_password,
                     start=i,
-                    end=i + 10 ** 7,
+                    end=i + step,
                     passwords=passwords
                 )
             )
