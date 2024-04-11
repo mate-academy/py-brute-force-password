@@ -33,7 +33,7 @@ def crack_password(password_ranges: tuple[int, int]) -> None:
 
 def brute_force_password() -> None:
     workers = multiprocessing.cpu_count()
-    range_factor = 12_500_000
+    range_factor = int(10**8 / workers)
     ranges = [(i * range_factor, (i + 1) * range_factor) for i in range(8)]
 
     with multiprocessing.Pool(processes=workers) as pool:
