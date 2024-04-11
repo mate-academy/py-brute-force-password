@@ -36,8 +36,8 @@ def brute_force_password() -> None:
         ProcessPoolExecutor(multiprocessing.cpu_count() - 1)
             as executor
     ):
-        f_range = 10_000_000
-        for num in range(8):
+        f_range = len(PASSWORDS_TO_BRUTE_FORCE) ** 8 // multiprocessing.cpu_count()
+        for num in range(multiprocessing.cpu_count()):
             futures.append(
                 executor.submit(
                     check_password,
