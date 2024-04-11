@@ -1,8 +1,8 @@
-import asyncio
+import multiprocessing
 import time
 from hashlib import sha256
 
-PASSWORDS_TO_BRUTE_FORCE = [
+PASSWORDS_TO_BRUTE_FORCE = {
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
     "cf0b0cfc90d8b4be14e00114827494ed5522e9aa1c7e6960515b58626cad0b44",
     "e34efeb4b9538a949655b788dcb517f4a82e997e9e95271ecd392ac073fe216d",
@@ -14,16 +14,14 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "7e8f0ada0a03cbee48a0883d549967647b3fca6efeb0a149242f19e4b68d53d6",
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
     "3f08d8fadb4b67fb056623565edbbc2c788091d78fd24cbc473fce3043ce3473",
-]
+}
 
 
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-async def crack_password(
-        password_ranges: tuple[int, int]
-) -> None:
+def crack_password(password_ranges: tuple[int, int]) -> None:
     start, end = password_ranges
     for password in range(start, end):
         formatted_password = str(password).zfill(8)
@@ -33,22 +31,18 @@ async def crack_password(
             print(f"Password: {formatted_password} -> Hash: {hashed_password}")
 
 
-async def brute_force_password() -> None:
-    tasks = []
-
+def brute_force_password() -> None:
+    workers = multiprocessing.cpu_count()
     range_factor = 12_500_000
     ranges = [(i * range_factor, (i + 1) * range_factor) for i in range(8)]
 
-    for password_range in ranges:
-        task = crack_password(password_range)
-        tasks.append(task)
-
-    await asyncio.gather(*tasks)
+    with multiprocessing.Pool(processes=workers) as pool:
+        pool.map(crack_password, ranges)
 
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
-    asyncio.run(brute_force_password())
+    brute_force_password()
     end_time = time.perf_counter()
 
     print("Elapsed:", end_time - start_time)
