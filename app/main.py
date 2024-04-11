@@ -19,7 +19,6 @@ PASSWORDS_TO_BRUTE_FORCE = [
 
 def to_pass_format(number: int) -> str:
     str_number = str(number)
-    # return "0" * (8 - len(str_number)) + str_number
     return str_number.zfill(8 - len(str_number)) + str_number
 
 
