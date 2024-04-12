@@ -19,7 +19,7 @@ PASSWORDS_TO_BRUTE_FORCE = [
 
 def to_pass_format(number: int) -> str:
     str_number = str(number)
-    return str_number.zfill(8 - len(str_number)) + str_number
+    return str_number.zfill(8)
 
 
 def sha256_hash_str(to_hash: str) -> str:
@@ -31,7 +31,7 @@ def find_passwords(start: int, end: int) -> None:
         password = to_pass_format(numbers)
         check_hash_password = sha256_hash_str(password)
         if check_hash_password in PASSWORDS_TO_BRUTE_FORCE:
-            print(f"password-{password} for hash: {check_hash_password}")
+            print(f"password - {password} for hash: {check_hash_password}")
 
 
 def brute_force_password() -> None:
