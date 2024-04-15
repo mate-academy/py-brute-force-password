@@ -36,9 +36,10 @@ def find_password(start: int, end: int) -> None:
 
 def brute_force_password() -> None:
     futures = []
+    num_processes = multiprocessing.cpu_count()
 
-    with ProcessPoolExecutor(multiprocessing.cpu_count()) as executor:
-        scope = 10 ** 8
+    with ProcessPoolExecutor(num_processes) as executor:
+        scope = 10 ** 8 // num_processes
         for factor in range(8):
             start = factor * scope
             end = (factor + 1) * scope
