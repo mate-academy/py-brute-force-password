@@ -1,7 +1,7 @@
 import time
+from concurrent.futures import ProcessPoolExecutor, wait
 import multiprocessing
 from hashlib import sha256
-from concurrent.futures import ProcessPoolExecutor, wait
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -22,7 +22,7 @@ def sha256_hash_str(to_hash: str) -> str:
 
 
 def reveal_password(start: int, end: int) -> None:
-    for i in range(start, end):
+    for i in range(start, end + 1):
         password = str(i).zfill(8)
         hashed_password = sha256_hash_str(password)
         if hashed_password in PASSWORDS_TO_BRUTE_FORCE:
