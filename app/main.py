@@ -15,30 +15,32 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "7e8f0ada0a03cbee48a0883d549967647b3fca6efeb0a149242f19e4b68d53d6",
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
-chars = [1, 2, 3, 4, 5, 6, 7, 8, 9, 0]
 
 
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password(index, hashed_password) -> None:
+def brute_force_password(index: int, hashed_password: str) -> None:
     print(f"start #{index + 1}")
     for num in range(100000000):
-        password = '{:08d}'.format(num)
+        password = "{:08d}".format(num)
 
         hashed_test_pass = sha256_hash_str(password)
         if hashed_test_pass == hashed_password:
-            print(f"password #{index + 1} have been found, password: {password}")
+            print(f"password #{index + 1} have been found, "
+                  f"password: {password}")
             break
 
 
-def main(hashed_passwords):
+def main(hashed_passwords: list[str]) -> None:
     futures = []
 
     with ProcessPoolExecutor() as executor:
         for index, hashed_password in enumerate(hashed_passwords):
-            futures.append(executor.submit(brute_force_password, index, hashed_password))
+            futures.append(executor.submit(
+                brute_force_password, index, hashed_password
+            ))
 
         wait(futures)
 
