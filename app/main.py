@@ -73,23 +73,23 @@ def brute_force_password(data: list) -> None:
 
 @timeit
 def brute_force_password_multiprocessing(data: list) -> None:
-    tasks = []
+    num_processes = multiprocessing.cpu_count()
+    processes = []
+    chunks = [[] for _ in range(num_processes)]
 
-    for password in data:
-        tasks.append(
-            multiprocessing.Process(
-                target=selection_of_passwords,
-                args=(
-                    [
-                        password,
-                    ],
-                ),
-            )
+    for i, password in enumerate(data):
+        chunks[i % num_processes].append(password)
+
+    for chunk in chunks:
+        process = multiprocessing.Process(
+            target=selection_of_passwords,
+            args=(chunk,),
         )
-        tasks[-1].start()
+        processes.append(process)
+        process.start()
 
-    for task in tasks:
-        task.join()
+    for process in processes:
+        process.join()
 
 
 @timeit
