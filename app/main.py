@@ -1,4 +1,5 @@
 import itertools
+import multiprocessing
 import time
 from hashlib import sha256
 
@@ -21,26 +22,44 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
-    possible_digits = "0123456789"
-    passwords = {}
-
-    for combination in itertools.product(possible_digits, repeat=8):
-        password = "".join(combination)
+def brute_force_worker(start, end, hash_set, result_queue):
+    for num in range(start, end):
+        password = f"{num:08d}"  # Pad number to 8 digits
         hashed_password = sha256_hash_str(password)
+        if hashed_password in hash_set:
+            result_queue.put((hashed_password, password))
 
-        if hashed_password in PASSWORDS_TO_BRUTE_FORCE:
-            passwords[hashed_password] = password
-            print(f"{hashed_password} -> {password}")
 
-            if len(passwords) == len(PASSWORDS_TO_BRUTE_FORCE):
-                break
-    return passwords
+def brute_force_password():
+    hash_set = set(PASSWORDS_TO_BRUTE_FORCE)
+    result_queue = multiprocessing.Queue()
+    num_processes = multiprocessing.cpu_count()
+    batch_size = 100000000 // num_processes
+
+    processes = []
+    for i in range(num_processes):
+        start = i * batch_size
+        end = start + batch_size if i != num_processes - 1 else 100000000
+        process = multiprocessing.Process(target=brute_force_worker, args=(start, end, hash_set, result_queue))
+        processes.append(process)
+        process.start()
+
+    found_passwords = {}
+    while len(found_passwords) < len(PASSWORDS_TO_BRUTE_FORCE):
+        hashed_password, password = result_queue.get()
+        found_passwords[hashed_password] = password
+
+    for process in processes:
+        process.join()
+
+    return found_passwords
 
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
-    brute_force_password()
+    found_passwords = brute_force_password()
+    for hash_val in PASSWORDS_TO_BRUTE_FORCE:
+        print(f"{hash_val}: {found_passwords[hash_val]}")
     end_time = time.perf_counter()
 
     print("Elapsed:", end_time - start_time)
