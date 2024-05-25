@@ -24,7 +24,7 @@ def sha256_hash_str(to_hash: str) -> str:
 
 def brute_force_worker(start, end, hash_set, result_queue):
     for num in range(start, end):
-        password = f"{num:08d}"  # Pad number to 8 digits
+        password = f"{num:08d}"
         hashed_password = sha256_hash_str(password)
         if hashed_password in hash_set:
             result_queue.put((hashed_password, password))
