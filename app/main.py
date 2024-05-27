@@ -1,6 +1,10 @@
+import multiprocessing
 import time
+from functools import partial
 from hashlib import sha256
+from multiprocessing.managers import ValueProxy
 
+N_DIGITS = 8
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -20,13 +24,29 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
-    pass
+def brute_force_password(int_pass: int, pass_found: ValueProxy) -> None:
+    str_pass = "0" * (N_DIGITS - len(str(int_pass))) + str(int_pass)
+    hash_pass = sha256_hash_str(str_pass)
+
+    if hash_pass in PASSWORDS_TO_BRUTE_FORCE:
+        print(f"Password {pass_found.value} found: {str_pass}")
+        pass_found.value += 1
+
+
+def run_multiproc() -> None:
+    with multiprocessing.Pool() as pool:
+        with multiprocessing.Manager() as manager:
+            pass_found = manager.Value("i", 0)
+            pool.map(partial(
+                brute_force_password,
+                pass_found=pass_found
+            ), range(10 ** N_DIGITS))
 
 
 if __name__ == "__main__":
-    start_time = time.perf_counter()
-    brute_force_password()
-    end_time = time.perf_counter()
+    start = time.perf_counter()
 
-    print("Elapsed:", end_time - start_time)
+    run_multiproc()
+
+    duration = time.perf_counter() - start
+    print("Duration=", duration, "sec")
