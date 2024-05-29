@@ -41,4 +41,5 @@ Notes:
 - you should use setup to speed up this brute forcing as much as possible;
 - attach the screenshot of your script results (the console) to the PR.
 
-
+# Results
+![results](passwords.png)

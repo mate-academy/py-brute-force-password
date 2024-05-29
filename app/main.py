@@ -1,6 +1,8 @@
+import concurrent
 import time
 from hashlib import sha256
-
+import multiprocessing
+from concurrent.futures import ProcessPoolExecutor
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -15,18 +17,58 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
 
+PASSWORD_MAX_LENGTH = 10 ** 8
+
 
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
-    pass
+def divide_range(pass_max_length: int):
+    ranges = []
+    num_processors = multiprocessing.cpu_count()
+    chunk_size = pass_max_length // num_processors
+    remainder = pass_max_length % num_processors
+
+    start = 0
+    for i in range(num_processors):
+        end = start + chunk_size + (1 if i < remainder else 0)
+        ranges.append((start, end))
+        start = end
+
+    return ranges
+
+
+def brute_force_password(start: int, stop: int):
+    passwords = []
+
+    for number in range(start, stop):
+        number_str = f"{number:08d}"
+        if sha256_hash_str(number_str) in PASSWORDS_TO_BRUTE_FORCE:
+            passwords.append(number_str)
+
+    return passwords
+
+
+def brute_force_main_executor():
+    ranges = divide_range(PASSWORD_MAX_LENGTH)
+    futures = []
+    with ProcessPoolExecutor() as executor:
+        for start, stop in ranges:
+            futures.append(executor.submit(brute_force_password, start, stop))
+
+    results = []
+    for future in concurrent.futures.as_completed(futures):
+        results.extend(future.result())
+
+    return results
 
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
-    brute_force_password()
+    passwords = brute_force_main_executor()
     end_time = time.perf_counter()
 
     print("Elapsed:", end_time - start_time)
+    for index, password in enumerate(passwords, start=1):
+        print(f"{index}: {{ hash: {sha256_hash_str(password)}, password: {password} }}")
