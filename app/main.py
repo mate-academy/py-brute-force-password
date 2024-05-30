@@ -30,9 +30,7 @@ def brute_force_password(password_tuple):
     return None
 
 
-if __name__ == "__main__":
-    start_time = time.perf_counter()
-
+def mult():
     possible_passwords = itertools.product('0123456789', repeat=8)
     with multiprocessing.Pool() as pool:
         results = pool.imap_unordered(brute_force_password, possible_passwords, chunksize=1000)
@@ -42,5 +40,9 @@ if __name__ == "__main__":
                 password, hashed = result
                 print(f"Found password: {password} for hash: {hashed}")
 
+
+if __name__ == "__main__":
+    start_time = time.perf_counter()
+    mult()
     end_time = time.perf_counter()
     print("Elapsed:", end_time - start_time)
