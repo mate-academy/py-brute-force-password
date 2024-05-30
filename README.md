@@ -40,5 +40,3 @@ Notes:
 - you should find `10` passwords (not `9`) — check it;
 - you should use setup to speed up this brute forcing as much as possible;
 - attach the screenshot of your script results (the console) to the PR.
-
-
