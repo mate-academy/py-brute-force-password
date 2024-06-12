@@ -1,4 +1,4 @@
-import asyncio
+import threading
 import time
 from hashlib import sha256
 import random
@@ -26,27 +26,29 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-async def brute_force_password(password: str) -> None:
+def brute_force_password(password: str) -> None:
     while True:
         guess_password = generate_password()
         if sha256_hash_str(guess_password) == password:
             print(f"Found password for hash {password}: {guess_password}")
             break
 
-        await asyncio.sleep(0)
 
+def brute_force_worker():
+    threads = []
 
-async def brute_force_worker():
-    tasks = [
-        asyncio.create_task(brute_force_password(password))
-        for password in PASSWORDS_TO_BRUTE_FORCE
-    ]
-    await asyncio.gather(*tasks)
+    for password in PASSWORDS_TO_BRUTE_FORCE:
+        thread = threading.Thread(target=brute_force_password, args=(password,))
+        threads.append(thread)
+        thread.start()
+
+    for thread in threads:
+        thread.join()
 
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
-    asyncio.run(brute_force_worker())
+    brute_force_worker()
     end_time = time.perf_counter()
 
     print("Elapsed:", end_time - start_time)
