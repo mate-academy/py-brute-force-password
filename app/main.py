@@ -1,6 +1,6 @@
 import time
 from hashlib import sha256
-
+from multiprocessing import Process, Manager, cpu_count
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -20,8 +20,40 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
-    pass
+def worker(start, end, shared_dict, passwords_to_brute_force):
+    for num in range(start, end):
+        password = f"{num:08}"
+        hashed_password = sha256_hash_str(password)
+
+        if hashed_password in passwords_to_brute_force:
+            shared_dict[hashed_password] = password
+            print(f"Found: {password} -> {hashed_password}")
+
+
+def brute_force_password(num_processes=None):
+    if num_processes is None:
+        num_processes = cpu_count()
+
+    manager = Manager()
+    found_passwords = manager.dict()
+    passwords_to_brute_force = set(PASSWORDS_TO_BRUTE_FORCE)
+
+    chunk_size = 100000000 // num_processes
+    processes = []
+
+    for i in range(num_processes):
+        start = i * chunk_size
+        end = start + chunk_size
+        p = Process(target=worker, args=(start, end, found_passwords, passwords_to_brute_force))
+        processes.append(p)
+        p.start()
+
+    for p in processes:
+        p.join()
+
+    print("\nCracked Passwords:")
+    for hashed, password in found_passwords.items():
+        print(f"{hashed}: {password}")
 
 
 if __name__ == "__main__":
