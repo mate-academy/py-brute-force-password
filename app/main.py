@@ -17,18 +17,24 @@ PASSWORDS_TO_BRUTE_FORCE = [
 ]
 
 
-def sha256_hash_str(to_hash: str) -> str:
-    return sha256(to_hash.encode("utf-8")).hexdigest()
+def sha256_hash_str(to_hash: str, queue: multiprocessing.Queue) -> None:
+    hashed = sha256(to_hash.encode("utf-8")).hexdigest()
+    queue.put((to_hash, hashed))
 
 
 def brute_force_password() -> None:
     tasks = []
+    queue = multiprocessing.Queue()
     for password in PASSWORDS_TO_BRUTE_FORCE:
-        tasks.append(multiprocessing.Process(target=sha256_hash_str, args=(password,)))
-        tasks[-1].start()
-
+        task = multiprocessing.Process(target=sha256_hash_str, args=(password, queue))
+        tasks.append(task)
+        task.start()
     for task in tasks:
         task.join()
+
+    while not queue.empty():
+        original, hashed = queue.get()
+        print(f"Password: {original}\nHash: {hashed}\n")
 
 
 if __name__ == "__main__":
