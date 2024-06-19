@@ -22,9 +22,9 @@ def sha256_hash_str(to_hash: str) -> str:
 
 
 def generate_passwords(length: int):
-    chars = '0123456789'
+    chars = "0123456789"
     for pwd_tuple in product(chars, repeat=length):
-        yield ''.join(pwd_tuple)
+        yield "".join(pwd_tuple)
 
 
 def check_password(password: str):
@@ -37,7 +37,9 @@ def check_password(password: str):
 def brute_force_password():
     passwords = generate_passwords(8)
     with Pool(processes=cpu_count()) as pool:
-        results = pool.imap_unordered(check_password, passwords, chunksize=1000)
+        results = pool.imap_unordered(
+            check_password, passwords, chunksize=1000
+        )
 
         found_passwords = [result for result in results if result is not None]
         return found_passwords
