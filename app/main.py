@@ -15,8 +15,10 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
 
+
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
+
 
 def check_password(candidate: int) -> str:
     candidate_str = f"{candidate:08d}"
@@ -24,6 +26,7 @@ def check_password(candidate: int) -> str:
     if candidate_hash in PASSWORDS_TO_BRUTE_FORCE:
         return candidate_str
     return None
+
 
 def brute_force_password() -> None:
     with Pool(cpu_count()) as pool:
