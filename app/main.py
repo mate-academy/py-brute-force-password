@@ -20,21 +20,16 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def check_password(candidate: int) -> str:
+def check_password(candidate: int) -> None:
     candidate_str = f"{candidate: 08d}"
     candidate_hash = sha256_hash_str(candidate_str)
     if candidate_hash in PASSWORDS_TO_BRUTE_FORCE:
-        return candidate_str
-    return None
+        print(f"Found password: {candidate_str}")
 
 
 def brute_force_password() -> None:
     with Pool(cpu_count()) as pool:
-        results = pool.map(check_password, range(100000000))
-
-    found_passwords = [result for result in results if result]
-    for password in found_passwords:
-        print(f"Found password: {password}")
+        pool.map(check_password, range(10000000, 100000000))
 
 
 if __name__ == "__main__":
