@@ -21,7 +21,7 @@ def sha256_hash_str(to_hash: str) -> str:
 
 
 def check_password(candidate: int) -> str:
-    candidate_str = f"{candidate:08d}"
+    candidate_str = f"{candidate: 08d}"
     candidate_hash = sha256_hash_str(candidate_str)
     if candidate_hash in PASSWORDS_TO_BRUTE_FORCE:
         return candidate_str
