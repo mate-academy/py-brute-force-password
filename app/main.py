@@ -35,7 +35,7 @@ def brute_force_password() -> None:
     wait(futures)
 
 
-def find_password(start, end):
+def find_password(start: int, end: int) -> None:
     for i in range(start, end):
         combination = str(i).zfill(8)
         hashed = sha256_hash_str(combination)
