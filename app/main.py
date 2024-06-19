@@ -2,6 +2,8 @@ import time
 from hashlib import sha256
 from itertools import product
 from multiprocessing import Pool, cpu_count
+from typing import Optional, Tuple, Iterator, List
+
 import numpy as np
 
 
@@ -25,20 +27,20 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def generate_passwords(length: int):
-    chars = np.array(list('0123456789'))
+def generate_passwords(length: int) -> Iterator[str]:
+    chars = np.array(list("0123456789"))
     for pwd_tuple in product(chars, repeat=length):
         yield "".join(pwd_tuple)
 
 
-def check_password(password: str):
+def check_password(password: str) -> Optional[Tuple[str, str]]:
     hashed_password = sha256_hash_str(password)
     if hashed_password in PASSWORDS_TO_BRUTE_FORCE:
         return password, hashed_password
     return None
 
 
-def brute_force_password():
+def brute_force_password() -> List[Tuple[str, str]]:
     passwords = generate_passwords(8)
     with Pool(processes=cpu_count()) as pool:
         results = pool.imap_unordered(
