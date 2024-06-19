@@ -21,8 +21,8 @@ def sha256_hash_str(to_hash: str) -> str:
 
 
 def find_password(start: int) -> None:
-    for i in range(start, 100000000, 10):
-        password = f"{i:08d}"
+    for index in range(start, 100000000, 10):
+        password = f"{index:08d}"
         hashed_password = sha256_hash_str(password)
         if hashed_password in PASSWORDS_TO_BRUTE_FORCE:
             print(f"Found: {password} -> {hashed_password}")
@@ -38,5 +38,3 @@ if __name__ == "__main__":
     brute_force_password()
     end_time = time.perf_counter()
     print("Elapsed:", end_time - start_time)
-
-
