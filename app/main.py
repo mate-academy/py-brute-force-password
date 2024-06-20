@@ -1,8 +1,8 @@
 import time
 from hashlib import sha256
+from multiprocessing import Pool
 
-
-PASSWORDS_TO_BRUTE_FORCE = [
+PASSWORDS_TO_BRUTE_FORCE = {
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
     "cf0b0cfc90d8b4be14e00114827494ed5522e9aa1c7e6960515b58626cad0b44",
     "e34efeb4b9538a949655b788dcb517f4a82e997e9e95271ecd392ac073fe216d",
@@ -13,20 +13,23 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "1273682fa19625ccedbe2de2817ba54dbb7894b7cefb08578826efad492f51c9",
     "7e8f0ada0a03cbee48a0883d549967647b3fca6efeb0a149242f19e4b68d53d6",
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
-]
+}
 
 
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
-    pass
+def brute_force_password(digits_to_hash: int) -> None:
+    hashed_password = sha256_hash_str(f"{digits_to_hash: 08d}")
+    if hashed_password in PASSWORDS_TO_BRUTE_FORCE:
+        print(digits_to_hash, hashed_password)
 
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
-    brute_force_password()
+    with Pool(5) as pool:
+        pool.map(brute_force_password, range(10 ** 8))
     end_time = time.perf_counter()
 
     print("Elapsed:", end_time - start_time)
