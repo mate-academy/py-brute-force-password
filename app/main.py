@@ -21,7 +21,7 @@ def sha256_hash_str(to_hash: str) -> str:
 
 
 def brute_force_password(digits_to_hash: int) -> None:
-    hashed_password = sha256_hash_str(f"{digits_to_hash: 08d}")
+    hashed_password = sha256_hash_str(f"{digits_to_hash:08d}")
     if hashed_password in PASSWORDS_TO_BRUTE_FORCE:
         print(digits_to_hash, hashed_password)
 
