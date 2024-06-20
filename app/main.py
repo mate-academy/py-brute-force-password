@@ -27,25 +27,20 @@ def brut_force_chunk(
         end: int,
         passwords: dict
 ) -> None:
-    if start < 10_000_000:
-        for num in range(start, end):
-            num = "{:08d}".format(num)
-            if sha256_hash_str(num) in hashes:
-                print(sha256_hash_str(num), num)
-                passwords[sha256_hash_str(num)] = num
-    else:
-        for num in range(start, end):
-            num = str(num)
-            if sha256_hash_str(num) in hashes:
-                print(sha256_hash_str(num), num)
-                passwords[sha256_hash_str(num)] = num
+    for password in range(start, end):
+        password = "{:08d}".format(password)
+        password_hash = sha256_hash_str(password)
+
+        if password_hash in hashes:
+            print(password_hash, password)
+            passwords[password_hash] = password
 
 
 def brute_force_password(hashes: set) -> dict:
     manager = multiprocessing.Manager()
     passwords = manager.dict()
     tasks = []
-    step = 10_000_000
+    step = 100_000_000 // multiprocessing.cpu_count()
 
     for i in range(0, 100_000_000, step):
         tasks.append(multiprocessing.Process(
