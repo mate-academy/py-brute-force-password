@@ -1,7 +1,7 @@
 import os
 import time
 from hashlib import sha256
-from concurrent.futures import ProcessPoolExecutor, wait
+from concurrent.futures import FIRST_COMPLETED, ProcessPoolExecutor, wait
 
 
 PASSWORDS_TO_BRUTE_FORCE = [
@@ -49,9 +49,18 @@ def brute_force_passwords(hashes: list[str], length: int) -> None:
             executor.submit(try_password_range, hashes, bounds, length)
             for bounds in ranges
         ]
-        wait(futures)
+        passwords = []
+        while futures:
+            wait_result = wait(futures, return_when=FIRST_COMPLETED)
+            for done in wait_result.done:
+                passwords.extend(done.result())
+                futures.remove(done)
+            if len(passwords) == len(hashes):
+                # we've found all passwords already, stop here
+                for not_done in wait_result.not_done:
+                    not_done.cancel()
+                break
 
-    passwords = sum([fut.result() for fut in futures], [])
     hash_to_password = {
         sha256_hash_str(password): password for
         password in passwords
