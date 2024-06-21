@@ -1,5 +1,7 @@
+import os
 import time
 from hashlib import sha256
+from concurrent.futures import FIRST_COMPLETED, ProcessPoolExecutor, wait
 
 
 PASSWORDS_TO_BRUTE_FORCE = [
@@ -20,13 +22,60 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
-    pass
+def try_password_range(
+    hashes: list[str],
+    bounds: tuple[int, int],
+    length: int,
+) -> list[str]:
+    passwords = []
+    for number in range(*bounds):
+        guessed_password = format(number, f"0{length}")
+        hash_ = sha256_hash_str(guessed_password)
+        if hash_ in hashes:
+            passwords.append(guessed_password)
+    return passwords
+
+
+def brute_force_passwords(hashes: list[str], length: int) -> None:
+    limit = 10 ** length
+    cores = os.cpu_count()
+    interval = limit // cores
+    ranges = [(interval * i, interval * (i + 1)) for i in range(cores)]
+    # final range may be inaccurate because of rounding
+    ranges[-1] = (ranges[-1][0], limit)
+
+    with ProcessPoolExecutor(cores) as executor:
+        futures = [
+            executor.submit(try_password_range, hashes, bounds, length)
+            for bounds in ranges
+        ]
+        passwords = []
+        while futures:
+            wait_result = wait(futures, return_when=FIRST_COMPLETED)
+            for done in wait_result.done:
+                passwords.extend(done.result())
+                futures.remove(done)
+            if len(passwords) == len(hashes):
+                # we've found all passwords already, stop here
+                for not_done in wait_result.not_done:
+                    not_done.cancel()
+                break
+
+    hash_to_password = {
+        sha256_hash_str(password): password for
+        password in passwords
+    }
+
+    for i, hash_ in enumerate(hashes):
+        try:
+            print(f"Password #{i}: {hash_to_password[hash_]}")
+        except KeyError:
+            print(f"Password #{i} was not found!")
 
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
-    brute_force_password()
+    brute_force_passwords(PASSWORDS_TO_BRUTE_FORCE, 8)
     end_time = time.perf_counter()
 
     print("Elapsed:", end_time - start_time)
