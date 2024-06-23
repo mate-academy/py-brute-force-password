@@ -1,6 +1,8 @@
 import time
-from hashlib import sha256
-
+import hashlib
+import itertools
+from concurrent.futures import ProcessPoolExecutor, as_completed
+from typing import Iterable, Dict
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -16,17 +18,61 @@ PASSWORDS_TO_BRUTE_FORCE = [
 ]
 
 
-def sha256_hash_str(to_hash: str) -> str:
-    return sha256(to_hash.encode("utf-8")).hexdigest()
+def sha256_hash_str(password: str) -> str:
+    return hashlib.sha256(password.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
-    pass
+def check_password(passwords: Iterable[str]) -> Dict[str, str]:
+    found_passwords = {}
+    for password in passwords:
+        hashed_password = sha256_hash_str(password)
+        if hashed_password in PASSWORDS_TO_BRUTE_FORCE:
+            found_passwords[hashed_password] = password
+    return found_passwords
+
+
+def main() -> None:
+    start_time = time.time()
+
+    all_combinations = itertools.product("0123456789", repeat=8)
+
+    chunk_size = 1000000
+    chunks = []
+    chunk = []
+
+    for combo in all_combinations:
+        chunk.append("".join(combo))
+        if len(chunk) == chunk_size:
+            chunks.append(chunk)
+            chunk = []
+
+    if chunk:
+        chunks.append(chunk)
+
+    found_passwords = {}
+    with ProcessPoolExecutor() as executor:
+        futures = [
+            executor.submit(check_password, passwords)
+            for passwords in chunks
+        ]
+
+        for future in as_completed(futures):
+            found_passwords.update(future.result())
+            if len(found_passwords) >= len(PASSWORDS_TO_BRUTE_FORCE):
+                break
+
+    end_time = time.time()
+    total_time = end_time - start_time
+
+    print("\nTotal execution time:", total_time)
+    assert len(found_passwords) == len(
+        PASSWORDS_TO_BRUTE_FORCE
+    ), "Not all passwords were found!"
+
+    print("\nAll found passwords:")
+    for hash_val, password in found_passwords.items():
+        print(f"Hash: {hash_val} -> Password: {password}")
 
 
 if __name__ == "__main__":
-    start_time = time.perf_counter()
-    brute_force_password()
-    end_time = time.perf_counter()
-
-    print("Elapsed:", end_time - start_time)
+    main()
