@@ -1,6 +1,6 @@
 import time
 from hashlib import sha256
-
+from multiprocessing import Process, current_process, cpu_count
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -20,13 +20,36 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
-    pass
+def brute_force_password(start: int, end: int) -> None:
+    for i in range(start, end):
+        password = f"{i:08d}"
+        hashed_password = sha256_hash_str(password)
+        if hashed_password in PASSWORDS_TO_BRUTE_FORCE:
+            print(f"Process {current_process().name}: Found password {password} -> {hashed_password}")
+
+
+def main():
+    num_processes = cpu_count()
+    total_combinations = 10 ** 8
+    chunk_size = total_combinations // num_processes
+
+    processes = []
+    for i in range(num_processes):
+        start = i * chunk_size
+        end = (i + 1) * chunk_size if i != num_processes - 1 else total_combinations
+        p = Process(target=brute_force_password, args=(start, end), name=f"Process-{i + 1}")
+        processes.append(p)
+
+    for p in processes:
+        p.start()
+
+    for p in processes:
+        p.join()
 
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
-    brute_force_password()
+    main()
     end_time = time.perf_counter()
 
     print("Elapsed:", end_time - start_time)
