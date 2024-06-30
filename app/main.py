@@ -26,25 +26,21 @@ def sha256_hash_str(to_hash: str) -> str:
 
 def find_passwords(password_encode: str) -> None:
     print("Processing...")
-    # for i in itertools.product(range(10), repeat=8):
     for i in itertools.product("0123456789", repeat=8):
-        # tuple_with_str = map(str, i)
-        # res_str = "".join(tuple_with_str)
         res_str = "".join(i)
         if sha256_hash_str(res_str) == password_encode:
-            print(f"Password: {res_str} -> {password_encode}")
-            # return res_str
+            print(f"Password: {res_str} -> hash :{password_encode}")
 
 
 def brute_force_password() -> None:
     futures = []
     with ProcessPoolExecutor(max_workers=CPU_COUNT) as executor:
+        """executor divides the work evenly among the available CPU cores"""
         for password_encode in PASSWORDS_TO_BRUTE_FORCE:
             futures.append(executor.submit(find_passwords, password_encode))
 
     wait(futures)
 
-# divide the work evenly among the available CPU cores
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
@@ -52,8 +48,3 @@ if __name__ == "__main__":
     end_time = time.perf_counter()
 
     print("Elapsed:", end_time - start_time)
-# Elapsed: 746.8547292510002 -1
-# Elapsed: 711.646529787 -2
-
-# "01234567"
-# Elapsed: 1130.7080753779992
