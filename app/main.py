@@ -1,6 +1,8 @@
+import itertools
 import time
+from concurrent.futures import ProcessPoolExecutor, wait
 from hashlib import sha256
-
+import multiprocessing as mp
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -14,14 +16,27 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "7e8f0ada0a03cbee48a0883d549967647b3fca6efeb0a149242f19e4b68d53d6",
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
+CPU_COUNT = mp.cpu_count()
 
 
 def sha256_hash_str(to_hash: str) -> str:
-    return sha256(to_hash.encode("utf-8")).hexdigest()
+    """Encode str to hash"""
+    return sha256(str(to_hash).encode("utf-8")).hexdigest()
+
+
+def find_passwords(password_encode: str) -> None:
+    print("Processing...")
+    for i in itertools.product("0123456789", repeat=8):
+        res_str = "".join(i)
+        if sha256_hash_str(res_str) == password_encode:
+            print(f"Password: {res_str} -> hash :{password_encode}")
 
 
 def brute_force_password() -> None:
-    pass
+    with ProcessPoolExecutor(max_workers=CPU_COUNT) as executor:
+        """executor divides the work evenly among the available CPU cores"""
+        for password_encode in PASSWORDS_TO_BRUTE_FORCE:
+            executor.submit(find_passwords, password_encode)
 
 
 if __name__ == "__main__":
