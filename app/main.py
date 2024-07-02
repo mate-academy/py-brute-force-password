@@ -33,13 +33,10 @@ def find_passwords(password_encode: str) -> None:
 
 
 def brute_force_password() -> None:
-    futures = []
     with ProcessPoolExecutor(max_workers=CPU_COUNT) as executor:
         """executor divides the work evenly among the available CPU cores"""
         for password_encode in PASSWORDS_TO_BRUTE_FORCE:
-            futures.append(executor.submit(find_passwords, password_encode))
-
-    wait(futures)
+            executor.submit(find_passwords, password_encode)
 
 
 if __name__ == "__main__":
