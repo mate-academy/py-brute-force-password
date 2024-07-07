@@ -5,7 +5,6 @@ import multiprocessing
 import itertools
 
 
-
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
     "cf0b0cfc90d8b4be14e00114827494ed5522e9aa1c7e6960515b58626cad0b44",
@@ -34,18 +33,13 @@ def find_password(password: str) -> str:
 
 
 def brute_force_password() -> None:
-    tasks = []
-
     with ProcessPoolExecutor(multiprocessing.cpu_count() - 1) as executor:
         for password in PASSWORDS_TO_BRUTE_FORCE:
-            tasks.append(executor.submit(find_password, password))
-
-    wait(tasks)
+            executor.submit(find_password, password)
 
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
-    # main()
     brute_force_password()
     end_time = time.perf_counter()
 
