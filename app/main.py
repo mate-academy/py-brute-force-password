@@ -21,7 +21,7 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def check_password(password: int):
+def check_password(password: int) -> None:
     password = str(password).zfill(8)
     hashed_password = sha256_hash_str(password)
     if hashed_password in PASSWORDS_TO_BRUTE_FORCE:
