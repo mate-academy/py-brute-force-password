@@ -29,12 +29,12 @@ def get_password(index: int, hash_p: str) -> None:
             break
 
 
-def brute_force_password() -> None:
+def brute_force_password(hash_passwords: list) -> None:
     tasks = []
-    for i in range(10):
+    for i in range(len(hash_passwords)):
         tasks.append(
             multiprocessing.Process(
-                target=get_password, args=(i, PASSWORDS_TO_BRUTE_FORCE[i])
+                target=get_password, args=(i, hash_passwords[i])
             )
         )
         tasks[-1].start()
@@ -45,7 +45,7 @@ def brute_force_password() -> None:
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
-    brute_force_password()
+    brute_force_password(PASSWORDS_TO_BRUTE_FORCE)
     end_time = time.perf_counter()
 
     print("Elapsed:", end_time - start_time)
