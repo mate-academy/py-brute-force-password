@@ -42,3 +42,5 @@ Notes:
 - attach the screenshot of your script results (the console) to the PR.
 
 
+RESULT 
+![img.png](img.png)
