@@ -15,7 +15,7 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
 
-PASSWORDS_DICT = {password: '_' for password in PASSWORDS_TO_BRUTE_FORCE}
+PASSWORDS_DICT = {password: "_" for password in PASSWORDS_TO_BRUTE_FORCE}
 
 
 def sha256_hash_str(to_hash: int) -> str:
@@ -23,9 +23,9 @@ def sha256_hash_str(to_hash: int) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password(a: int, b: int) -> list:
+def brute_force_password(first_border: int, second_border: int) -> list:
     result = []
-    for password in range(a - 1, b + 1):
+    for password in range(first_border - 1, second_border + 1):
         hashed = sha256_hash_str(password)
         if hashed in PASSWORDS_DICT:
             result.append(password)
