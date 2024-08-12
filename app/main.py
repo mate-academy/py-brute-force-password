@@ -1,7 +1,8 @@
 import time
-import multiprocessing
 from hashlib import sha256
+from concurrent.futures import ProcessPoolExecutor, as_completed
 
+# List of hashes to match
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
     "cf0b0cfc90d8b4be14e00114827494ed5522e9aa1c7e6960515b58626cad0b44",
@@ -20,43 +21,38 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def generate_passwords(start, end, queue):
+def generate_passwords(start: int, end: int) -> list:
+    found_passwords = []
     for i in range(start, end):
         password = f"{i:08d}"
         hashed_password = sha256_hash_str(password)
         if hashed_password in PASSWORDS_TO_BRUTE_FORCE:
-            queue.put(password)
+            found_passwords.append(password)
+    return found_passwords
 
 
 def brute_force_passwords(num_processes: int) -> list:
-    queue = multiprocessing.Queue()
-    processes = []
-    range_size = 100000000 // num_processes
-    start = 0
+    found_passwords = set()  # Use a set to avoid duplicate passwords
+    range_size = 100000000 // num_processes  # There are 10^8 possible 8-digit numbers
 
-    for _ in range(num_processes):
-        end = start + range_size
-        p = multiprocessing.Process(
-            target=generate_passwords,
-            args=(start, end, queue)
-        )
-        processes.append(p)
-        p.start()
-        start = end
+    with ProcessPoolExecutor(max_workers=num_processes) as executor:
+        futures = []
+        start = 0
 
-    for p in processes:
-        p.join()
+        for _ in range(num_processes):
+            end = start + range_size
+            futures.append(executor.submit(generate_passwords, start, end))
+            start = end
 
-    found_pass = []
-    while not queue.empty():
-        found_pass.append(queue.get())
+        for future in as_completed(futures):
+            found_passwords.update(future.result())
 
-    return found_pass
+    return list(found_passwords)
 
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
-    found_passwords = brute_force_passwords(num_processes=8)
+    found_passwords = brute_force_passwords(num_processes=8)  # Adjust the number of processes if needed
     end_time = time.perf_counter()
 
     print("Found passwords:", found_passwords)
