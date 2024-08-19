@@ -1,8 +1,7 @@
-from concurrent.futures import ProcessPoolExecutor, wait
+from concurrent.futures import ProcessPoolExecutor, as_completed
 import time
 import multiprocessing
 from hashlib import sha256
-from itertools import product
 
 
 PASSWORDS_TO_BRUTE_FORCE = [
@@ -18,37 +17,34 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
 
-
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
-
-def brute_force_password(password_list: list) -> dict:
+def check_password_range(start: int, end: int) -> dict:
     found_passwords = {}
-    for password in password_list:
+    for num in range(start, end):
+        password = f"{num:08d}"
         hashed_password = sha256_hash_str(password)
         if hashed_password in PASSWORDS_TO_BRUTE_FORCE:
             found_passwords[hashed_password] = password
     return found_passwords
 
 def main_multiprocess_executor() -> None:
-    num_processes = multiprocessing.cpu_count() - 1
-    all_passwords = [''.join(password) for password in product("0123456789", repeat=8)]
+    num_processes = multiprocessing.cpu_count()
+    num_passwords = 10**8
+    chunk_size = num_passwords // num_processes
 
-    chunk_size = len(all_passwords) // num_processes
     futures = []
-
     with ProcessPoolExecutor(max_workers=num_processes) as executor:
         for i in range(num_processes):
-            start_index = i * chunk_size
-            end_index = (i + 1) * chunk_size if i < num_processes - 1 else len(all_passwords)
-            futures.append(executor.submit(brute_force_password, all_passwords[start_index:end_index]))
+            start = i * chunk_size
+            end = (i + 1) * chunk_size if i < num_processes - 1 else num_passwords
+            futures.append(executor.submit(check_password_range, start, end))
 
     results = {}
-    # for future in futures:
-    #     result = future.result()
-    #     results.update(result)
-    wait(futures)
+    for future in as_completed(futures):
+        result = future.result()
+        results.update(result)
 
     for hashed, password in results.items():
         print(f"Found password for hash {hashed}: {password}")
