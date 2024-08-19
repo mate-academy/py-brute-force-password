@@ -1,7 +1,6 @@
+import multiprocessing
 import time
 from hashlib import sha256
-import multiprocessing
-
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -20,7 +19,7 @@ MAX_PASSWORD_LEN = 100000000
 
 CPU_COUNT = multiprocessing.cpu_count()
 
-CHUNK = 100000000 // CPU_COUNT
+CHUNK = MAX_PASSWORD_LEN // CPU_COUNT
 
 
 def sha256_hash_str(to_hash: str) -> str:
