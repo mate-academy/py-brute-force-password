@@ -22,7 +22,7 @@ def sha256_hash_str(to_hash: str) -> str:
 
 def check_password_range(start: int, end: int) -> dict:
     found_passwords = {}
-    for num in range(start, end):
+    for num in range(start, end + 1):
         password = f"{num:08d}"
         hashed_password = sha256_hash_str(password)
         if hashed_password in PASSWORDS_TO_BRUTE_FORCE:
@@ -38,7 +38,7 @@ def main_multiprocess_executor() -> None:
     with ProcessPoolExecutor(max_workers=num_processes) as executor:
         for i in range(num_processes):
             start = i * chunk_size
-            end = (i + 1) * chunk_size if i < num_processes - 1 else num_passwords
+            end = (i + 1) * chunk_size if i < num_processes - 1 else num_passwords - 1
             futures.append(executor.submit(check_password_range, start, end))
 
     results = {}
