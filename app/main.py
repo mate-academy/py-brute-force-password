@@ -38,20 +38,19 @@ def sha256_hash_str(to_hash: str) -> str:
 
 def process_password_range(password_range: tuple) -> None:
     current_password = password_range[0]
-    while current_password != password_range[1] and PASSWORDS_TO_BRUTE_FORCE:
+    while current_password != password_range[1]:
         hashed_password = sha256_hash_str(str(current_password))
         if hashed_password in PASSWORDS_TO_BRUTE_FORCE:
             print(f"Found password for {hashed_password}: {current_password}")
-            PASSWORDS_TO_BRUTE_FORCE.remove(hashed_password)
         current_password += 1
 
 
 def brute_force_password() -> None:
     cpu_count = multiprocessing.cpu_count()
     print(f"Starting brute forcing password with {cpu_count} processes")
-    pool = multiprocessing.Pool(cpu_count)
-    passwords_count = 99_999_999
+    passwords_count = 100_000_000
     tasks_range = split_number_into_ranges(passwords_count, cpu_count)
+    pool = multiprocessing.Pool(cpu_count)
     pool.map(process_password_range, tasks_range)
     pool.close()
     pool.join()
