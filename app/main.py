@@ -19,7 +19,7 @@ MAX_PASSWORD_LEN = 100000000
 
 CPU_COUNT = multiprocessing.cpu_count()
 
-CHUNK = MAX_PASSWORD_LEN // CPU_COUNT
+CHUNK = (MAX_PASSWORD_LEN + CPU_COUNT - 1) // CPU_COUNT
 
 
 def sha256_hash_str(to_hash: str) -> str:
@@ -29,8 +29,10 @@ def sha256_hash_str(to_hash: str) -> str:
 def brute_force_range(start: int, end: int) -> None:
     for i in range(start, end):
         password = f"{i:08d}"
-        if sha256_hash_str(password) in PASSWORDS_TO_BRUTE_FORCE:
-            print(f"{password} - {sha256_hash_str(password)}")
+        hash_password = sha256_hash_str(password)
+
+        if hash_password in PASSWORDS_TO_BRUTE_FORCE:
+            print(f"{password} - {hash_password}")
 
 
 def brute_force_password() -> None:
