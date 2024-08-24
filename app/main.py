@@ -23,7 +23,6 @@ def sha256_hash_str(to_hash: str) -> str:
 def brute_force_password() -> None:
     found_passwords = {}
 
-    # Перебір всіх можливих 8-значних чисел
     for candidate in product("0123456789", repeat=8):
         candidate_password = "".join(candidate)
         hashed_password = sha256_hash_str(candidate_password)
