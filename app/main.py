@@ -1,6 +1,6 @@
 import time
 from hashlib import sha256
-
+from itertools import product
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -21,7 +21,22 @@ def sha256_hash_str(to_hash: str) -> str:
 
 
 def brute_force_password() -> None:
-    pass
+    found_passwords = {}
+
+    # Перебір всіх можливих 8-значних чисел
+    for candidate in product("0123456789", repeat=8):
+        candidate_password = "".join(candidate)
+        hashed_password = sha256_hash_str(candidate_password)
+
+        if hashed_password in PASSWORDS_TO_BRUTE_FORCE:
+            print(f"Found password: {candidate_password} -> {hashed_password}")
+            found_passwords[hashed_password] = candidate_password
+
+        if len(found_passwords) == len(PASSWORDS_TO_BRUTE_FORCE):
+            break
+
+    if len(found_passwords) < len(PASSWORDS_TO_BRUTE_FORCE):
+        print("Not all passwords were found!")
 
 
 if __name__ == "__main__":
