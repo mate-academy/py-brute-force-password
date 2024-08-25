@@ -21,28 +21,36 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force(password: str) -> str:
-    for temp_password in range(0, 100000000, 1):
-        if len(str(temp_password)) < 8:
-            temp_password = "0" * (8 - len(str(temp_password))) + str(temp_password)
-        if sha256_hash_str(str(temp_password)) == password:
-            return str(temp_password)
+def brute_force(start: int, end: int, passwords) -> list:
+    all_passwords_in_interval = []
+    for temp_password in range(start, end, 1):
+        temp_password = str(temp_password)
+        if len(temp_password) != 8:
+            temp_password = (8 - len(temp_password)) * "0" + temp_password
+        hashed_password = sha256_hash_str(temp_password)
+
+        if hashed_password in passwords:
+            all_passwords_in_interval.append((passwords.index(hashed_password), temp_password))
+    return all_passwords_in_interval
 
 
-def brute_force_print(index: int, password: str) -> None:
-    print(f"hacking {index} password...")
-    result = brute_force(password)
-    print(f"result of hacking {index} password - {result}")
+def brute_force_print(start: int, end: int, passwords) -> None:
+    list_results = brute_force(start, end, passwords)
+    for index, result in list_results:
+        print(f"{index} password is - {result}")
 
 
 def brute_force_password(passwords: list[str]) -> None:
-    lst = []
-
+    max_value_pass = 100_000_000
+    chunk_size = max_value_pass // multiprocessing.cpu_count() - 1
+    brute_force_tasks = []
     with ProcessPoolExecutor(multiprocessing.cpu_count() - 1) as executor:
-        for index, password in enumerate(passwords):
-            lst.append(executor.submit(brute_force_print, index, password))
+        for slice_size in range(0, max_value_pass, chunk_size):
+            start = slice_size
+            end = start + chunk_size
+            brute_force_tasks.append(executor.submit(brute_force_print, start, end, passwords))
 
-    wait(lst)
+    wait(brute_force_tasks)
 
 
 if __name__ == "__main__":
