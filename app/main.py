@@ -1,6 +1,8 @@
+import asyncio
 import time
 from hashlib import sha256
-
+from concurrent.futures import ProcessPoolExecutor
+from os import cpu_count
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -20,13 +22,47 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
-    pass
+def check_password_range(start, end, target_hashes):
+    found_passwords = []
+    for i in range(start, end):
+        password = f"{i:08d}"
+        hashed = sha256_hash_str(password)
+        if hashed in target_hashes:
+            found_passwords.append((password, hashed))
+    return found_passwords
+
+
+async def brute_force_password() -> None:
+    chunk_size = 10000000
+    num_processes = cpu_count() - 1
+
+    with ProcessPoolExecutor(num_processes) as executor:
+        loop = asyncio.get_running_loop()
+        tasks = []
+        for i in range(0, 100000000, chunk_size):
+            task = loop.run_in_executor(
+                executor, check_password_range, i, i + chunk_size,
+                set(PASSWORDS_TO_BRUTE_FORCE)
+            )
+            tasks.append(task)
+
+        results = await asyncio.gather(*tasks)
+
+    found_passwords = [item for sublist in results for item in sublist]
+
+    for password, hashed in found_passwords:
+        print(f"Found password: {password} for hash: {hashed}")
+
+    if len(found_passwords) != 10:
+        print(f"Warning: Found {len(found_passwords)} passwords instead of 10")
+
+
+async def main():
+    start_time = time.perf_counter()
+    await brute_force_password()
+    end_time = time.perf_counter()
+    print("Elapsed:", end_time - start_time)
 
 
 if __name__ == "__main__":
-    start_time = time.perf_counter()
-    brute_force_password()
-    end_time = time.perf_counter()
-
-    print("Elapsed:", end_time - start_time)
+    asyncio.run(main())
