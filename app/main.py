@@ -2,8 +2,7 @@ import time
 from hashlib import sha256
 import multiprocessing
 
-
-PASSWORDS_TO_BRUTE_FORCE = [
+PASSWORDS_TO_BRUTE_FORCE = {
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
     "cf0b0cfc90d8b4be14e00114827494ed5522e9aa1c7e6960515b58626cad0b44",
     "e34efeb4b9538a949655b788dcb517f4a82e997e9e95271ecd392ac073fe216d",
@@ -14,7 +13,7 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "1273682fa19625ccedbe2de2817ba54dbb7894b7cefb08578826efad492f51c9",
     "7e8f0ada0a03cbee48a0883d549967647b3fca6efeb0a149242f19e4b68d53d6",
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
-]
+}
 
 
 def split_number_into_ranges(total_count, range_count):
@@ -50,10 +49,9 @@ def brute_force_password() -> None:
     print(f"Starting brute forcing password with {cpu_count} processes")
     total_passwords = 100_000_000
     tasks_range = split_number_into_ranges(total_passwords, cpu_count)
-    pool = multiprocessing.Pool(cpu_count)
-    pool.map(process_password_range, tasks_range)
-    pool.close()
-    pool.join()
+
+    with multiprocessing.Pool(cpu_count) as pool:
+        pool.map(process_password_range, tasks_range)
 
 
 if __name__ == "__main__":
