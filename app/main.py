@@ -21,46 +21,25 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_by_segments_formatted(start: int, end: int) -> list:
-    passwords = []
-    for number in range(start, end):
-        formatted_number = f"{number:08d}" # noqa
-        sha_pass = sha256_hash_str(formatted_number)
-        if sha_pass in PASSWORDS_TO_BRUTE_FORCE:
-            passwords.append((formatted_number, sha_pass))
-    return passwords
-
-
 def brute_by_segments(start: int, end: int) -> list:
     passwords = []
     for number in range(start, end):
-        sha_pass = sha256_hash_str(str(number))
+        sha_pass = sha256_hash_str(str(number).zfill(8))
         if sha_pass in PASSWORDS_TO_BRUTE_FORCE:
             passwords.append((number, sha_pass))
     return passwords
 
 
 def brute_force_password() -> None:
-    num_cores = multiprocessing.cpu_count()
+    num_cores = multiprocessing.cpu_count() - 1
     futures = []
     passwords = []
-    total_range_formatted = 10_000_000
     total_range = 100_000_000
-    step_formatted = total_range_formatted // num_cores
     step = total_range // num_cores
 
     with ProcessPoolExecutor(num_cores) as executor:
         for i in range(num_cores):
-            start_formatted = i * step_formatted
-            end_formatted = (i + 1) * step_formatted
-            futures.append(
-                executor.submit(
-                    brute_by_segments_formatted,
-                    start_formatted,
-                    end_formatted
-                )
-            )
-            start = total_range_formatted if i == 0 else i * step
+            start = i * step
             end = (i + 1) * step
             futures.append(
                 executor.submit(
