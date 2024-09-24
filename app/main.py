@@ -1,6 +1,6 @@
 import time
 from hashlib import sha256
-
+from multiprocessing import cpu_count, Pool
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -20,8 +20,42 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
-    pass
+def encoded_password(start: int, end: int):
+    found = []
+    for number in range(start, end):
+        password = f"{number:08}"
+        hash_password = sha256_hash_str(password)
+        if hash_password in PASSWORDS_TO_BRUTE_FORCE:
+            found.append((password, hash_password))
+            if len(found) == len(PASSWORDS_TO_BRUTE_FORCE):
+                break
+    return found
+
+
+def brute_force_password():
+    cores = cpu_count()
+    total_range = 10 ** 8
+    range_size = total_range // cores
+
+    tasks = []
+    found_passwords = []
+
+    with Pool(cores) as pool:
+        for core in range(cores):
+            start = core * range_size
+            end = start + range_size if core != cores - 1 else total_range
+            tasks.append(pool.apply_async(encoded_password, (start, end)))
+
+        for task in tasks:
+            result = task.get()
+            if result:
+                found_passwords.extend(result)
+                for password, hash_value in result:
+                    print(f"Password found: {password} for hash {hash_value}")
+                    if len(found_passwords) == len(PASSWORDS_TO_BRUTE_FORCE):
+                        return found_passwords
+
+    return found_passwords
 
 
 if __name__ == "__main__":
