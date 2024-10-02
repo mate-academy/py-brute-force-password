@@ -30,8 +30,7 @@ def get_password_guess_and_make_hash(number: int) -> (str, str):
 
 def check_password_and_print(number: int) -> None:
     password_and_hash = get_password_guess_and_make_hash(number)
-    psw_hash = password_and_hash[0]
-    password = password_and_hash[1]
+    psw_hash, password = password_and_hash
 
     if psw_hash in PASSWORDS_TO_BRUTE_FORCE:
         print(f"Password is {password}")
