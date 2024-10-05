@@ -52,6 +52,7 @@ def brute_force_password() -> None:
             except Exception as e:
                 print(f"An error occurred in {futures[future]} core. {e}")
             finally:
+                del futures[future]
                 gc.collect()
 
     for number, sha in passwords.items():
