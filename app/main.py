@@ -22,18 +22,18 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_by_segments(start: int, end: int) -> list:
-    passwords = []
+def brute_by_segments(start: int, end: int) -> dict:
+    passwords = {}
     for number in range(start, end):
         sha_pass = sha256_hash_str(str(number).zfill(8))
         if sha_pass in PASSWORDS_TO_BRUTE_FORCE:
-            passwords.append((number, sha_pass))
+            passwords[number] = sha_pass
     return passwords
 
 
 def brute_force_password() -> None:
     num_cores = multiprocessing.cpu_count() - 1
-    passwords = []
+    passwords = {}
     total_range = 100_000_000
     step = total_range // num_cores
 
@@ -48,14 +48,14 @@ def brute_force_password() -> None:
         }
         for future in pool.as_completed(futures):
             try:
-                passwords.extend(future.result())
+                passwords.update(future.result())
             except Exception as e:
                 print(f"An error occurred in {futures[future]} core. {e}")
             finally:
                 gc.collect()
 
-    for password in passwords:
-        print(password)
+    for number, sha in passwords.items():
+        print(f"{number}:{sha}")
     print(f"Total length: {len(passwords)}")
 
 
