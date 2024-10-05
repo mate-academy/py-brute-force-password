@@ -49,7 +49,6 @@ def brute_force_password() -> None:
         for future in pool.as_completed(futures):
             try:
                 passwords.extend(future.result())
-                print(futures[future])
             except Exception as e:
                 print(f"An error occurred in {futures[future]} core. {e}")
             finally:
