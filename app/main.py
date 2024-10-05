@@ -1,6 +1,7 @@
+import concurrent.futures as pool
+import gc
 import multiprocessing
 import time
-from concurrent.futures.process import ProcessPoolExecutor
 from hashlib import sha256
 
 PASSWORDS_TO_BRUTE_FORCE = [
@@ -32,24 +33,27 @@ def brute_by_segments(start: int, end: int) -> list:
 
 def brute_force_password() -> None:
     num_cores = multiprocessing.cpu_count() - 1
-    futures = []
     passwords = []
     total_range = 100_000_000
     step = total_range // num_cores
 
-    with ProcessPoolExecutor(num_cores) as executor:
-        for i in range(num_cores):
-            start = i * step
-            end = (i + 1) * step
-            futures.append(
-                executor.submit(
-                    brute_by_segments,
-                    start,
-                    end
-                )
-            )
-        for future in futures:
-            passwords.extend(future.result())
+    with pool.ProcessPoolExecutor(num_cores) as executor:
+        futures = {
+            executor.submit(
+                brute_by_segments,
+                num_core * step,
+                (num_core + 1) * step
+            ): num_core
+            for num_core in range(num_cores)
+        }
+        for future in pool.as_completed(futures):
+            try:
+                passwords.extend(future.result())
+                print(futures[future])
+            except Exception as e:
+                print(f"An error occurred in {futures[future]} core. {e}")
+            finally:
+                gc.collect()
 
     for password in passwords:
         print(password)
