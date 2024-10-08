@@ -1,6 +1,7 @@
+import itertools
 import time
 from hashlib import sha256
-
+from multiprocessing import Pool, cpu_count
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -20,13 +21,55 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
-    pass
+def brute_force_password(chunk: list[str]) -> None:
+    for password in chunk:
+        if sha256_hash_str(password) in PASSWORDS_TO_BRUTE_FORCE:
+            print(
+                f"Found password: {password} "
+                f"for hash: {sha256_hash_str(password)}"
+            )
+            return
+
+
+def chunked_combinations(start: int, end: int) -> list[str]:
+    symbols_combinations = itertools.product("0123456789", repeat=8)
+    return [
+        "".join(x) for x in itertools.islice(symbols_combinations, start, end)
+    ]
+
+
+def create_chunks_list(chunk_size: int = 1000000) -> list:
+    total_combinations = 10 ** 8
+    chunks = [
+        (
+            i, min(i + chunk_size, total_combinations)
+        ) for i in range(0, total_combinations, chunk_size)
+    ]
+    return chunks
+
+
+def parallel_chunk_generation(chunk: tuple[int, int]) -> list[str]:
+    start, end = chunk
+    return chunked_combinations(start, end)
+
+
+def main_chunked() -> list[list[str]]:
+    chunks = create_chunks_list()
+    with Pool(cpu_count() - 1) as pool:
+        result = pool.map(parallel_chunk_generation, chunks)
+
+    return result
+
+
+def main() -> None:
+    chunks = main_chunked()
+    with Pool(cpu_count() - 1) as pool:
+        pool.map(brute_force_password, chunks)
 
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
-    brute_force_password()
+    main()
     end_time = time.perf_counter()
 
     print("Elapsed:", end_time - start_time)
