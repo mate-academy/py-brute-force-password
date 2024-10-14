@@ -21,18 +21,19 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password(passwords: set, range_input: tuple) -> None:
+def brute_force_password(passwords_hash: set, range_input: tuple) -> None:
     for num in range(range_input[0], range_input[1]):
         password = str(num).zfill(8)
         possible_password = sha256_hash_str(password)
-        if possible_password in passwords:
-            print(password)
+        if possible_password in passwords_hash:
+            for possible_hash in passwords_hash:
+                if possible_hash == possible_password:
+                    print(f"Found match! {possible_hash} -> {password}")
 
 
 def divide_work(num_processes: int, total_range: int) -> list:
     chunk_size = total_range // num_processes
     ranges = [(i * chunk_size, (i + 1) * chunk_size) for i in range(num_processes)]
-    # Handle the last range, ensuring it captures any remainder
     ranges[-1] = (ranges[-1][0], total_range)
     return ranges
 
