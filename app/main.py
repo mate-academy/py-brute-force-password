@@ -23,38 +23,36 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password(start: int, end: int, all_variants) -> None:
+def generate_variants():
+    """Generator that yields all password variants."""
+    for variant in product("0123456789", repeat=8):
+        yield variant
 
-    for i, variant in enumerate(all_variants):
-        if start <= i < end:
-            hashed_variant = sha256_hash_str("".join(variant))
-            if hashed_variant in PASSWORDS_TO_BRUTE_FORCE:
-                print(f"Found match: {''.join(variant)}")
+
+def brute_force_password(variant) -> str | None:
+
+    hashed_variant = sha256_hash_str("".join(variant))
+    if hashed_variant in PASSWORDS_TO_BRUTE_FORCE:
+        return f"Found match: {''.join(variant)}"
+    return None
 
 
 def parallel_brute_force(num_workers: int) -> None:
     """Splits the task of brute-forcing into multiple processes."""
-    variants_amount = 10**8  # 10 digits, 8 positions
-    step = variants_amount // num_workers
-
-    processes = []
-    all_variants = product("0123456789", repeat=8)
-
-    for i in range(num_workers):
-        start = i * step
-        end = (i + 1) * step
-        process = multiprocessing.Process(target=brute_force_password, args=(start, end, all_variants))
-        processes.append(process)
-        process.start()
-
-    # Join all processes to ensure they finish
-    for process in processes:
-        process.join()
+    answers_count = 0
+    with multiprocessing.Pool(processes=num_workers) as pool:
+        for result in pool.imap_unordered(brute_force_password, generate_variants(), chunksize=1000):
+            if result:
+                answers_count += 1
+                print(result)
+            if answers_count == 10:
+                break
 
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
-    parallel_brute_force(multiprocessing.cpu_count() - 1)
+    cpu_workers = multiprocessing.cpu_count() - 1
+    parallel_brute_force(num_workers=cpu_workers)
     end_time = time.perf_counter()
 
     print("Elapsed:", end_time - start_time)
