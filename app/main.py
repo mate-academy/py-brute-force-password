@@ -1,5 +1,8 @@
 import time
 from hashlib import sha256
+from itertools import product
+
+import multiprocessing
 
 
 PASSWORDS_TO_BRUTE_FORCE = [
@@ -20,13 +23,38 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
-    pass
+def brute_force_password(start: int, end: int, all_variants) -> None:
+
+    for i, variant in enumerate(all_variants):
+        if start <= i < end:
+            hashed_variant = sha256_hash_str("".join(variant))
+            if hashed_variant in PASSWORDS_TO_BRUTE_FORCE:
+                print(f"Found match: {''.join(variant)}")
+
+
+def parallel_brute_force(num_workers: int) -> None:
+    """Splits the task of brute-forcing into multiple processes."""
+    variants_amount = 10**8  # 10 digits, 8 positions
+    step = variants_amount // num_workers
+
+    processes = []
+    all_variants = product("0123456789", repeat=8)
+
+    for i in range(num_workers):
+        start = i * step
+        end = (i + 1) * step
+        process = multiprocessing.Process(target=brute_force_password, args=(start, end, all_variants))
+        processes.append(process)
+        process.start()
+
+    # Join all processes to ensure they finish
+    for process in processes:
+        process.join()
 
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
-    brute_force_password()
+    parallel_brute_force(multiprocessing.cpu_count() - 1)
     end_time = time.perf_counter()
 
     print("Elapsed:", end_time - start_time)
