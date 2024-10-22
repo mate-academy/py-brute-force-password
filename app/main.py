@@ -48,10 +48,6 @@ def brute_force_password(step_size: int) -> None:
             )
         )
 
-    # found_passwords = [password for sublist in results for password in sublist]
-    # for password in found_passwords:
-    #     print(f"Found password: {password}")
-
 
 if __name__ == "__main__":
     step_size = 100000
