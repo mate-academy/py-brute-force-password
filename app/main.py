@@ -21,7 +21,14 @@ def sha256_hash_str(to_hash: str) -> str:
 
 
 def brute_force_password() -> None:
-    pass
+    counter = 0
+    for num in range(99_999_999 + 1):
+        formatted_num = f"{num:08}"  # noqa: E231
+        result = sha256_hash_str(formatted_num)
+        if result in PASSWORDS_TO_BRUTE_FORCE:
+            counter += 1
+            print(f"{counter} Password for {result} is {formatted_num}")
+            print("-" * 20)
 
 
 if __name__ == "__main__":
