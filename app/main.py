@@ -41,7 +41,7 @@ def brute_force_password(step_size: int) -> None:
     ]
 
     with multiprocessing.Pool(processes=cpu_count) as pool:
-        results = list(
+        _ = list(
             tqdm(
                 pool.imap_unordered(check_password_range, ranges),
                 total=len(ranges)
