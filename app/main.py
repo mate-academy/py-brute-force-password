@@ -28,6 +28,7 @@ def check_password_range(password_range: range) -> list:
         password_str = str(password).zfill(8)
         hashed_password = sha256_hash_str(password_str)
         if hashed_password in PASSWORDS_TO_BRUTE_FORCE:
+            print(f"Found password: {password_str}")
             local_results.append(password_str)
     return local_results
 
@@ -47,9 +48,9 @@ def brute_force_password(step_size: int) -> None:
             )
         )
 
-    found_passwords = [password for sublist in results for password in sublist]
-    for password in found_passwords:
-        print(f"Found password: {password}")
+    # found_passwords = [password for sublist in results for password in sublist]
+    # for password in found_passwords:
+    #     print(f"Found password: {password}")
 
 
 if __name__ == "__main__":
