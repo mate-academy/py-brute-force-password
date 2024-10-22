@@ -1,5 +1,7 @@
+import multiprocessing
 import time
 from hashlib import sha256
+from tqdm import tqdm
 
 
 PASSWORDS_TO_BRUTE_FORCE = [
@@ -20,13 +22,40 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
-    pass
+def check_password_range(password_range: range) -> list:
+    local_results = []
+    for password in password_range:
+        password_str = str(password).zfill(8)
+        hashed_password = sha256_hash_str(password_str)
+        if hashed_password in PASSWORDS_TO_BRUTE_FORCE:
+            local_results.append(password_str)
+    return local_results
+
+
+def brute_force_password(step_size: int) -> None:
+    cpu_count = multiprocessing.cpu_count()
+    ranges = [
+        range(start, min(start + step_size, 100000000))
+        for start in range(0, 100000000, step_size)
+    ]
+
+    with multiprocessing.Pool(processes=cpu_count) as pool:
+        results = list(
+            tqdm(
+                pool.imap_unordered(check_password_range, ranges),
+                total=len(ranges)
+            )
+        )
+
+    found_passwords = [password for sublist in results for password in sublist]
+    for password in found_passwords:
+        print(f"Found password: {password}")
 
 
 if __name__ == "__main__":
+    step_size = 100000
     start_time = time.perf_counter()
-    brute_force_password()
+    brute_force_password(step_size)
     end_time = time.perf_counter()
 
     print("Elapsed:", end_time - start_time)
