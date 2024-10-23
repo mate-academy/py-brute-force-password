@@ -2,7 +2,6 @@ import time
 from hashlib import sha256
 import multiprocessing
 
-
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
     "cf0b0cfc90d8b4be14e00114827494ed5522e9aa1c7e6960515b58626cad0b44",
@@ -17,28 +16,36 @@ PASSWORDS_TO_BRUTE_FORCE = [
 ]
 
 
+hashed_passwords_set = set(PASSWORDS_TO_BRUTE_FORCE)
+
+
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_single_password(hashed_password: str) -> str:
-    cur_num = 0
-    while True:
+def brute_force_single_password(start_num: int, step: int) -> None:
+    cur_num = start_num
+    count_pass = 0
+    while cur_num < 100000000:
         generated_password = f"{cur_num:08d}"
-        if hashed_password == sha256_hash_str(generated_password):
-            return generated_password
-        cur_num += 1
+        generated_hash = sha256_hash_str(generated_password)
+
+        if generated_hash in hashed_passwords_set:
+            print(generated_password)
+            count_pass += 1
+            if count_pass == 10:
+                return
+
+        cur_num += step
 
 
 def brute_force_password() -> None:
-
-    with multiprocessing.Pool(processes=multiprocessing.cpu_count()) as pool:
-        decrypted_passwords = pool.map(
+    processes = multiprocessing.cpu_count()
+    with multiprocessing.Pool(processes=processes) as pool:
+        pool.starmap(
             brute_force_single_password,
-            PASSWORDS_TO_BRUTE_FORCE
+            [(i, processes) for i in range(processes)]
         )
-
-    print(decrypted_passwords)
 
 
 if __name__ == "__main__":
