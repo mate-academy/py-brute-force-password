@@ -25,33 +25,50 @@ def brute_force_password(
         end: int,
         passwords_to_brute_force: list
 ) -> None:
+    found_passwords = []
     for i in range(start, end):
         password = "0" * (8 - len(str(i))) + str(i)
         sha256_password = sha256_hash_str(password)
         if sha256_password in passwords_to_brute_force:
             passwords_to_brute_force.remove(sha256_password)
             print(password)
+            found_passwords.append(password)
+    return found_passwords
 
 
 def multiprocessing_brute_force(num_processes: int) -> None:
     chunk_size = int(9999_9999 / num_processes)
 
-    processes = []
+    with mp.Pool(num_processes) as pool:
+        results = []
 
-    for i in range(num_processes):
-        start = i * chunk_size
-        end = (i + 1) * chunk_size if i != num_processes - 1 else 9999_9999
-        process = mp.Process(
-            target=brute_force_password,
-            args=(start, end, PASSWORDS_TO_BRUTE_FORCE)
-        )
-        processes.append(process)
+        for i in range(num_processes):
+            start = i * chunk_size
+            end = (i + 1) * chunk_size if i != num_processes - 1 else 9999_9999
+            result = pool.apply_async(brute_force_password, (start, end, PASSWORDS_TO_BRUTE_FORCE))
+            results.append(result)
 
-    for process in processes:
-        process.start()
+        found_passwords = []
+        for result in results:
+            found_passwords.extend(result.get())
 
-    for process in processes:
-        process.join()
+        print(found_passwords)
+    # processes = []
+    #
+    # for i in range(num_processes):
+    #     start = i * chunk_size
+    #     end = (i + 1) * chunk_size if i != num_processes - 1 else 9999_9999
+    #     process = mp.Process(
+    #         target=brute_force_password,
+    #         args=(start, end, PASSWORDS_TO_BRUTE_FORCE)
+    #     )
+    #     processes.append(process)
+    #
+    # for process in processes:
+    #     process.start()
+    #
+    # for process in processes:
+    #     process.join()
 
 
 if __name__ == "__main__":
