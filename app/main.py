@@ -25,7 +25,7 @@ def brute_force_password_worker(start: int, end: int) -> None:
     for candidate in itertools.product("0123456789", repeat=8):
         password = ''.join(candidate)
 
-        if start <= int(password) <= end:
+        if start <= password <= end:
             hashed_password = sha256_hash_str(password)
 
             if hashed_password in PASSWORDS_TO_BRUTE_FORCE:
@@ -33,12 +33,14 @@ def brute_force_password_worker(start: int, end: int) -> None:
 
 
 def brute_force_password_multiprocessing(num_processes: int) -> None:
-    step = 10**8 // num_processes
+    total_range = 10**8
+    step = total_range // num_processes
+
     processes = []
 
     for i in range(num_processes):
-        start = i * step
-        end = (i + 1) * step - 1
+        start = str(i * step).zfill(8)
+        end = str((i + 1) * step - 1).zfill(8) if i != num_processes - 1 else "99999999"
 
         process = multiprocessing.Process(target=brute_force_password_worker, args=(start, end))
         processes.append(process)
