@@ -31,14 +31,17 @@ def single_password_check(num: int) -> str | None:
 
 def brute_force_password() -> None:
     with multiprocessing.Pool() as pool:
-        results = pool.map(single_password_check, range(99_999_999 + 1))
-
-        counter = 0
+        results = pool.imap_unordered(
+            single_password_check, range(99_999_999 + 1), chunksize=10000
+        )
+        passwords = []
         for result in results:
             if result:
-                counter += 1
-                print(f"{counter} {result}")
-                print("-" * 20)
+                passwords.append(result)
+
+    for i, password in enumerate(passwords):
+            print(f"{i + 1} {password}")
+            print("-" * 20)
 
 
 if __name__ == "__main__":
