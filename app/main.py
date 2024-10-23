@@ -1,6 +1,7 @@
 import time
 from hashlib import sha256
-
+import itertools
+import multiprocessing
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -20,13 +21,39 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
-    pass
+def brute_force_password_worker(start: int, end: int) -> None:
+    for candidate in itertools.product("0123456789", repeat=8):
+        password = ''.join(candidate)
 
+        if start <= password <= end:
+            hashed_password = sha256_hash_str(password)
+
+            if hashed_password in PASSWORDS_TO_BRUTE_FORCE:
+                print(f"Password found: {password} -> {hashed_password}")
+
+
+def brute_force_password_multiprocessing(num_processes: int) -> None:
+    total_range = 10**8
+    step = total_range // num_processes
+
+    processes = []
+
+    for i in range(num_processes):
+        start = str(i * step).zfill(8)
+        end = str((i + 1) * step - 1).zfill(8) if i != num_processes - 1 else "99999999"
+
+        process = multiprocessing.Process(target=brute_force_password_worker, args=(start, end))
+        processes.append(process)
+        process.start()
+
+    for process in processes:
+        process.join()
 
 if __name__ == "__main__":
+    num_cores = multiprocessing.cpu_count()
+
     start_time = time.perf_counter()
-    brute_force_password()
+    brute_force_password_multiprocessing(num_cores)
     end_time = time.perf_counter()
 
     print("Elapsed:", end_time - start_time)
