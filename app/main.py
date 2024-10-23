@@ -30,11 +30,15 @@ def brute_force_range(start: int, end: int) -> None:
 
 
 def brute_force_password() -> None:
-    num_cores = cpu_count() - 1
+    num_cores = cpu_count()
     total_range = 100_000_000
     segment = total_range // num_cores
 
-    ranges = [(i * segment, (i + 1) * segment) for i in range(num_cores)]
+    ranges = []
+    for i in range(num_cores):
+        start = i * segment
+        end = total_range if i == num_cores - 1 else (i + 1) * segment
+        ranges.append((start, end))
 
     with Pool(processes=num_cores) as pool:
         pool.starmap(brute_force_range, ranges)
