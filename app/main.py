@@ -1,5 +1,10 @@
-import time
+from multiprocessing import Process, Queue
+from string import digits
+from itertools import product, cycle
 from hashlib import sha256
+from queue import Empty
+import time
+import psutil
 
 
 PASSWORDS_TO_BRUTE_FORCE = [
@@ -15,18 +20,69 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
 
+PROCS = psutil.cpu_count() - 1 # one less that CPU count
+ONE_PWD_LEN = 8 # len of password
+BATCH = 10_000  # empirically determined to be a fairly good batch size
+PWD_COUNT = len(PASSWORDS_TO_BRUTE_FORCE) # passwords to find
 
-def sha256_hash_str(to_hash: str) -> str:
-    return sha256(to_hash.encode("utf-8")).hexdigest()
+
+# check a batch of passwords
+def process(queue, queue_response) -> None:
+    while batch := queue.get():
+        for v in map(str.encode, batch):
+            hashed_pwd = sha256(v).hexdigest()
+            if hashed_pwd in PASSWORDS_TO_BRUTE_FORCE:
+                queue_response.put(v)
+                print(f"Hash '{hashed_pwd}' encoded to password {v}")
+                PASSWORDS_TO_BRUTE_FORCE.remove(hashed_pwd)
+                if len(PASSWORDS_TO_BRUTE_FORCE) == 0:
+                    break
 
 
-def brute_force_password() -> None:
-    pass
+# generate passwords
+def genpwd() -> str:
+    for pwd in product(digits, repeat=ONE_PWD_LEN):
+        yield "".join(pwd)
+
+
+def main_multiprocess() -> None:
+    queue_response = Queue()
+    # start PROCS processes each with a discrete input queue
+    # each process uses the same response queue
+    procs = []
+    for queue in (queues := [Queue() for _ in range(PROCS)]):
+        (proc := Process(target=process, args=(queue, queue_response))).start()
+        procs.append(proc)
+
+    batch = []
+    qc = cycle(queues)
+    results = []
+
+    for pwd in genpwd():
+        batch.append(pwd)
+        if len(batch) == BATCH:
+            # send batch to the next queue in the cycle
+            next(qc).put(batch)
+            batch = []
+            # occasional check for a response
+            try:
+                results.append(queue_response.get(block=False))
+                if len(results) == PWD_COUNT:
+                    break
+            except Empty:
+                pass
+
+    # tells each process to stop
+    for queue in queues:
+        queue.put(None)
+
+    # wait for all subprocesses to end
+    for p in procs:
+        p.join()
 
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
-    brute_force_password()
-    end_time = time.perf_counter()
-
-    print("Elapsed:", end_time - start_time)
+    main_multiprocess()
+    multiprocessing_duration = time.perf_counter() - start_time
+    print(f"All hashes encoded. Time taken: {multiprocessing_duration}")
