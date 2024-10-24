@@ -22,18 +22,26 @@ def sha256_hash_str(to_hash: str) -> str:
 
 
 # Функція для брутфорсингу в потоці
-def brute_force_password(start: int, end: int, found_passwords: list) -> None:
+def brute_force_password(
+        start: int,
+        end: int,
+        found_passwords: list,
+        lock: multiprocessing.Lock
+) -> None:
     for number in range(start, end):
         password = f"{number:08d}"
         hashed_password = sha256_hash_str(password)
         if hashed_password in PASSWORDS_TO_BRUTE_FORCE:
             print(f"Password found: {password}, Hash: {hashed_password}")
-            found_passwords.append(password)
+            with lock:  # Use the lock to safely append to the shared list
+                found_passwords.append(password)
+
 
 def multiprocessing_brute_force():
     processes = []
     manager = multiprocessing.Manager()
     found_passwords = manager.list()
+    lock = multiprocessing.Lock()  # Create a lock
     num_processes = multiprocessing.cpu_count()
     range_size = 10**8 // num_processes
 
@@ -42,7 +50,7 @@ def multiprocessing_brute_force():
         end = (i + 1) * range_size
         process = multiprocessing.Process(
             target=brute_force_password,
-            args=(start, end, found_passwords)
+            args=(start, end, found_passwords, lock)
         )
         processes.append(process)
         process.start()
