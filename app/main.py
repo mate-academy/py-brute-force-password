@@ -21,22 +21,24 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def find_password(password_hash: str, index: int) -> None:
-    print(f"Start #{index + 1}")
-    for num in range(100000000):
+def find_password(start: int, end: int) -> None:
+    print(f"Search from {start} to {end}")
+    for num in range(start, end):
         num = str(num).zfill(8)
         num_hash = sha256_hash_str(str(num))
-        if num_hash == password_hash:
-            print(f"Password #{index + 1}: {num}")
-            break
+        if num_hash in PASSWORDS_TO_BRUTE_FORCE:
+            password_num = PASSWORDS_TO_BRUTE_FORCE.index(num_hash)
+            print(f"Password #{password_num}: {num}")
 
 
 def brute_force_password() -> None:
     futures = []
+    num_processes = multiprocessing.cpu_count() - 1
+    interval = 100000000 // len(PASSWORDS_TO_BRUTE_FORCE)
 
-    with ProcessPoolExecutor(multiprocessing.cpu_count() - 1) as executor:
+    with ProcessPoolExecutor(num_processes) as executor:
         for i, hash_ps in enumerate(PASSWORDS_TO_BRUTE_FORCE):
-            futures.append(executor.submit(find_password, hash_ps, i))
+            futures.append(executor.submit(find_password, interval * i, interval * (i + 1)))
 
     wait(futures)
 
