@@ -33,7 +33,7 @@ def brute_force_single_password(start_num: int, step: int) -> None:
         if generated_hash in hashed_passwords_set:
             print(generated_password)
             count_pass += 1
-            if count_pass == 10:
+            if count_pass == len(PASSWORDS_TO_BRUTE_FORCE):
                 return
 
         cur_num += step
