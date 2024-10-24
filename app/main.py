@@ -18,7 +18,7 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
 
-POWER_OF_CPU = 10**8 // multiprocessing.cpu_count()
+POWER_OF_CPU = 10**8 / multiprocessing.cpu_count()
 
 
 def sha256_hash_str(to_hash: str) -> str:
