@@ -28,15 +28,19 @@ PWD_COUNT = len(PASSWORDS_TO_BRUTE_FORCE) # passwords to find
 
 # check a batch of passwords
 def process(queue, queue_response) -> None:
-    while batch := queue.get():
+
+    while len(PASSWORDS_TO_BRUTE_FORCE) != 0:
+        batch = queue.get()
+
+        if batch is None:
+            break
+
         for v in map(str.encode, batch):
             hashed_pwd = sha256(v).hexdigest()
             if hashed_pwd in PASSWORDS_TO_BRUTE_FORCE:
                 queue_response.put(v)
                 print(f"Hash '{hashed_pwd}' encoded to password {v}")
                 PASSWORDS_TO_BRUTE_FORCE.remove(hashed_pwd)
-                if len(PASSWORDS_TO_BRUTE_FORCE) == 0:
-                    break
 
 
 # generate passwords
