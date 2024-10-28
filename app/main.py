@@ -1,6 +1,5 @@
 from multiprocessing import Process, Queue
-from string import digits
-from itertools import product, cycle
+from itertools import cycle
 from hashlib import sha256
 from queue import Empty
 import time
@@ -22,59 +21,55 @@ PASSWORDS_TO_BRUTE_FORCE = [
 
 PROCS = psutil.cpu_count() - 1 # one less that CPU count
 ONE_PWD_LEN = 8 # len of password
-BATCH = 10_000  # empirically determined to be a fairly good batch size
-PWD_COUNT = len(PASSWORDS_TO_BRUTE_FORCE) # passwords to find
+BATCH_SIZE = 10_000  # empirically determined to be a fairly good batch size
+
+PWD_COUNT = len(PASSWORDS_TO_BRUTE_FORCE) # number of passwords to find
+results = [] # for count results
+MAX_PASSWORD_PLUS_1 = int("1" + "0" * ONE_PWD_LEN) # for generate passwords ranges
 
 
-# check a batch of passwords
+# check a passwords
 def process(queue, queue_response) -> None:
-
-    while len(PASSWORDS_TO_BRUTE_FORCE) != 0:
-        batch = queue.get()
+    while len(results) != PWD_COUNT:
+        batch = queue.get(timeout=0.1) # change to higher value (0.2 - 0.5) if timeout errors appear
 
         if batch is None:
             break
 
-        for v in map(str.encode, batch):
-            hashed_pwd = sha256(v).hexdigest()
+        for p in map(str.encode, batch):
+            hashed_pwd = sha256(p).hexdigest()
             if hashed_pwd in PASSWORDS_TO_BRUTE_FORCE:
-                queue_response.put(v)
-                print(f"Hash '{hashed_pwd}' encoded to password {v}")
-                PASSWORDS_TO_BRUTE_FORCE.remove(hashed_pwd)
-
-
-# generate passwords
-def genpwd() -> str:
-    for pwd in product(digits, repeat=ONE_PWD_LEN):
-        yield "".join(pwd)
+                queue_response.put(p)
+                print(f"Hash '{hashed_pwd}' encoded to password {p}")
 
 
 def main_multiprocess() -> None:
     queue_response = Queue()
-    # start PROCS processes each with a discrete input queue
-    # each process uses the same response queue
+
+    # generate passwords ranges
+    pwd_ranges = [
+        range(start, min(start + BATCH_SIZE, MAX_PASSWORD_PLUS_1))
+        for start in range(0, MAX_PASSWORD_PLUS_1, BATCH_SIZE)
+    ]
+
     procs = []
     for queue in (queues := [Queue() for _ in range(PROCS)]):
         (proc := Process(target=process, args=(queue, queue_response))).start()
         procs.append(proc)
 
-    batch = []
     qc = cycle(queues)
-    results = []
 
-    for pwd in genpwd():
-        batch.append(pwd)
-        if len(batch) == BATCH:
-            # send batch to the next queue in the cycle
-            next(qc).put(batch)
-            batch = []
-            # occasional check for a response
-            try:
-                results.append(queue_response.get(block=False))
-                if len(results) == PWD_COUNT:
-                    break
-            except Empty:
-                pass
+    for pwd_range in pwd_ranges:
+        # send batch to the next queue in the cycle with generated password
+        next(qc).put([str(pwd).zfill(8) for pwd in pwd_range])
+
+        # occasional check for a response
+        try:
+            results.append(queue_response.get(block=False))
+            if len(results) == PWD_COUNT:
+                break
+        except Empty:
+            pass
 
     # tells each process to stop
     for queue in queues:
