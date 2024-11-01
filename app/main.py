@@ -17,40 +17,26 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
 
+combinations = itertools.product('0123456789', repeat=8)
+
 
 def search_passwords():
-    # dict = {}
-    passwords = []
-    combinations = itertools.product('0123456789', repeat=8)
     combinations_list = [''.join(combination) for combination in combinations]
     for combo in combinations_list:
         dict = {combo: sha256(combo.encode("utf-8")).hexdigest()}
         for key, value in dict.items():
             if value in PASSWORDS_TO_BRUTE_FORCE:
-                passwords.append(key)
-                print(passwords)
+                print(key)
 
 
-def sha256_hash_str(to_hash: str) -> str:
-    return sha256(to_hash.encode("utf-8")).hexdigest()
-
-
-def print_passwords(passwords):
-    print(passwords)
-
-
-def brute_force_password(passwords) -> None:
-    future = []
+def brute_force_password() -> None:
     with ProcessPoolExecutor(multiprocessing.cpu_count() - 1) as executor:
-        for password in passwords:
-            future.append(executor.submit(print_passwords, password))
-    wait(future)
+        executor.submit(search_passwords)
 
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
     brute_force_password()
-    search_passwords()
     end_time = time.perf_counter()
 
     print("Elapsed:", end_time - start_time)
