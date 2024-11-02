@@ -36,7 +36,7 @@ def brute_force_password() -> None:
         futures = []
         for worker in range(num_workers):
             start = worker * batch_size
-            end = start + batch_size if worker < num_workers else batch_size
+            end = start + batch_size if worker < num_workers - 1 else batch_size
             futures.append(executor.submit(brute_force, start, end))
 
         for future in futures:
