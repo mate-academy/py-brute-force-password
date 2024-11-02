@@ -32,7 +32,7 @@ def brute_force_password() -> None:
     num_workers = multiprocessing.cpu_count()
     batch_size = 100_000_000 // num_workers
 
-    with ProcessPoolExecutor(num_workers) as executor:
+    with ProcessPoolExecutor(max_workers=num_workers) as executor:
         futures = []
         for worker in range(num_workers):
             start = worker * batch_size
