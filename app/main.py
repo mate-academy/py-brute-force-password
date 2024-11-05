@@ -37,7 +37,7 @@ def brute_force_password(start: int, end: int) -> list:
 
 
 def multiprocess_brute_force_password() -> None:
-    password_range = 100_000_000
+    password_range = 100_000_00
     free_cpu_count = cpu_count() - 1
 
     optimal_range = math.ceil(password_range / free_cpu_count)
@@ -47,12 +47,15 @@ def multiprocess_brute_force_password() -> None:
 
         for value in range(free_cpu_count):
             start = value * optimal_range
-            end = value * optimal_range + optimal_range
+            end = min(value * optimal_range + optimal_range, password_range)
             range_sections.append((start, end))
 
-        p.starmap(brute_force_password, range_sections)
+        results = p.starmap(brute_force_password, range_sections)
         p.close()
         p.join()
+
+    data = [item for result in results for item in result]
+    print(data)
 
 
 if __name__ == "__main__":
