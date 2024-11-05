@@ -37,7 +37,7 @@ def brute_force_password(start: int, end: int) -> list:
 
 
 def multiprocess_brute_force_password() -> None:
-    password_range = 100_000_00
+    password_range = 100_000_000
     free_cpu_count = cpu_count() - 1
 
     optimal_range = math.ceil(password_range / free_cpu_count)
