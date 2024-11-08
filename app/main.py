@@ -31,7 +31,12 @@ def hash_password(start: int) -> None:
 
 
 def brute_force_password() -> None:
-    pass
+    futures = []
+    with (ProcessPoolExecutor(max_workers=multiprocessing.cpu_count())
+          as executor):
+        for i in range(0, 100000000, 100000):
+            futures.append(executor.submit(hash_password, i))
+    wait(futures)
 
 
 if __name__ == "__main__":
