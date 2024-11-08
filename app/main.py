@@ -22,6 +22,14 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
+def hash_password(start: int) -> None:
+    for i in range(start, start + 100000):
+        password = str(i).zfill(8)
+        res_hash = sha256_hash_str(password)
+        if res_hash in PASSWORDS_TO_BRUTE_FORCE:
+            print(f"The password: {password}")
+
+
 def brute_force_password() -> None:
     pass
 
