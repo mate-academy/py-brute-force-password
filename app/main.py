@@ -1,5 +1,4 @@
 import time
-import multiprocessing
 from multiprocessing import Pool
 
 from hashlib import sha256
@@ -23,7 +22,9 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_worker(start, end, passwords_to_brute_force):
+def brute_force_worker(
+        start: int, end: int, passwords_to_brute_force: list
+) -> list:
     result = []
 
     for number in range(start, end):
@@ -36,7 +37,7 @@ def brute_force_worker(start, end, passwords_to_brute_force):
     return result
 
 
-def brute_force_password():
+def brute_force_password() -> None:
     num_chunks = 4
     range_size = 99999999 // num_chunks
 
@@ -53,7 +54,7 @@ def brute_force_password():
     for found_password in all_results:
         print(found_password)
 
-    print(f"Number of all founded passwords: {len(all_results)}")
+    print(f"Number of all found passwords: {len(all_results)}")
 
 
 if __name__ == "__main__":
