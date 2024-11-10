@@ -1,7 +1,6 @@
 import time
 from hashlib import sha256
 import multiprocessing
-from concurrent.futures import ProcessPoolExecutor, wait
 
 
 PASSWORDS_TO_BRUTE_FORCE = [
@@ -23,39 +22,33 @@ def sha256_hash_str(to_hash: str) -> str:
 
 
 def generate_password(number: int) -> None:
-        """
+    """
         Creates 8-digit string, hash it with sha256
         and check if hashed string exist in data-set
         print if
 
         param number - int
         return: None
-        """
-        # make 8-digit password like '00000000'
-        string = '0' * (8 - len(str(number))) + str(number)
-        # make hash string
-        hash_password = sha256_hash_str(string)
-        # check if hashed password is in library and print it if yes
-        if hash_password in PASSWORDS_TO_BRUTE_FORCE:
-            print(string)
+    """
+    # make 8-digit password like '00000000'
+    string = "0" * (8 - len(str(number))) + str(number)
+    # make hash string
+    hash_password = sha256_hash_str(string)
+    # check if hashed password is in library and print it if yes
+    if hash_password in PASSWORDS_TO_BRUTE_FORCE:
+        print(string)
+
+
+# def brute_force_password() -> None:
+#     print("Executing task without any speeding-up:")
+#     for number in range(10**8):
+#         generate_password(number)
 
 
 def brute_force_password() -> None:
-    print("Executing task without any speeding-up:")
-    for number in range(10**8):
-        generate_password(number)
-
-
-def brute_force_password_multiprocessing() -> None:
-    print("Executing task with multiprocessing ProcessPoolExecutor:")
-    tasks = []
-    with ProcessPoolExecutor(max_workers=multiprocessing.cpu_count() - 1) as executor:
-        # Submit each task individually
-        for number in range(10 ** 8):
-            tasks.append(executor.submit(generate_password, number))
-
-        # Wait for all tasks to complete
-        wait(tasks)
+    print("Executing task with simple multiprocessing:")
+    with multiprocessing.Pool() as pool:
+        pool.map(generate_password, [number for number in range(10**8)])
 
 
 if __name__ == "__main__":
@@ -64,9 +57,3 @@ if __name__ == "__main__":
     end_time = time.perf_counter()
 
     print("Elapsed:", end_time - start_time)
-    #
-    # start_time = time.perf_counter()
-    # brute_force_password_multiprocessing()
-    # end_time = time.perf_counter()
-    #
-    # print("Elapsed:", end_time - start_time)
