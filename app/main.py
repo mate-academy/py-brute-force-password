@@ -43,6 +43,6 @@ def main(hashed_password: list[str]) -> None:
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
-    main(PASSWORDS_TO_BRUTE_FORCE)
+    brute_force_password()
     end_time = time.perf_counter()
     print(f"Finished in {end_time - start_time:.2f} seconds")
