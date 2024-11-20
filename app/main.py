@@ -36,13 +36,13 @@ def brute_force_password(args: Tuple[str, str]) -> Tuple[str, str]:
 def main(hashed_password: list[str]) -> None:
     with multiprocessing.Pool(processes=multiprocessing.cpu_count()) as pool:
         results = pool.map(brute_force_password, enumerate(hashed_password))
-        for result in results:
-            if result[1] is not None:
-                print(f"Password {result[0] + 1} found: {result[1]}")
+        found_passwords = [result for result in results if result[1] is not None]
+        for result in found_passwords:
+            print(f"Password {result[0] + 1} found: {result[1]}")
 
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
-    brute_force_password()
+    main(PASSWORDS_TO_BRUTE_FORCE)
     end_time = time.perf_counter()
     print(f"Finished in {end_time - start_time:.2f} seconds")
