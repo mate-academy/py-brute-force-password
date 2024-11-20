@@ -30,7 +30,7 @@ def brute_force_password(args: Tuple[str, str]) -> Tuple[str, str]:
         hashed_test_password = sha256_hash_str(password)
         if hashed_test_password == hashed_password:
             print(f"Password {index + 1} found: {password}")
-            return (index, None)
+            return (index, password)
 
 
 def main(hashed_password: list[str]) -> None:
