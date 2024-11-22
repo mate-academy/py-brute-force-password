@@ -1,9 +1,7 @@
-import time
-import hashlib
-from multiprocessing import Pool, cpu_count, Manager
+from hashlib import sha256
+import multiprocessing
 
-
-PASSWORDS_TO_BRUTE_FORCE = [
+PASSWORDS_TO_BRUTE_FORCE = {
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
     "cf0b0cfc90d8b4be14e00114827494ed5522e9aa1c7e6960515b58626cad0b44",
     "e34efeb4b9538a949655b788dcb517f4a82e997e9e95271ecd392ac073fe216d",
@@ -14,69 +12,56 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "1273682fa19625ccedbe2de2817ba54dbb7894b7cefb08578826efad492f51c9",
     "7e8f0ada0a03cbee48a0883d549967647b3fca6efeb0a149242f19e4b68d53d6",
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
-]
+}
 
 
 def sha256_hash_str(to_hash: str) -> str:
-    return hashlib.sha256(to_hash.encode("utf-8")).hexdigest()
+    return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def check_password_range(start: int, end: int, found_passwords, lock):
-    local_found = {}
-
-    for num in range(start, end):
-        password = f"{num:08d}"
-        hashed = sha256_hash_str(password)
-
-        if hashed in PASSWORDS_TO_BRUTE_FORCE:
-            with lock:
-                if hashed not in found_passwords:
-                    found_passwords[hashed] = password
-                    print(f"Знайдено пароль: {password} для хешу {hashed}")
-
-            if len(found_passwords) == len(PASSWORDS_TO_BRUTE_FORCE):
-                break
-
-    return local_found
-
-def brute_force_password():
-    manager = Manager()
-    found_passwords = manager.dict()
-    lock = manager.Lock()
-
-    pool = Pool(cpu_count())
-    total_numbers = 100000000
-    chunk_size = total_numbers // cpu_count()
-
-    tasks = [(i * chunk_size, (i + 1) * chunk_size, found_passwords, lock) for i in range(cpu_count())]
-
-    pool.starmap(check_password_range, tasks)
-
-    pool.close()
-    pool.join()
-
-    return dict(found_passwords)
+def check_password(start, end, given_hashes):
+    for i in range(start, end):
+        if sha256_hash_str(str(i).zfill(8)) in given_hashes:
+            print(f"Password: {str(i).zfill(8)}")
 
 
-def brute_force_passwords():
-    pool = Pool(cpu_count())
-    total_numbers = 100000000
-    chunk_size = total_numbers // cpu_count()
+def check_password_out_hash(start, end, given_list_hashes):
+    for i in range(start, end):
+        if sha256_hash_str(str(i)) in given_list_hashes:
+            print(f"Password: {str(i)}")
 
-    tasks = [(i * chunk_size, (i + 1) * chunk_size) for i in range(cpu_count())]
 
-    results = pool.starmap(check_password_range, tasks)
+def main_threads(given_list_hashes):
+    tasks = []
 
-    found_passwords = {}
-    for result in results:
-        found_passwords.update(result)
+    num_threads = 2
+    range_per_thread = 10000000 // num_threads
 
-    return found_passwords
+    for i in range(num_threads):
+        start = i * range_per_thread
+        end = (i + 1) * range_per_thread if i != num_threads - 1 else 10000000
+        tasks.append(multiprocessing.Process(target=check_password, args=(start, end, given_list_hashes)))
+        tasks[-1].start()
+
+    for task in tasks:
+        task.join()
+
+    num_threads = 2
+    range_per_thread = (100000000 - 10000000) // num_threads
+
+    for i in range(num_threads):
+        start = 10000000 + i * range_per_thread
+        end = 10000000 + (i + 1) * range_per_thread if i != num_threads - 1 else 100000000
+        tasks.append(multiprocessing.Process(
+            target=check_password,
+            args=(start, end, given_list_hashes))
+        )
+        tasks[-1].start()
+
+    for task in tasks:
+        task.join()
 
 
 if __name__ == "__main__":
-    start_time = time.perf_counter()
-    brute_force_password()
-    end_time = time.perf_counter()
 
-    print("Elapsed:", end_time - start_time)
+    main_threads(PASSWORDS_TO_BRUTE_FORCE)
