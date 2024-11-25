@@ -1,5 +1,6 @@
 import time
 from hashlib import sha256
+import multiprocessing
 
 
 PASSWORDS_TO_BRUTE_FORCE = [
@@ -20,13 +21,57 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
-    pass
+def check_password(start: int, end: int, given_list_hashes: list[str]) -> None:
+    for i in range(start, end):
+        if sha256_hash_str(str(i).zfill(8)) in given_list_hashes:
+            print(f"Password: {str(i).zfill(8)}")
+
+
+def check_password_out_hash(
+        start: int, end: int, given_list_hashes: list[str]
+) -> None:
+    for i in range(start, end):
+        if sha256_hash_str(str(i)) in given_list_hashes:
+            print(f"Password: {str(i)}")
+
+
+def brute_force_password(given_list_hashes: list[str]) -> None:
+    tasks = []
+
+    num_threads = 2
+    range_per_thread = 10000000 // num_threads
+
+    for i in range(num_threads):
+        start = i * range_per_thread
+        end = (i + 1) * range_per_thread if i != num_threads - 1 else 10000000
+        tasks.append(multiprocessing.Process(
+            target=check_password, args=(start, end, given_list_hashes)))
+        tasks[-1].start()
+
+    for task in tasks:
+        task.join()
+
+    num_threads = 2
+    range_per_thread = (100000000 - 10000000) // num_threads
+
+    for i in range(num_threads):
+        start = 10000000 + i * range_per_thread
+        end = 10000000 + (i + 1) * range_per_thread \
+            if i != num_threads - 1 \
+            else 100000000
+        tasks.append(multiprocessing.Process(
+            target=check_password,
+            args=(start, end, given_list_hashes))
+        )
+        tasks[-1].start()
+
+    for task in tasks:
+        task.join()
 
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
-    brute_force_password()
+    brute_force_password(PASSWORDS_TO_BRUTE_FORCE)
     end_time = time.perf_counter()
 
     print("Elapsed:", end_time - start_time)
