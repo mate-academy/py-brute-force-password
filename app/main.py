@@ -1,7 +1,7 @@
 import itertools
 import multiprocessing
 import time
-from concurrent.futures import ProcessPoolExecutor, wait
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from hashlib import sha256
 
 
@@ -23,31 +23,32 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def get_relevant_passwords(chunk: list[str]) -> None:
-    for combo in chunk:
-        if sha256_hash_str(combo) in PASSWORDS_TO_BRUTE_FORCE:
-            print(combo)
+def get_relevant_passwords(start: int, end: int) -> dict:
+    found_passwords = {}
+    for num in range(start, end):
+        password = f"{num:08d}"
+        hashed = sha256_hash_str(password)
+        if hashed in PASSWORDS_TO_BRUTE_FORCE:
+            found_passwords[hashed] = password
+    return found_passwords
 
 
 def brute_force_password() -> None:
-    all_combinations = [
-        "".join(combination)
-        for combination in itertools.product("0123456789", repeat=8)
-    ]
-    chunk_size = 10_000_000
-    combinations_chunks = [
-        all_combinations[i:i + chunk_size]
-        for i in range(0, len(all_combinations), chunk_size)
-    ]
+    num_workers = multiprocessing.cpu_count() - 1
+    total_combinations = 10_000_000  # Всі паролі від 00000000 до 99999999
+    chunk_size = total_combinations // num_workers
 
-    futures = []
-    with ProcessPoolExecutor(
-            max_workers=multiprocessing.cpu_count() - 1
-    ) as executor:
-        for chunk in combinations_chunks:
-            futures.append(executor.submit(get_relevant_passwords, chunk))
+    ranges = [(i * chunk_size, (i + 1) * chunk_size) for i in range(num_workers)]
+    ranges[-1] = (ranges[-1][0], total_combinations)  # Упевнюємося, що охопили всі комбінації
 
-    wait(futures)
+    found_passwords = {}
+    with ProcessPoolExecutor(max_workers=num_workers) as executor:
+        futures = {executor.submit(get_relevant_passwords, r[0], r[1]): r for r in ranges}
+        for future in as_completed(futures):
+            found_passwords.update(future.result())
+
+    for hashed, password in found_passwords.items():
+        print(f"Found password for hash {hashed}: {password}")
 
 
 if __name__ == "__main__":
