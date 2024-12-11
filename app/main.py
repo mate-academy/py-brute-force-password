@@ -1,4 +1,7 @@
+import itertools
+import multiprocessing
 import time
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from hashlib import sha256
 
 
@@ -20,8 +23,32 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
+def get_relevant_passwords(start: int, end: int) -> dict:
+    found_passwords = {}
+    for num in range(start, end):
+        password = f"{num:08d}"
+        hashed = sha256_hash_str(password)
+        if hashed in PASSWORDS_TO_BRUTE_FORCE:
+            found_passwords[hashed] = password
+    return found_passwords
+
+
 def brute_force_password() -> None:
-    pass
+    num_workers = multiprocessing.cpu_count() - 1
+    total_combinations = 10_000_000  # Всі паролі від 00000000 до 99999999
+    chunk_size = total_combinations // num_workers
+
+    ranges = [(i * chunk_size, (i + 1) * chunk_size) for i in range(num_workers)]
+    ranges[-1] = (ranges[-1][0], total_combinations)  # Упевнюємося, що охопили всі комбінації
+
+    found_passwords = {}
+    with ProcessPoolExecutor(max_workers=num_workers) as executor:
+        futures = {executor.submit(get_relevant_passwords, r[0], r[1]): r for r in ranges}
+        for future in as_completed(futures):
+            found_passwords.update(future.result())
+
+    for hashed, password in found_passwords.items():
+        print(f"Found password for hash {hashed}: {password}")
 
 
 if __name__ == "__main__":
