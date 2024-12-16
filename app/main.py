@@ -1,5 +1,7 @@
+import hashlib
+import multiprocessing
+from itertools import product
 import time
-from hashlib import sha256
 
 
 PASSWORDS_TO_BRUTE_FORCE = [
@@ -15,18 +17,52 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
 
+HASH_SET = set(PASSWORDS_TO_BRUTE_FORCE)
+
 
 def sha256_hash_str(to_hash: str) -> str:
-    return sha256(to_hash.encode("utf-8")).hexdigest()
+    return hashlib.sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
-    pass
+def brute_force_passwords(start: int, end: int, result_dict):
+    for num in range(start, end):
+        password = f"{num:08d}"
+        hashed_password = sha256_hash_str(password)
+
+        if hashed_password in HASH_SET:
+            result_dict[hashed_password] = password
+
+
+def main():
+    start_time = time.time()
+
+    total_passwords = 10**8
+    num_processes = multiprocessing.cpu_count()
+    chunk_size = total_passwords // num_processes
+
+    manager = multiprocessing.Manager()
+    result_dict = manager.dict()
+
+    processes = []
+    for i in range(num_processes):
+        start = i * chunk_size
+        end = start + chunk_size
+        if i == num_processes - 1:
+            end = total_passwords
+        process = multiprocessing.Process(target=brute_force_passwords, args=(start, end, result_dict))
+        processes.append(process)
+        process.start()
+
+    for process in processes:
+        process.join()
+
+    print("\nУсі знайдені паролі:")
+    for hash_value, password in result_dict.items():
+        print(f"Хеш: {hash_value}, Пароль: {password}")
+
+    end_time = time.time()
+    print(f"\nЧас виконання: {end_time - start_time:.2f} секунд")
 
 
 if __name__ == "__main__":
-    start_time = time.perf_counter()
-    brute_force_password()
-    end_time = time.perf_counter()
-
-    print("Elapsed:", end_time - start_time)
+    main()
