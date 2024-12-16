@@ -55,8 +55,4 @@ def main_multiprocessing() -> None:
 
 
 
-if __name__ == "__main__":
-    start_time = time.perf_counter()
-    main_multiprocessing()
-    end_time = time.perf_counter()
-    print("Elapsed:", end_time - start_time)
+
