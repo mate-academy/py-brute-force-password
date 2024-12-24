@@ -36,14 +36,19 @@ def find_hash(start: int, stop: int) -> list | None:
 def brute_force_password() -> None:
     futures = []
     cpu_cores = cpu_count() - 1
-    ranges = 10_000_000 // cpu_cores
-    range_step = [(i, min(i + ranges, 10_000_000)) for i in range(0, 10_000_000, ranges)]
+    ranges = 10_000_0000 // cpu_cores
+    range_step = [(i, min(i + ranges, 100_000_000)) for i in range(0, 10_000_0000, ranges)]
     with ProcessPoolExecutor(max_workers=cpu_cores) as executor:
         for step in range_step:
+            print(step)
             futures.append(executor.submit(find_hash, step[0], step[1]))
 
-
     wait(futures)
+
+    result = [future for future in futures for future in (future.result() or [])]
+
+
+    print(result)
 
 
 if __name__ == "__main__":
