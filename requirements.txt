@@ -1,5 +1,16 @@
+attrs==24.3.0
+coloredlogs==15.0.1
+executor==23.2
+fasteners==0.19
 flake8==5.0.4
 flake8-annotations==2.9.1
 flake8-quotes==3.3.1
 flake8-variables-names==0.0.5
+humanfriendly==10.0
+mccabe==0.7.0
 pep8-naming==0.13.2
+property-manager==3.0
+pycodestyle==2.9.1
+pyflakes==2.5.0
+six==1.17.0
+verboselogs==1.7
