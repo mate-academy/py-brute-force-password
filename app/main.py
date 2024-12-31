@@ -1,4 +1,6 @@
+import itertools
 import time
+from concurrent.futures import ProcessPoolExecutor
 from hashlib import sha256
 
 
@@ -14,19 +16,35 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "7e8f0ada0a03cbee48a0883d549967647b3fca6efeb0a149242f19e4b68d53d6",
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
+CHARSET = "0123456789"
+LENGTH = 8
 
 
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
-    pass
+def brute_force_worker(password_hash: str) -> str:
+    for candidate in itertools.product(CHARSET, repeat=LENGTH):
+        candidate_str = "".join(candidate)
+        if sha256_hash_str(candidate_str) == password_hash:
+            return candidate_str
+
+
+def brute_force_password(password_hashes: list[str]) -> None:
+    with ProcessPoolExecutor() as executor:
+        results = list(executor.map(brute_force_worker, password_hashes))
+
+    for i, result in enumerate(results, start=1):
+        if result:
+            print(f"Password {i}: {result}")
+        else:
+            print(f"Password {i}: Not found")
 
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
-    brute_force_password()
+    brute_force_password(PASSWORDS_TO_BRUTE_FORCE)
     end_time = time.perf_counter()
 
     print("Elapsed:", end_time - start_time)
