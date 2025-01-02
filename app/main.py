@@ -25,6 +25,8 @@ def brute_force_password() -> None:
     cpus = multiprocessing.cpu_count()
     variables = 99999999 + 1
     total_range = range(variables)
+    for i in range(1, cpus + 1):
+        print(i, range(int(variables / cpus) * (i - 1), int(variables / cpus) * i))
     passwords = {}
     for i in total_range:
         password = str(i).zfill(8)
@@ -32,7 +34,7 @@ def brute_force_password() -> None:
         if potentials_password in PASSWORDS_TO_BRUTE_FORCE:
             passwords[password] = potentials_password
             print(password)
-        if len(password) == len(PASSWORDS_TO_BRUTE_FORCE):
+        if len(passwords) == len(PASSWORDS_TO_BRUTE_FORCE):
             break
     print("-" * 100)
     print(passwords)
