@@ -2,7 +2,6 @@ import multiprocessing
 import time
 from hashlib import sha256
 
-
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
     "cf0b0cfc90d8b4be14e00114827494ed5522e9aa1c7e6960515b58626cad0b44",
@@ -21,23 +20,38 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
-    cpus = multiprocessing.cpu_count()
-    variables = 99999999 + 1
-    total_range = range(variables)
-    for i in range(1, cpus + 1):
-        print(i, range(int(variables / cpus) * (i - 1), int(variables / cpus) * i))
-    passwords = {}
-    for i in total_range:
+def get_password_in_range(start, finish):
+    for i in range(start, finish):
         password = str(i).zfill(8)
         potentials_password = sha256_hash_str(password)
         if potentials_password in PASSWORDS_TO_BRUTE_FORCE:
-            passwords[password] = potentials_password
-            print(password)
-        if len(passwords) == len(PASSWORDS_TO_BRUTE_FORCE):
-            break
+            print(f"{password}: {potentials_password}")
+
+
+def brute_force_password() -> None:
+    cpus = multiprocessing.cpu_count()
+    variables = 99999999 + 1
+    tasks = []
+
+    for i in range(1, cpus):
+        start = int(variables / cpus) * (i - 1)
+        finish = int(variables / cpus) * i
+
+        tasks.append(
+            multiprocessing.Process(
+                target=get_password_in_range,
+                args=(
+                    start,
+                    finish,
+                ),
+            )
+        )
+        tasks[-1].start()
+
+    for task in tasks:
+        task.join()
+
     print("-" * 100)
-    print(passwords)
 
 
 if __name__ == "__main__":
