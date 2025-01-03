@@ -32,7 +32,7 @@ def brute_force_password(start: int, end: int) -> None:
 def multi_brute_force():
     tasks = []
     count_cpu = multiprocessing.cpu_count() - 1
-    range_size = 100_000_000 // count_cpu
+    range_size = 100_000_000 // count_cpu + 1
 
     with ProcessPoolExecutor(count_cpu) as executor:
         for i in range(count_cpu):
@@ -40,7 +40,13 @@ def multi_brute_force():
             end = start + range_size
             tasks.append(executor.submit(brute_force_password, start, end))
 
-    wait(tasks)
+    done, not_done = wait(tasks)
+
+    for future in done:
+        try:
+            future.result()
+        except Exception as e:
+            print(f"Task generated an exception: {e}")
 
 
 if __name__ == "__main__":
