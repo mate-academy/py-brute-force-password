@@ -21,7 +21,7 @@ PASSWORDS_TO_BRUTE_FORCE = [
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
-def get_password_from_hash(start:int, end:int) -> list:
+def get_password_from_hash(start:int, end:int) -> None:
    for i in range(start, end):
        password = str(i).zfill(8)
        if sha256_hash_str(password) in PASSWORDS_TO_BRUTE_FORCE:
@@ -33,8 +33,9 @@ def get_password_from_hash(start:int, end:int) -> list:
 def brute_force_password() -> None:
     futures = []
     range_size = 100000000
-    with ProcessPoolExecutor(multiprocessing.cpu_count() - 1) as executor:
-        for i in range(range_size):
+    count_of_cpus = multiprocessing.cpu_count() - 1
+    with ProcessPoolExecutor(count_of_cpus) as executor:
+        for i in range(count_of_cpus):
             start = i * range_size
             end = start + range_size
             futures.append(executor.submit(get_password_from_hash, start, end))
