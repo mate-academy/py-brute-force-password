@@ -20,7 +20,9 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def check_password_range(start_range: int, end_range: int, hashes_set: set) -> list:
+def check_password_range(
+        start_range: int, end_range: int, hashes_set: set
+) -> list:
     found = []
     for num in range(start_range, end_range):
         password_str = str(num).zfill(8)
@@ -43,7 +45,8 @@ def brute_force_password() -> None:
 
     with Pool(cpus) as pool:
         results = pool.starmap(check_password_range,
-                               [(chunk[0], chunk[1], chunk[2]) for chunk in chunks])
+                               [(chunk[0], chunk[1], chunk[2])
+                                for chunk in chunks])
 
     found_passwords = []
     for result in results:
