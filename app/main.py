@@ -1,6 +1,9 @@
+import multiprocessing
 import time
+from concurrent.futures import ProcessPoolExecutor
+from itertools import product
 from hashlib import sha256
-
+from typing import Generator
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -20,8 +23,35 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
+def find_password(passwords: list[str]) -> None:
+    for password in passwords:
+        hash_password = sha256_hash_str(password)
+        if hash_password in PASSWORDS_TO_BRUTE_FORCE:
+            print(f"Password - {password}")
+
+
+def division_combinations_on_one_cpu() -> Generator:
+    size = 10000000 // (multiprocessing.cpu_count() - 1)
+
+    combinations = product("0123456789", repeat=8)
+
+    passwords_on_one_cpu = []
+
+    for combination in combinations:
+        str_password = "".join(combination)
+        passwords_on_one_cpu.append(str_password)
+
+        if len(passwords_on_one_cpu) == size:
+            yield passwords_on_one_cpu
+            passwords_on_one_cpu = []
+
+    if passwords_on_one_cpu:
+        yield passwords_on_one_cpu
+
+
 def brute_force_password() -> None:
-    pass
+    with ProcessPoolExecutor(multiprocessing.cpu_count() - 1) as executor:
+        executor.map(find_password, division_combinations_on_one_cpu())
 
 
 if __name__ == "__main__":
