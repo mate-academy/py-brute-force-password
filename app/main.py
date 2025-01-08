@@ -22,7 +22,8 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def check_password(combinations: product, hash_password: str) -> str:
+def check_password(hash_password: str) -> str:
+    combinations = product("0123456789", repeat=8)
     for combination in combinations:
         str_combination = "".join(combination)
         if sha256_hash_str(str_combination) == hash_password:
@@ -31,11 +32,10 @@ def check_password(combinations: product, hash_password: str) -> str:
 
 def brute_force_password() -> None:
     futures = []
-    combinations = product("0123456789", repeat=8)
     with ProcessPoolExecutor(multiprocessing.cpu_count()) as executor:
         for password in PASSWORDS_TO_BRUTE_FORCE:
             futures.append(
-                executor.submit(check_password, combinations, password)
+                executor.submit(check_password,  password)
             )
 
     wait(futures)
