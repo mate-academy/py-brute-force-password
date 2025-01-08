@@ -1,4 +1,4 @@
-import threading
+import multiprocessing
 import time
 from hashlib import sha256
 import random
@@ -41,7 +41,7 @@ def brute_force_password() -> List[str]:
 def main_threads(passwords_list):
     tasks = []
     for password in passwords_list:
-        tasks.append(threading.Thread(target=brute_force_password))
+        tasks.append(multiprocessing.Process(target=brute_force_password))
         tasks[-1].start()
 
     for task in tasks:
