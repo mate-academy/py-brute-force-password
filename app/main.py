@@ -27,7 +27,7 @@ def process_range(start: int, end: int, target_hashes: set) -> dict:
     found = {}
 
     for num in range(start, end):
-        password = f"{num: 08d}"
+        password = f"{num:08d}"  # noqa: E231
         password_hash = sha256_hash_str(password)
 
         if password_hash in target_hashes:
