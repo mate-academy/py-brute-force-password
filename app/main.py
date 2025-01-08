@@ -74,7 +74,8 @@ def brute_force_password() -> None:
 
     for target_hash in PASSWORDS_TO_BRUTE_FORCE:
         print(
-            f"Hash: {target_hash} -> Password: {found_passwords[target_hash]}"
+            f"Hash: {target_hash} -> Password: "
+            f"{found_passwords.get(target_hash, "Password not found.")}"
         )
 
 
