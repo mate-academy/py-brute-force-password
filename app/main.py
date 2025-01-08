@@ -3,6 +3,8 @@ import time
 from hashlib import sha256
 
 
+NUMS = "0123456789"
+
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
     "cf0b0cfc90d8b4be14e00114827494ed5522e9aa1c7e6960515b58626cad0b44",
@@ -20,38 +22,50 @@ PASSWORDS_TO_BRUTE_FORCE = [
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
-def check_passwords(start: int, end: int) -> None:
-    for i in range(start, end):
-        password = str(i).zfill(8)
-        hashed_password = sha256_hash_str(password)
+
+def brute_force_password(
+    start: int,
+    end: int,
+    nums: str,
+) -> None:
+    found_passwords = set()
+    for number in range(start, end + 1):
+        checking_password = f"{number: 08}"
+        hashed_password = sha256_hash_str(checking_password)
 
         if hashed_password in PASSWORDS_TO_BRUTE_FORCE:
-            print(password)
+            found_passwords.add(checking_password)
+            print(f"Password: {checking_password} added to passwords")
+            if len(found_passwords) == 10:
+                break
 
 
-def brute_force_password() -> None:
-    num_passwords = 10
-    len_password = 8
-    num_processes = multiprocessing.cpu_count() - 1
-    passwords_per_core = num_passwords ** len_password // num_processes
-    tasks = []
+def main_multiprocess(numbers: str = NUMS) -> list:
+    core_count = multiprocessing.cpu_count()
+    segment = 100_000_000 // core_count
 
-    for i in range(num_processes):
-        start = i * passwords_per_core
-        end = (i + 1) * passwords_per_core
-        tasks.append(multiprocessing.Process(
-            target=check_passwords,
-            args=(start, end)
-        ))
-        tasks[-1].start()
-
-    for task in tasks:
-        task.join()
+    processes = []
+    for i in range(core_count - 1):
+        start = i * segment
+        end = (i + 1) * segment - 1
+        processes.append(
+            multiprocessing.Process(
+                target=brute_force_password,
+                args=(
+                    start,
+                    end,
+                    NUMS,
+                ),
+            )
+        )
+        processes[-1].start()
+    for proces in processes:
+        proces.join()
 
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
-    brute_force_password()
+    main_multiprocess()
     end_time = time.perf_counter()
 
     print("Elapsed:", end_time - start_time)
