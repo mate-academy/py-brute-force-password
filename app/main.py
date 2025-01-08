@@ -28,6 +28,7 @@ def check_password(hash_password: str) -> str:
         str_combination = "".join(combination)
         if sha256_hash_str(str_combination) == hash_password:
             return f"password: {str_combination} hash: {hash_password}"
+    return f"password: not found, hash: {hash_password}"
 
 
 def brute_force_password() -> None:
