@@ -1,6 +1,8 @@
+import multiprocessing
 import time
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from hashlib import sha256
-
+from typing import List
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -20,13 +22,32 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
-    pass
+def brute_force_range(start: int, end: int) -> List[str]:
+    found_passwords = []
+    for i in range(start, end):
+        password = f"{i:08d}"
+        hashed = sha256_hash_str(password)
+        if hashed in PASSWORDS_TO_BRUTE_FORCE:
+            found_passwords.append(password)
+    return found_passwords
 
+
+def main():
+    range_per_core = 10 ** 8 // multiprocessing.cpu_count()
+    ranges = [(i * range_per_core, (i + 1) * range_per_core) for i in range(11)]
+    found_passwords = []
+
+    with ProcessPoolExecutor() as executor:
+        futures = [executor.submit(brute_force_range, start, end) for start, end in ranges]
+        for future in as_completed(futures):
+            result = future.result()
+            found_passwords.extend(result)
+
+    print("Знайдені паролі:", found_passwords)
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
-    brute_force_password()
+    main()
     end_time = time.perf_counter()
 
     print("Elapsed:", end_time - start_time)
