@@ -33,7 +33,9 @@ def brute_force_password():
     chunk_size = total_combinations // num_processes
 
     with Pool(processes=num_processes) as pool:
-        results = pool.starmap(check_password_range, [(i * chunk_size, (i + 1) * chunk_size) for i in range(num_processes)])
+        ranges = [(i * chunk_size, (i + 1) * chunk_size) for i in range(num_processes - 1)]
+        ranges.append((num_processes * chunk_size, total_combinations))
+        results = pool.starmap(check_password_range, ranges)
 
     for found in results:
         for password, hashed in found:
