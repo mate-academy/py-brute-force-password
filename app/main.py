@@ -24,12 +24,16 @@ def sha256_hash_str(to_hash: str) -> str:
 
 
 def brute_force_password() -> None:
-    num_chunks = multiprocessing.cpu_count() - 1
+    if multiprocessing.cpu_count() > 1:
+        num_chunks = multiprocessing.cpu_count() - 1
+    else:
+        num_chunks = 1
+
     chunk_size = MAX_PASSWORD_COMBINATIONS // num_chunks
 
     ranges = [
-        (i * chunk_size, (i + 1) * chunk_size)
-        for i in range(num_chunks)
+        (chunk_index * chunk_size, (chunk_index + 1) * chunk_size)
+        for chunk_index in range(num_chunks)
     ]
 
     with multiprocessing.Pool(num_chunks) as pool:
