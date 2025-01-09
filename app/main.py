@@ -1,3 +1,4 @@
+import multiprocessing
 import time
 from hashlib import sha256
 
@@ -15,13 +16,36 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
 
+MAX_PASSWORD_COMBINATIONS = 10 ** 8
+
 
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
 def brute_force_password() -> None:
-    pass
+    if multiprocessing.cpu_count() > 1:
+        num_chunks = multiprocessing.cpu_count() - 1
+    else:
+        num_chunks = 1
+
+    chunk_size = MAX_PASSWORD_COMBINATIONS // num_chunks
+
+    ranges = [
+        (chunk_index * chunk_size, (chunk_index + 1) * chunk_size)
+        for chunk_index in range(num_chunks)
+    ]
+
+    with multiprocessing.Pool(num_chunks) as pool:
+        pool.starmap(check_password_range, ranges)
+
+
+def check_password_range(start: int, end: int) -> None:
+    for password in range(start, end):
+        password_str = str(password).zfill(8)
+        password_hash = sha256_hash_str(password_str)
+        if password_hash in PASSWORDS_TO_BRUTE_FORCE:
+            print(f"Password: {password_str}")
 
 
 if __name__ == "__main__":
