@@ -28,7 +28,7 @@ def brute_force_range(
 ) -> dict[str, str]:
     found_passwords = {}
     for number in range(start, end):
-        password = f"{number: 08d}"
+        password = f"{number:08d}"
         hashed_pass = sha256_hash_str(password)
         if hashed_pass in passwords:
             found_passwords[hashed_pass] = password
@@ -38,11 +38,14 @@ def brute_force_range(
 
 def brute_force_passwords(passwords: list[str]) -> dict[str, str]:
     num_processes = multiprocessing.cpu_count() - 1
-    range_size = 10**8 // num_processes
-    ranges = [
-        (i * range_size, (i + 1) * range_size)
-        for i in range(num_processes)
-    ]
+    range_size = 10 ** 8 // num_processes
+    ranges = []
+
+    for i in range(num_processes):
+        start = i * range_size
+        end = (i + 1) * range_size if i != num_processes - 1 else 10 ** 8
+        ranges.append((start, end))
+
     found_passwords = {}
 
     with ProcessPoolExecutor(num_processes) as executor:
