@@ -29,7 +29,7 @@ def validate_password(password: int) -> None:
 
 def brute_force_password() -> None:
     with mp.Pool(mp.cpu_count()) as p:
-        p.map(get_pass, range(10**8))
+        p.map(validate_password, range(10**8))
 
 
 if __name__ == "__main__":
