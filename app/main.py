@@ -24,9 +24,9 @@ def sha256_hash_str(to_hash: str) -> str:
 def brute_force_password() -> None:
     passwords = []
     for password in PASSWORDS_TO_BRUTE_FORCE:
-        passwords.append(mp.Process(target=brute_force_password,
-                                    args=password).start())
-        passwords[-1].start()
+        process = mp.Process(target=brute_force_password,
+                                    args=password,).start()
+        passwords.append(process)
     for password in passwords:
         password.join()
 
