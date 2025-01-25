@@ -1,5 +1,6 @@
 import time
 from hashlib import sha256
+import threading
 
 
 PASSWORDS_TO_BRUTE_FORCE = [
@@ -20,16 +21,28 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-# synchronous code for CPU-bound
-def brute_force_password() -> None:
-    for password in PASSWORDS_TO_BRUTE_FORCE:
-        encode_pwd = sha256_hash_str(password)
-        print(f"Encode Password is: {encode_pwd}")
+
+def brute_force_password(index: int, pwd: str) -> None:
+    print(f"start task: {index}")
+    encode_pwd = sha256_hash_str(pwd)
+    print(f"Result of task {index}: Encode Password is: {encode_pwd}")
+
+
+# Multitasking Methods for CPU-bound
+def main_threads(passwords: list) -> None:
+    tasks = []
+
+    for index, pwd in enumerate(passwords):
+        tasks.append(threading.Thread(target=brute_force_password, args=(index, pwd)))
+        tasks[-1].start()
+
+    for task in tasks:
+        task.join()
 
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
-    brute_force_password()
+    main_threads(PASSWORDS_TO_BRUTE_FORCE)
     end_time = time.perf_counter()
 
     print("Elapsed:", end_time - start_time)
