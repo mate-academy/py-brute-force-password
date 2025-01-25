@@ -30,6 +30,8 @@ def brute_force_password() -> None:
             if sha256_hash_str(formatted_number) == password:
                 print(f"Password found: {formatted_number}")
                 DECODE_PASSWORDS[formatted_number] = password
+                if len(DECODE_PASSWORDS) == len(PASSWORDS_TO_BRUTE_FORCE):
+                    return
                 continue
 
 
