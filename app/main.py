@@ -24,11 +24,9 @@ def sha256_hash_str(to_hash: str) -> str:
 
 def brute_force_password() -> None:
 
-    for number in range(0, 10_000_000):
+    for number in range(0, 100_000_000):
         formatted_number = f"{number:08d}"
-        print(formatted_number)
         for index, password in enumerate(PASSWORDS_TO_BRUTE_FORCE):
-            print(index, password)
             if sha256_hash_str(formatted_number) == password:
                 print(f"Password found: {formatted_number}")
                 DECODE_PASSWORDS[formatted_number] = password
