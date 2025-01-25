@@ -1,7 +1,6 @@
 import multiprocessing
 import time
 from hashlib import sha256
-import multiprocessing
 
 
 PASSWORDS_TO_BRUTE_FORCE = [
@@ -33,7 +32,12 @@ def main_multiprocessing(passwords: list) -> None:
     tasks = []
 
     for index, pwd in enumerate(passwords):
-        tasks.append(multiprocessing.Process(target=brute_force_password, args=(index, pwd)))
+        tasks.append(
+            multiprocessing.Process(
+                target=brute_force_password,
+                args=(index, pwd)
+            )
+        )
         tasks[-1].start()
 
     for task in tasks:
