@@ -20,6 +20,7 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
+# synchronous code for CPU-bound
 def brute_force_password() -> None:
     for password in PASSWORDS_TO_BRUTE_FORCE:
         encode_pwd = sha256_hash_str(password)
