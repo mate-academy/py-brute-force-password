@@ -1,6 +1,7 @@
+import multiprocessing
 import time
 from hashlib import sha256
-import threading
+import multiprocessing
 
 
 PASSWORDS_TO_BRUTE_FORCE = [
@@ -21,19 +22,18 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-
 def brute_force_password(index: int, pwd: str) -> None:
     print(f"start task: {index}")
     encode_pwd = sha256_hash_str(pwd)
     print(f"Result of task {index}: Encode Password is: {encode_pwd}")
 
 
-# Multitasking Methods for CPU-bound
-def main_threads(passwords: list) -> None:
+# multiprocessing method Code for CPU-bound
+def main_multiprocessing(passwords: list) -> None:
     tasks = []
 
     for index, pwd in enumerate(passwords):
-        tasks.append(threading.Thread(target=brute_force_password, args=(index, pwd)))
+        tasks.append(multiprocessing.Process(target=brute_force_password, args=(index, pwd)))
         tasks[-1].start()
 
     for task in tasks:
@@ -42,7 +42,7 @@ def main_threads(passwords: list) -> None:
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
-    main_threads(PASSWORDS_TO_BRUTE_FORCE)
+    main_multiprocessing(PASSWORDS_TO_BRUTE_FORCE)
     end_time = time.perf_counter()
 
     print("Elapsed:", end_time - start_time)
