@@ -21,15 +21,9 @@ def sha256_hash_str(to_hash: str) -> str:
 
 
 def brute_force_password() -> None:
-    encode_passwords = []
-
     for password in PASSWORDS_TO_BRUTE_FORCE:
         encode_pwd = sha256_hash_str(password)
         print(f"Encode Password is: {encode_pwd}")
-        encode_passwords.append(encode_pwd)
-
-    return encode_passwords
-
 
 
 if __name__ == "__main__":
