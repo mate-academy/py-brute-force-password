@@ -21,7 +21,7 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password(start, end) -> None:
+def brute_force_password(start: int, end: int) -> list:
     results = []
     for i in range(start, end):
         candidate = f"{i:08}"
@@ -39,8 +39,15 @@ def main_multiprocessing() -> None:
     piece_of_work = total_candidate // cpu_count
 
     # Range for processing
-    ranges = [(i * piece_of_work, (i + 1) * piece_of_work) for i in range(piece_of_work)]
-    ranges[-1] = (ranges[-1][0], total_candidate) # CHeck last cover range
+    ranges = [
+        (
+            i * piece_of_work,
+            (i + 1) * piece_of_work
+        )
+        for i in range(piece_of_work)
+    ]
+
+    ranges[-1] = (ranges[-1][0], total_candidate)  # CHeck last cover range
 
     futures = []
     found_passwords = []
