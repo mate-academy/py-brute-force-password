@@ -25,8 +25,9 @@ def brute_force_password(start: int, end: int) -> list:
     results = []
     for i in range(start, end):
         candidate = f"{i:08}"
-        encode_candidate = sha256_hash_str(candidate)
-        if encode_candidate in PASSWORDS_TO_BRUTE_FORCE:
+        hashed_candidate = sha256_hash_str(candidate)
+        if hashed_candidate in PASSWORDS_TO_BRUTE_FORCE:
+            print(f"Found pwd {hashed_candidate} - {candidate}")
             results.append(candidate)
     return results
 
@@ -44,7 +45,7 @@ def main_multiprocessing() -> None:
             i * piece_of_work,
             (i + 1) * piece_of_work
         )
-        for i in range(piece_of_work)
+        for i in range(cpu_count)
     ]
 
     ranges[-1] = (ranges[-1][0], total_candidate)  # CHeck last cover range
@@ -58,6 +59,7 @@ def main_multiprocessing() -> None:
 
         for future in as_completed(futures):
             found_passwords.extend(future.result())
+            print(f"Added to list found_passwords {found_passwords[-1]}")
 
             # Exit early if all passwords are found
             if len(found_passwords) >= len(PASSWORDS_TO_BRUTE_FORCE):
