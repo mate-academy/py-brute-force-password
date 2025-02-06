@@ -36,20 +36,27 @@ def check_password(start: int, end: int) -> None:
 def brute_force_password() -> None:
     futures = []
 
-    num_cores = cpu_count() - 1
+    num_cores = max(1, cpu_count() - 1)
     chunk_size = AMOUNT_OF_PASSWORD_COMBINATIONS // num_cores
 
     with ProcessPoolExecutor(num_cores) as executor:
-        ranges = [
-            (i * chunk_size, (i + 1) * chunk_size)
-            for i in range(num_cores - 1)
-        ]
-        ranges.append(
-            ((num_cores - 1) * chunk_size, AMOUNT_OF_PASSWORD_COMBINATIONS)
-        )
+        if num_cores == 1:
+            futures.append(
+                executor.submit(
+                    check_password, 0, AMOUNT_OF_PASSWORD_COMBINATIONS
+                )
+            )
+        else:
+            ranges = [
+                (i * chunk_size, (i + 1) * chunk_size)
+                for i in range(num_cores - 1)
+            ]
+            ranges.append(
+                ((num_cores - 1) * chunk_size, AMOUNT_OF_PASSWORD_COMBINATIONS)
+            )
 
-        for start, end in ranges:
-            futures.append(executor.submit(check_password, start, end))
+            for start, end in ranges:
+                futures.append(executor.submit(check_password, start, end))
 
     wait(futures)
 
