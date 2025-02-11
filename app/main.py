@@ -1,4 +1,6 @@
 import time
+import itertools
+from multiprocessing import Pool
 from hashlib import sha256
 
 
@@ -20,13 +22,32 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
-    pass
+def check_password(candidate):
+    hashed = sha256_hash_str(candidate)
+    if hashed in PASSWORDS_TO_BRUTE_FORCE:
+        print(f"Знайдено: {candidate} -> {hashed}")
+        return candidate
+    return None
+
+
+def brute_force_password():
+    found_passwords = set()
+
+    all_possible_passwords = (''.join(p) for p in itertools.product("0123456789", repeat=8))
+
+    with Pool(processes=8) as pool:
+        for result in pool.imap_unordered(check_password, all_possible_passwords):
+            if result:
+                found_passwords.add(result)
+            if len(found_passwords) == len(PASSWORDS_TO_BRUTE_FORCE):
+                pool.terminate()
+                break
+
+    print("\nУсі знайдені паролі:", found_passwords)
 
 
 if __name__ == "__main__":
-    start_time = time.perf_counter()
+    start = time.perf_counter()
     brute_force_password()
-    end_time = time.perf_counter()
-
-    print("Elapsed:", end_time - start_time)
+    sync_duration = time.perf_counter() - start
+    print(sync_duration)
