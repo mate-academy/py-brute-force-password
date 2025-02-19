@@ -1,3 +1,4 @@
+from asyncio import futures
 from concurrent.futures import ProcessPoolExecutor, wait
 import itertools
 from os import cpu_count
@@ -36,17 +37,12 @@ def sha256_hash_str(to_hash: str) -> str:
 
 
 def brute_force_password() -> None:
-    passwords = []
-
-    with ProcessPoolExecutor(cpu_count() - 1) as executor:
-        for password in POSSIBLE_PASSWORDS:
-            passwords.append(executor.submit(make_password, password))
-
     futures = []
-
     with ProcessPoolExecutor(cpu_count() - 1) as executor:
-        for password in passwords:
-            futures.append(executor.submit(sha256_hash_str, password.result()))
+        for attempt in POSSIBLE_PASSWORDS:
+            password = make_password(attempt)
+
+            futures.append(executor.submit(sha256_hash_str, password))
 
 
 if __name__ == "__main__":
