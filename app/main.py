@@ -1,11 +1,8 @@
-from asyncio import futures
-from concurrent.futures import ProcessPoolExecutor, wait
+from concurrent.futures import ProcessPoolExecutor
 import itertools
 from os import cpu_count
 import time
 from hashlib import sha256
-
-from attr import has
 
 
 PASSWORDS_TO_BRUTE_FORCE = [
