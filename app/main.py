@@ -21,7 +21,7 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def search_passwords(password: str):
+def search_passwords(password: str) -> None:
     search_password = 0
     while password != sha256_hash_str(str(search_password).zfill(8)):
         search_password += 1
@@ -29,7 +29,6 @@ def search_passwords(password: str):
         f"PASSWORD({PASSWORDS_TO_BRUTE_FORCE.index(password) + 1}): "
         f"{str(search_password).zfill(8)}"
     )
-
 
 
 def brute_force_password() -> None:
@@ -40,7 +39,6 @@ def brute_force_password() -> None:
             futures.append(executor.submit(search_passwords, password))
 
     wait(futures)
-
 
 
 if __name__ == "__main__":
