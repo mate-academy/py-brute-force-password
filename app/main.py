@@ -1,6 +1,6 @@
 import multiprocessing
 import time
-from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures import ProcessPoolExecutor, wait
 from hashlib import sha256
 
 
@@ -17,33 +17,50 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
 
-
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
 def check_password(option: int) -> str | None:
-    password = f"{option: 08d}"
+    password = f"{option:08d}"
     hashed_password = sha256_hash_str(password)
     if hashed_password in PASSWORDS_TO_BRUTE_FORCE:
         return password
     return None
 
 
-def brute_force_password() -> str | None:
-    found_passwords = set()
+def brute_force_password():
+    found_passwords = []
 
-    with ProcessPoolExecutor(multiprocessing.cpu_count() - 1) as executor:
-        for result in executor.map(check_password, range(100_000_000)):
-            if result:
-                print(f"Found: {result}")
-                found_passwords.add(result)
+    for number in range(100_000_000):
+        result = check_password(number)
+        if result:
+            found_passwords.append(result)
+            print(f"Found: {result}")
 
-            if len(found_passwords) == 10:
-                break
+    return found_passwords
 
-        print(f"\nFind {len(found_passwords)} passwords.")
 
+def main_multiprocess_executor() -> None:
+    total_numbers = 100_000_000
+    num_processors = multiprocessing.cpu_count()
+    chunk_size = total_numbers // num_processors
+
+    futures = []
+    all_found_passwords = []
+
+    with ProcessPoolExecutor(num_processors) as executor:
+        for i in range(num_processors):
+            start = i * chunk_size
+            end = (i + 1) * chunk_size if i < num_processors - 1 else total_numbers
+            futures.append(executor.submit(brute_force_password, start, end))
+
+        wait(futures)
+
+        for future in futures:
+            all_found_passwords.extend(future.result())
+
+    print(f"\nTotal found: {len(all_found_passwords)} passwords.")
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
