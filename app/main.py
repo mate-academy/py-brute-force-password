@@ -17,6 +17,7 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
 
+
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
@@ -29,10 +30,25 @@ def check_password(option: int) -> str | None:
     return None
 
 
-def brute_force_password():
+def brute_force_password() -> None:
+    total_numbers = 100_000_000
+    num_processors = multiprocessing.cpu_count()
+    chunk_size = total_numbers // num_processors
+
+    with ProcessPoolExecutor(num_processors) as executor:
+        futures = []
+        for i in range(num_processors):
+            start = i * chunk_size
+            end = (i + 1) * chunk_size
+            futures.append(executor.submit(brute_force_range, start, end))
+
+        wait(futures)
+
+
+def brute_force_range(start: int, end: int) -> []:
     found_passwords = []
 
-    for number in range(100_000_000):
+    for number in range(start, end):
         result = check_password(number)
         if result:
             found_passwords.append(result)
@@ -40,27 +56,6 @@ def brute_force_password():
 
     return found_passwords
 
-
-def main_multiprocess_executor() -> None:
-    total_numbers = 100_000_000
-    num_processors = multiprocessing.cpu_count()
-    chunk_size = total_numbers // num_processors
-
-    futures = []
-    all_found_passwords = []
-
-    with ProcessPoolExecutor(num_processors) as executor:
-        for i in range(num_processors):
-            start = i * chunk_size
-            end = (i + 1) * chunk_size if i < num_processors - 1 else total_numbers
-            futures.append(executor.submit(brute_force_password, start, end))
-
-        wait(futures)
-
-        for future in futures:
-            all_found_passwords.extend(future.result())
-
-    print(f"\nTotal found: {len(all_found_passwords)} passwords.")
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
