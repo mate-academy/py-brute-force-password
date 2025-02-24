@@ -1,6 +1,8 @@
 import time
 from hashlib import sha256
-
+from itertools import product, islice
+from multiprocessing import Pool, Manager, cpu_count
+from typing import Iterable, List, Iterator
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -20,13 +22,47 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
+def brute_force_chunk(chunk: Iterable[tuple], output_list: List[str]) -> None:
+    for num in chunk:
+        hashed_num = sha256_hash_str("".join(map(str, num)))
+        if hashed_num in PASSWORDS_TO_BRUTE_FORCE:
+            password = "".join(map(str, num))
+            output_list.append(password)  # Додаємо знайдений пароль до списку
+            print(password)  # Виводимо пароль у консоль
+
+
+def split_combinations(
+        num_combinations: Iterable[tuple],
+        num_chunks: int
+) -> Iterator[Iterable[tuple]]:
+    """Розділяє всі комбінації на частини для паралельної обробки."""
+    chunk_size = 10**8 // num_chunks  # Розмір кожної частини
+    for i in range(0, 10**8, chunk_size):
+        yield islice(num_combinations, i, i + chunk_size)
+
+
 def brute_force_password() -> None:
-    pass
+    num_combinations = product(range(10), repeat=8)
+    num_processes = cpu_count()  # Кількість доступних ядер процесора
+    chunks = split_combinations(num_combinations, num_processes)
+
+    # Використовуємо Manager для спільного доступу до списку
+    with Manager() as manager:
+        output_list = manager.list()  # Список для зберігання знайдених паролів
+
+        with Pool(processes=num_processes) as pool:
+            # Запускаємо процеси з передачею output_list
+            pool.starmap(
+                brute_force_chunk,
+                [
+                    (chunk, output_list) for chunk in chunks
+                ]
+            )
 
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
-    brute_force_password()
+    print(brute_force_password())
     end_time = time.perf_counter()
 
     print("Elapsed:", end_time - start_time)
