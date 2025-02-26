@@ -21,6 +21,13 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
+def check_password(hashed_password):
+    for i in range(100000000):
+        password = str(i).zfill(8)
+        if sha256_hash_str(password) == hashed_password:
+            return f"Пароль знайдено: {password}"
+    return f"Пароль для {hashed_password} не знайдено"
+
 def brute_force_password(passwords) -> None:
     with ProcessPoolExecutor(max_workers=multiprocessing.cpu_count() - 1) as executor:
         futures = [executor.submit(check_password, password) for password in passwords]
