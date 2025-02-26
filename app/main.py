@@ -1,5 +1,6 @@
 import time
 from hashlib import sha256
+from itertools import product
 
 
 PASSWORDS_TO_BRUTE_FORCE = [
@@ -20,8 +21,20 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
+found_passwords = {}
+
+
 def brute_force_password() -> None:
-    pass
+    for num_tuple in product("0123456789", repeat=8):
+        candidate = "".join(num_tuple)
+        hashed_candidate = sha256_hash_str(candidate)
+
+        if hashed_candidate in PASSWORDS_TO_BRUTE_FORCE:
+            found_passwords[hashed_candidate] = candidate
+            print(f"Найден пароль: {candidate} -> {hashed_candidate}")
+
+        if len(found_passwords) == 10:
+            break
 
 
 if __name__ == "__main__":
