@@ -1,6 +1,6 @@
 import time
+import multiprocessing
 from hashlib import sha256
-from itertools import product
 
 
 PASSWORDS_TO_BRUTE_FORCE = [
@@ -21,25 +21,50 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-found_passwords = {}
-
-
-def brute_force_password() -> None:
-    for num_tuple in product("0123456789", repeat=8):
-        candidate = "".join(num_tuple)
+def brute_force_worker(start_range: int, end_range: int, queue):
+    for i in range(start_range, end_range):
+        candidate = f"{i:08d}"
         hashed_candidate = sha256_hash_str(candidate)
-
         if hashed_candidate in PASSWORDS_TO_BRUTE_FORCE:
-            found_passwords[hashed_candidate] = candidate
-            print(f"Найден пароль: {candidate} -> {hashed_candidate}")
+            queue.put((candidate, hashed_candidate))
 
-        if len(found_passwords) == 10:
-            break
+
+def find_passwords():
+    start_time = time.perf_counter()
+
+    with multiprocessing.Manager() as manager:
+        queue = manager.Queue()
+        processes = []
+        num_processes = multiprocessing.cpu_count()
+
+        total_combinations = 10**8
+        chunk_size = total_combinations // num_processes
+
+        for i in range(num_processes):
+            start = i * chunk_size
+            end = start + chunk_size if i < num_processes - 1 else total_combinations
+            p = multiprocessing.Process(target=brute_force_worker, args=(start, end, queue))
+            processes.append(p)
+            p.start()
+
+        for p in processes:
+            p.join()
+
+        found_passwords = set()
+        while not queue.empty():
+            candidate, hashed_candidate = queue.get()
+            if hashed_candidate in PASSWORDS_TO_BRUTE_FORCE:
+                found_passwords.add(candidate)
+                print(f"found password: {candidate} -> {hashed_candidate}")
+
+        if len(found_passwords) != 10:
+                print("Error: only {len(found_passwords)} passwords out of 10 were found!")
+        else:
+            print(f"Success: all 10 passwords found!")
+
+    end_time = time.perf_counter()
+    print(f"Lead time {end_time - start_time:.2f} seconds")
 
 
 if __name__ == "__main__":
-    start_time = time.perf_counter()
-    brute_force_password()
-    end_time = time.perf_counter()
-
-    print("Elapsed:", end_time - start_time)
+    find_passwords()
