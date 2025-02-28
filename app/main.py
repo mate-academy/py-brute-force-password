@@ -15,36 +15,44 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
 
+
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
-def check_password_range(passwords, start, end):
+
+def brute_force_password() -> None:
+    passwords = set(PASSWORDS_TO_BRUTE_FORCE)  # Преобразуем список паролей в set для быстрого поиска
+    chunk_size = 1000000  # Размер одного диапазона
+
+    with concurrent.futures.ProcessPoolExecutor() as executor:
+        futures = []
+
+        # Разделяем диапазон значений на части и распределяем их по процессам
+        for start in range(0, 100000000, chunk_size):
+            end = start + chunk_size
+            futures.append(executor.submit(check_chunk, passwords, start, end))
+
+        # Обрабатываем результаты
+        for future in concurrent.futures.as_completed(futures):
+            result = future.result()
+            if result:
+                found_password, hashed_password = result
+                print(f"Password: {hashed_password}, Found: {found_password}")
+                passwords.remove(hashed_password)  # Удаляем найденный пароль из списка
+                if not passwords:
+                    return  # Прекращаем, если все пароли найдены
+
+def check_chunk(passwords, start, end):
     for x in range(start, end):
-        formatted_number = f"{x:08d}"
+        formatted_number = f"{x:08d}"  # Преобразуем число в строку, заполненную нулями до 8 символов
         hashed = sha256_hash_str(formatted_number)
         if hashed in passwords:
             return formatted_number, hashed
-    return None, None
-
-def brute_force_password(passwords) -> None:
-    chunk_size = 1000000
-    with concurrent.futures.ProcessPoolExecutor() as executor:
-        futures = []
-        for start in range(0, 100000000, chunk_size):
-            end = start + chunk_size
-            futures.append(executor.submit(check_password_range, passwords, start, end))
-
-        for future in concurrent.futures.as_completed(futures):
-            result, found_password = future.result()
-            if result is not None:
-                print(f"Result: {result}")
-                passwords.remove(found_password)
-                if not passwords:
-                    return
+    return None
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
-    brute_force_password(set(PASSWORDS_TO_BRUTE_FORCE))
+    brute_force_password()
     end_time = time.perf_counter()
 
     print("Elapsed:", end_time - start_time)
