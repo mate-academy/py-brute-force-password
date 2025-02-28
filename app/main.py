@@ -1,4 +1,5 @@
 import time
+import multiprocessing
 from hashlib import sha256
 
 
@@ -20,13 +21,60 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
-    pass
+def brute_force_password(
+        start_range: int,
+        end_range,
+        queue: multiprocessing.Queue
+) -> None:
+    for i in range(start_range, end_range):
+        candidate = f"{i:08d}"
+        hashed_candidate = sha256_hash_str(candidate)
+        if hashed_candidate in PASSWORDS_TO_BRUTE_FORCE:
+            queue.put((candidate, hashed_candidate))
 
+
+def find_passwords() -> None:
+    start_time = time.perf_counter()
+    with multiprocessing.Manager() as manager:
+        queue = manager.Queue()
+        processes = []
+        num_processes = multiprocessing.cpu_count()
+
+        total_combinations = 10 ** 8
+        chunk_size = total_combinations // num_processes
+
+        for i in range(num_processes):
+            start = i * chunk_size
+            if i < num_processes - 1:
+                end = start + chunk_size
+            else:
+                end = total_combinations
+
+            password = multiprocessing.Process(
+                target=brute_force_password,
+                args=(start, end, queue)
+            )
+            processes.append(password)
+            password.start()
+
+        for process in processes:
+            process.join()
+
+        found_passwords = set()
+        while not queue.empty():
+            candidate, hashed_candidate = queue.get()
+            if hashed_candidate in PASSWORDS_TO_BRUTE_FORCE:
+                found_passwords.add(candidate)
+                print(f"found password: {candidate} -> {hashed_candidate}")
+
+        if len(found_passwords) != 10:
+            print(f"Error: only {len(found_passwords)}"
+                  f"passwords out of 10 were found!")
+        else:
+            print("Success: all 10 passwords found!")
+
+    end_time = time.perf_counter()
+    print(f"Lead time {end_time - start_time:.2f} seconds")
 
 if __name__ == "__main__":
-    start_time = time.perf_counter()
-    brute_force_password()
-    end_time = time.perf_counter()
-
-    print("Elapsed:", end_time - start_time)
+    find_passwords()
