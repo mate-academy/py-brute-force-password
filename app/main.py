@@ -1,6 +1,6 @@
 import time
 from hashlib import sha256
-
+import concurrent.futures
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -21,8 +21,34 @@ def sha256_hash_str(to_hash: str) -> str:
 
 
 def brute_force_password() -> None:
-    pass
+    passwords = set(PASSWORDS_TO_BRUTE_FORCE)  # Преобразуем список паролей в set для быстрого поиска
+    chunk_size = 1000000  # Размер одного диапазона
 
+    with concurrent.futures.ProcessPoolExecutor() as executor:
+        futures = []
+
+        # Разделяем диапазон значений на части и распределяем их по процессам
+        for start in range(0, 100000000, chunk_size):
+            end = start + chunk_size
+            futures.append(executor.submit(check_chunk, passwords, start, end))
+
+        # Обрабатываем результаты
+        for future in concurrent.futures.as_completed(futures):
+            result = future.result()
+            if result:
+                found_password, hashed_password = result
+                print(f"Password: {hashed_password}, Found: {found_password}")
+                passwords.remove(hashed_password)  # Удаляем найденный пароль из списка
+                if not passwords:
+                    return  # Прекращаем, если все пароли найдены
+
+def check_chunk(passwords, start, end):
+    for x in range(start, end):
+        formatted_number = f"{x:08d}"  # Преобразуем число в строку, заполненную нулями до 8 символов
+        hashed = sha256_hash_str(formatted_number)
+        if hashed in passwords:
+            return formatted_number, hashed
+    return None
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
