@@ -1,3 +1,5 @@
+from concurrent.futures import ProcessPoolExecutor, wait
+import multiprocessing
 import time
 from hashlib import sha256
 
@@ -21,8 +23,15 @@ def sha256_hash_str(to_hash: str) -> str:
 
 
 def brute_force_password() -> None:
-    pass
-
+    count = 0
+    for password in range(10 ** 8):
+        password = str(password).zfill(8)
+        password_hash = sha256_hash_str(password)
+        if password_hash in PASSWORDS_TO_BRUTE_FORCE:
+            print(f"Password found: {password}")
+            count += 1
+            if count == 10:
+                break
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
