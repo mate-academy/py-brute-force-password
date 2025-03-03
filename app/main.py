@@ -2,7 +2,6 @@ import time
 import multiprocessing
 from hashlib import sha256
 
-
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
     "cf0b0cfc90d8b4be14e00114827494ed5522e9aa1c7e6960515b58626cad0b44",
@@ -16,10 +15,8 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
 
-
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
-
 
 def brute_force_worker(
         start_range: int,
@@ -27,11 +24,10 @@ def brute_force_worker(
         queue: multiprocessing.Queue
 ) -> None:
     for i in range(start_range, end_range):
-        candidate = f"{i:08d}"  # noqa: E231
+        candidate = f"{i:08d}"
         hashed_candidate = sha256_hash_str(candidate)
         if hashed_candidate in PASSWORDS_TO_BRUTE_FORCE:
             queue.put((candidate, hashed_candidate))
-
 
 def find_passwords() -> None:
     start_time = time.perf_counter()
@@ -61,22 +57,24 @@ def find_passwords() -> None:
         for process in processes:
             process.join()
 
-        found_passwords = set()
-        while not queue.empty():
-            candidate, hashed_candidate = queue.get()
-            if hashed_candidate in PASSWORDS_TO_BRUTE_FORCE:
-                found_passwords.add(candidate)
-                print(f"found password: {candidate} -> {hashed_candidate}")
-
-        if len(found_passwords) != 10:
-            print(f"Error: only {len(found_passwords)} "
-                  f"passwords out of 10 were found!")
-        else:
-            print("Success: all 10 passwords found!")
+        found_passwords = []
+        while True:
+            try:
+                candidate, hashed_candidate = queue.get_nowait()
+                if hashed_candidate in PASSWORDS_TO_BRUTE_FORCE:
+                    found_passwords.append(candidate)
+                    print(f"found password: {candidate} -> {hashed_candidate}")
+                    if len(found_passwords) == 10:
+                        print("Success: all 10 passwords found!")
+                        break
+            except multiprocessing.queues.Empty:
+                if len(found_passwords) < 10:
+                    print(f"Error: only {len(found_passwords)} "
+                          f"passwords out of 10 were found!")
+                break
 
     end_time = time.perf_counter()
-    print(f"Lead time {end_time - start_time:.2f} seconds")  # noqa: E231
-
+    print(f"Lead time {end_time - start_time:.2f} seconds")
 
 if __name__ == "__main__":
     find_passwords()
