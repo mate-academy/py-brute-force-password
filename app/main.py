@@ -1,4 +1,6 @@
 import time
+import multiprocessing
+from datetime import datetime
 from hashlib import sha256
 
 
@@ -14,19 +16,31 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "7e8f0ada0a03cbee48a0883d549967647b3fca6efeb0a149242f19e4b68d53d6",
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
-
+DECODE_PASSWORDS = {}
 
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
 def brute_force_password() -> None:
-    pass
+
+    for number in range(0, 100_000_000):
+        formatted_number = f"{number:08d}"
+        for index, password in enumerate(PASSWORDS_TO_BRUTE_FORCE):
+            if sha256_hash_str(formatted_number) == password:
+                print(f"Password found: {formatted_number}")
+                DECODE_PASSWORDS[formatted_number] = password
+                if len(DECODE_PASSWORDS) == len(PASSWORDS_TO_BRUTE_FORCE):
+                    return
+                continue
 
 
 if __name__ == "__main__":
+    time_start = datetime.now()
     start_time = time.perf_counter()
     brute_force_password()
+    time_stop = datetime.now()
     end_time = time.perf_counter()
-
+    print("Паролі -->", DECODE_PASSWORDS)
+    print("Час очікування -->", time_stop - time_start)
     print("Elapsed:", end_time - start_time)
