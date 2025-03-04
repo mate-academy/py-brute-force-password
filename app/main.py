@@ -1,3 +1,5 @@
+import itertools
+import multiprocessing
 import time
 from hashlib import sha256
 
@@ -20,13 +22,39 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
-    pass
+def brute_force_worker(password_chunk):
+    for password in password_chunk:
+        hashed = sha256_hash_str(password)
+        if hashed in PASSWORDS_TO_BRUTE_FORCE:
+            print(f"FOUND: {password} -> {hashed}")
+            return password, hashed
+    return None
+
+
+def chunked_iterator(iterable, chunk_size):
+    iterator = iter(iterable)
+    while chunk := list(itertools.islice(iterator, chunk_size)):
+        yield chunk
+
+
+def main():
+    num_cores = multiprocessing.cpu_count()
+    print(f"Using {num_cores} CPU cores for brute force...")
+
+    all_possible_passwords = ("".join(p) for p in itertools.product("0123456789", repeat=8))
+
+    with multiprocessing.Pool(num_cores) as pool:
+        for result in pool.imap_unordered(brute_force_worker, chunked_iterator(all_possible_passwords, 100000)):
+            if result:
+                PASSWORDS_TO_BRUTE_FORCE.remove(result[1])
+                if not PASSWORDS_TO_BRUTE_FORCE:
+                    print("All passwords found!")
+                    break
 
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
-    brute_force_password()
+    main()
     end_time = time.perf_counter()
 
     print("Elapsed:", end_time - start_time)
