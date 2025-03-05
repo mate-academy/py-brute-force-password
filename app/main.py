@@ -38,8 +38,6 @@ def brute_force_password() -> None:
         wait(futures)
 
 
-
-
 if __name__ == "__main__":
     start_time = time.perf_counter()
     brute_force_password()
