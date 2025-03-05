@@ -30,6 +30,7 @@ def find_match(start_ind: int) -> None:
 
 def brute_force_password() -> None:
     cores_count = multiprocessing.cpu_count()
+
     size_of_block = 1000000
     ranges = range(0, 100000000, size_of_block)
 
