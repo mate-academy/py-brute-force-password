@@ -27,7 +27,7 @@ def sha256_hash_str(to_hash: str) -> str:
 
 
 def brute_force_password() -> None:
-    batch_size = (10 ** 8) // 130
+    batch_size = (10 ** 8) // 160
     res = []
     with ProcessPoolExecutor() as executor:
         for batch_res in executor.map(
