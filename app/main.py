@@ -21,7 +21,7 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def find_hash(hash: str, password_num: int) -> str:
+def find_hash(pass_hash: str, password_num: int) -> None:
     digits = "0123456789"
     for attempt in product(digits, repeat=8):
         attempt = "".join(attempt)
@@ -32,7 +32,12 @@ def find_hash(hash: str, password_num: int) -> str:
 def brute_force_password() -> None:
     tasks = []
     for num, password in enumerate(PASSWORDS_TO_BRUTE_FORCE):
-        tasks.append(multiprocessing.Process(target=find_hash, args=(password, num)))
+        tasks.append(
+            multiprocessing.Process(
+                target=find_hash,
+                args=(password, num)
+            )
+        )
         tasks[-1].start()
 
     for task in tasks:
