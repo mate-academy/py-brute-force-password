@@ -1,6 +1,6 @@
+import multiprocessing
 import time
 from hashlib import sha256
-
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -17,11 +17,44 @@ PASSWORDS_TO_BRUTE_FORCE = [
 
 
 def sha256_hash_str(to_hash: str) -> str:
+    print(sha256(to_hash.encode("utf-8")).hexdigest())
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
+def search_passwords_in_range(start: int,
+                              end: int,
+                              found_passwords: multiprocessing.Queue) -> None:
+    for number in range(start, end):
+        password = f"{number:08d}"
+        if sha256_hash_str(password) in PASSWORDS_TO_BRUTE_FORCE:
+            found_passwords.put(password)
+
+
 def brute_force_password() -> None:
-    pass
+    num_processes = multiprocessing.cpu_count()
+    chunk_size = 10 ** 8 // num_processes
+
+    found_passwords = multiprocessing.Queue()
+    processes = []
+
+    for i in range(num_processes):
+        start = i * chunk_size
+        end = (i + 1) * chunk_size if i != num_processes - 1 else 10 ** 8
+        process = multiprocessing.Process(target=search_passwords_in_range,
+                                          args=(start, end, found_passwords))
+        processes.append(process)
+        process.start()
+
+    for process in processes:
+        process.join()
+
+    results = []
+    while not found_passwords.empty():
+        results.append(found_passwords.get())
+
+    print("\nВсе найденные пароли:")
+    for password in results:
+        print(password)
 
 
 if __name__ == "__main__":
