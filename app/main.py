@@ -1,6 +1,7 @@
 import time
 from hashlib import sha256
-
+import multiprocessing
+from itertools import product
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -20,8 +21,22 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
+def find_hash(hash: str, password_num: int) -> str:
+    digits = "0123456789"
+    for attempt in product(digits, repeat=8):
+        attempt = "".join(attempt)
+        if sha256_hash_str(attempt) == hash:
+            print(f"password #{password_num}: {attempt}")
+
+
 def brute_force_password() -> None:
-    pass
+    tasks = []
+    for num, password in enumerate(PASSWORDS_TO_BRUTE_FORCE):
+        tasks.append(multiprocessing.Process(target=find_hash, args=(password, num)))
+        tasks[-1].start()
+
+    for task in tasks:
+        task.join()
 
 
 if __name__ == "__main__":
