@@ -1,5 +1,6 @@
-import time
-from hashlib import sha256
+import hashlib
+import itertools
+from multiprocessing import Pool, cpu_count
 
 
 PASSWORDS_TO_BRUTE_FORCE = [
@@ -16,17 +17,41 @@ PASSWORDS_TO_BRUTE_FORCE = [
 ]
 
 
+PASSWORD_LENGTH = 8
+
+
 def sha256_hash_str(to_hash: str) -> str:
-    return sha256(to_hash.encode("utf-8")).hexdigest()
+    return hashlib.sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
-    pass
+def check_password(candidate):
+    hashed = sha256_hash_str(candidate)
+    if hashed in PASSWORDS_TO_BRUTE_FORCE:
+        print(f" Found: {candidate} -> {hashed}")
+        return candidate
+    return None
+
+
+def brute_force_password():
+    found_passwords = set()
+    all_possible_passwords = (''.join(p) for p in itertools.product("0123456789", repeat=PASSWORD_LENGTH))
+
+    num_workers = min(cpu_count(), 8)
+
+    with Pool(processes=num_workers) as pool:
+        try:
+            for result in pool.imap_unordered(check_password, all_possible_passwords):
+                if result:
+                    found_passwords.add(result)
+
+                if len(found_passwords) == len(PASSWORDS_TO_BRUTE_FORCE):
+                    break
+        finally:
+            pool.close()
+            pool.join()
+
+    print("\n Found all passwords:", found_passwords)
 
 
 if __name__ == "__main__":
-    start_time = time.perf_counter()
     brute_force_password()
-    end_time = time.perf_counter()
-
-    print("Elapsed:", end_time - start_time)
