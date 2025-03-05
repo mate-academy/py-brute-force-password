@@ -20,8 +20,35 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
+def process_range(rng: tuple) -> list:
+    start, end = rng
+    local_results = []
+    for password in range(start, end):
+        password_str = str(password).zfill(8)
+        hashed_password = sha256_hash_str(password_str)
+        if hashed_password in PASSWORDS_TO_BRUTE_FORCE:
+            local_results.append(
+                f"Found password: {password_str} -> Hash: {hashed_password}"
+            )
+    return local_results
+
+
 def brute_force_password() -> None:
-    pass
+    import multiprocessing
+    cpu_count = multiprocessing.cpu_count()
+
+    step = 10000000 // cpu_count
+    ranges = [
+        (start, min(start + step, 100000000))
+        for start in range(0, 100000000, step)
+    ]
+
+    with multiprocessing.Pool(cpu_count) as pool:
+        results = pool.map(process_range, ranges)
+
+    for sublist in results:
+        for result in sublist:
+            print(result)
 
 
 if __name__ == "__main__":
