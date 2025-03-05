@@ -25,7 +25,7 @@ def find_hash(pass_hash: str, password_num: int) -> None:
     digits = "0123456789"
     for attempt in product(digits, repeat=8):
         attempt = "".join(attempt)
-        if sha256_hash_str(attempt) == hash:
+        if sha256_hash_str(attempt) == pass_hash:
             print(f"password #{password_num}: {attempt}")
 
 
