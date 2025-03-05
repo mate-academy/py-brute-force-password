@@ -22,27 +22,10 @@ def sha256_hash_str(to_hash: str) -> str:
 
 
 def generate_password(number: int) -> None:
-    """
-        Creates 8-digit string, hash it with sha256
-        and check if hashed string exist in data-set
-        print if
-
-        param number - int
-        return: None
-    """
-    # make 8-digit password like '00000000'
     string = "0" * (8 - len(str(number))) + str(number)
-    # make hash string
     hash_password = sha256_hash_str(string)
-    # check if hashed password is in library and print it if yes
     if hash_password in PASSWORDS_TO_BRUTE_FORCE:
         print(string)
-
-
-# def brute_force_password() -> None:
-#     print("Executing task without any speeding-up:")
-#     for number in range(10**8):
-#         generate_password(number)
 
 
 def brute_force_password() -> None:
