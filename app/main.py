@@ -21,7 +21,8 @@ def sha256_hash_str(to_hash: str) -> str:
 
 
 def check_password(number: int) -> str | None:
-    password = f"{number: 08d}"
+    # adding whitespace for f"{number: 08d}" will ruin the search logic
+    password = f"{number:08d}"  # noqa: E231
     hashed_password = sha256_hash_str(password)
     if hashed_password in PASSWORDS_TO_BRUTE_FORCE:
         return password
