@@ -22,7 +22,7 @@ def sha256_hash_str(to_hash: str) -> str:
 
 
 def find_match(start_ind: int) -> None:
-    for number in range(start_ind, start_ind + 1_000_000):
+    for number in range(start_ind, start_ind + 1000000):
         password = f"{number:08d}"
         if sha256_hash_str(password) in PASSWORDS_TO_BRUTE_FORCE:
             print(f"Found password: {password}")
@@ -30,8 +30,8 @@ def find_match(start_ind: int) -> None:
 
 def brute_force_password() -> None:
     cores_count = multiprocessing.cpu_count()
-    size_of_block = 1_000_000
-    ranges = range(0, 100_000_000, size_of_block)
+    size_of_block = 1000000
+    ranges = range(0, 100000000, size_of_block)
 
     with multiprocessing.Pool(cores_count) as pool:
         pool.map(find_match, ranges)
