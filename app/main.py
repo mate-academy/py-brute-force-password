@@ -21,6 +21,7 @@ def sha256_hash_str(to_hash: str) -> str:
 
 
 def brute_force_password() -> None:
+
     pass
 
 
