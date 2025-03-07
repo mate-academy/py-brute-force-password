@@ -25,11 +25,11 @@ def sha256_hash_str(to_hash: str) -> str:
 def brute_force_password(password_for_check: int) -> None:
     str_password = str(password_for_check).zfill(8)
     if sha256_hash_str(str_password) in PASSWORDS_TO_BRUTE_FORCE:
-        print("Password found")
+        return sha256_hash_str(str_password)
 
 def main() -> None:
     with ProcessPoolExecutor(multiprocessing.cpu_count() - 1) as executor:
-        executor.map(brute_force_password, range(100000), chunksize=10000)
+        executor.map(brute_force_password, range(100000000), chunksize=10000)
 if __name__ == "__main__":
     start_time = time.perf_counter()
     main()
