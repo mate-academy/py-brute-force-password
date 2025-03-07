@@ -21,16 +21,17 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def check_password(password: str):
+def check_password(password: str) -> tuple[str, str] | None:
     hashed = sha256_hash_str(password)
     if hashed in PASSWORDS_TO_BRUTE_FORCE:
         return hashed, password
     return None
 
 
-def brute_force_password():
+def brute_force_password() -> None:
     with Pool(processes=cpu_count()) as pool:
-        passwords = ("".join(p) for p in itertools.product("0123456789", repeat=8))
+        passwords = ("".join(p) for p
+                     in itertools.product("0123456789", repeat=8))
 
         for result in pool.map(check_password, passwords, chunksize=5000):
             if result:
@@ -38,7 +39,8 @@ def brute_force_password():
                 PASSWORDS_TO_BRUTE_FORCE[hashed] = password
                 print(f"Found: {password} -> {hashed}")
 
-                if all(value is not None for value in PASSWORDS_TO_BRUTE_FORCE.values()):
+                if all(value is not None for value
+                       in PASSWORDS_TO_BRUTE_FORCE.values()):
                     pool.terminate()
                     break
 
