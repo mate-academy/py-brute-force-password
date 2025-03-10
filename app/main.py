@@ -23,16 +23,15 @@ def sha256_hash_str(to_hash: str) -> str:
 
 def brute(from_num: int, to_num: int) -> None:
     for num in range(from_num, to_num):
-        to_hash = str(num)[-1:]
+        to_hash = str(num)
         hashed = sha256_hash_str(to_hash)
         if hashed in PASSWORDS_TO_BRUTE_FORCE:
             print(f"Find {to_hash} in brute force as {hashed}")
             PASSWORDS_TO_BRUTE_FORCE.remove(hashed)
 
 
-def brute_force_password() -> None:
+def brute_force_password(start: int = 100000000, end: int = 200000000) -> None:
     num_of_processes = multiprocessing.cpu_count() - 1
-    start, end = 100000000, 200000000
     step = (end - start) / num_of_processes
     tasks = []
     for i in range(num_of_processes):
