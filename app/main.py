@@ -1,6 +1,7 @@
+import multiprocessing
 import time
 from hashlib import sha256
-
+from concurrent.futures import ProcessPoolExecutor, as_completed
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -20,13 +21,61 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
-    pass
+def brute_force_password(start: int, end: int) -> list:
+    results = []
+    for i in range(start, end):
+        candidate = f"{i:08}"
+        hashed_candidate = sha256_hash_str(candidate)
+        if hashed_candidate in PASSWORDS_TO_BRUTE_FORCE:
+            print(f"Found pwd {hashed_candidate} - {candidate}")
+            results.append(candidate)
+    return results
+
+
+# multiprocessing method Code for CPU-bound
+def main_multiprocessing() -> None:
+    # Define the range of numbers to brute force (00000000 to 99999999)
+    total_candidate = 10 ** 8
+    cpu_count = multiprocessing.cpu_count() - 1
+    piece_of_work = total_candidate // cpu_count
+
+    # Range for processing
+    ranges = [
+        (
+            i * piece_of_work,
+            (i + 1) * piece_of_work
+        )
+        for i in range(cpu_count)
+    ]
+
+    ranges[-1] = (ranges[-1][0], total_candidate)  # CHeck last cover range
+
+    futures = []
+    found_passwords = []
+
+    with ProcessPoolExecutor(cpu_count) as executor:
+        for start, end in ranges:
+            futures.append(executor.submit(brute_force_password, start, end))
+
+        for future in as_completed(futures):
+            found_passwords.extend(future.result())
+            print(f"Added to list found_passwords {found_passwords[-1]}")
+
+            # Exit early if all passwords are found
+            if len(found_passwords) >= len(PASSWORDS_TO_BRUTE_FORCE):
+                print("All passwords found.")
+                executor.shutdown(wait=False, cancel_futures=True)
+                break
+
+    # Print the result
+    print("Found password")
+    for pwd in found_passwords:
+        print(pwd)
 
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
-    brute_force_password()
+    main_multiprocessing()
     end_time = time.perf_counter()
 
     print("Elapsed:", end_time - start_time)
