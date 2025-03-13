@@ -21,7 +21,8 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def check_passwords(start: int, block_size: int = 1_000_000) -> None:
+def check_passwords(start: int) -> None:
+    block_size = 1_000_000
     for num in range(start, start + block_size):
         password = f"{num:08d}"
         hashed = sha256_hash_str(password)
