@@ -1,5 +1,7 @@
+from typing import List
 import time
 from hashlib import sha256
+import multiprocessing
 
 
 PASSWORDS_TO_BRUTE_FORCE = [
@@ -20,13 +22,41 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
+def brute_force_password_worker(start: int, end: int, results: List):
+    for i in range(start, end):
+        if len(results) == 10:
+            break
+        current_hash = sha256_hash_str(to_hash=str(i).zfill(8))
+        if current_hash in PASSWORDS_TO_BRUTE_FORCE:
+            results.append(current_hash)
+            print(results[-1])
+                
 def brute_force_password() -> None:
-    pass
+    process_count = multiprocessing.cpu_count() - 2
+    chunk_size = 1_000_000_000 // process_count
+    tasks: List[multiprocessing.Process] = []
+    results = []
 
+    for i in range(process_count):
+        start = i * chunk_size
+        end = start + chunk_size if i < process_count - 1 else 1_000_000_000
+
+        tasks.append(multiprocessing.Process(target=brute_force_password_worker, args=(start, end, results)))
+        tasks[-1].start()
+
+    for task in tasks:
+        task.join()
+
+def brute_force_password_sync() -> None:
+    results = []
+    start = 0
+    end = 1_000_000_000
+    brute_force_password_worker(start=start, end=end, results=results)
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
     brute_force_password()
+    # brute_force_password_sync()
     end_time = time.perf_counter()
 
     print("Elapsed:", end_time - start_time)
