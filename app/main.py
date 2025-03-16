@@ -3,6 +3,7 @@ import time
 from hashlib import sha256
 import multiprocessing
 
+
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
     "cf0b0cfc90d8b4be14e00114827494ed5522e9aa1c7e6960515b58626cad0b44",
@@ -16,42 +17,35 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
 
+
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
-def brute_force_password_worker(start: int, end: int, results: List, stop_event):
+
+def brute_force_password_worker(start: int, end: int, results: List):
     for i in range(start, end):
-        if stop_event.is_set():
+        if len(results) == 10:
             break
-        
         current_hash = sha256_hash_str(to_hash=str(i).zfill(8))
         if current_hash in PASSWORDS_TO_BRUTE_FORCE:
             results.append(current_hash)
-            print(current_hash)
-            
-            if len(results) >= 10:
-                stop_event.set()
-                break
-
+            print(results[-1])
+                
 def brute_force_password() -> None:
-    process_count = max(1, multiprocessing.cpu_count() - 2)
+    process_count = multiprocessing.cpu_count() - 2
     chunk_size = 1_000_000_000 // process_count
     tasks: List[multiprocessing.Process] = []
-    
-    with multiprocessing.Manager() as manager:
-        results = manager.list()
-        stop_event = multiprocessing.Event()
+    results = []
 
-        for i in range(process_count):
-            start = i * chunk_size
-            end = start + chunk_size if i < process_count - 1 else 1_000_000_000
+    for i in range(process_count):
+        start = i * chunk_size
+        end = start + chunk_size if i < process_count - 1 else 1_000_000_000
 
-            process = multiprocessing.Process(target=brute_force_password_worker, args=(start, end, results, stop_event))
-            tasks.append(process)
-            process.start()
+        tasks.append(multiprocessing.Process(target=brute_force_password_worker, args=(start, end, results)))
+        tasks[-1].start()
 
-        for task in tasks:
-            task.join()
+    for task in tasks:
+        task.join()
 
 def brute_force_password_sync() -> None:
     results = []
@@ -62,5 +56,7 @@ def brute_force_password_sync() -> None:
 if __name__ == "__main__":
     start_time = time.perf_counter()
     brute_force_password()
+    # brute_force_password_sync()
     end_time = time.perf_counter()
+
     print("Elapsed:", end_time - start_time)
