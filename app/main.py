@@ -29,14 +29,11 @@ def check_password_range(start: int, end: int) -> list[str]:
             print(f"Found: {num_str}")
             found_passwords.append(num_str)
 
-        if len(found_passwords) == 10:
-            break
-
     return found_passwords
 
 
 def brute_force_password() -> None:
-    cpu_count = max(1, multiprocessing.cpu_count() - 1)
+    cpu_count = multiprocessing.cpu_count()
     total_range = 100_000_000
     chunk_size = total_range // cpu_count
 
