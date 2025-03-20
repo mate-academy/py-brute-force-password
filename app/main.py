@@ -1,6 +1,6 @@
+import multiprocessing
 import time
 from hashlib import sha256
-
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -20,13 +20,45 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
-    pass
+def brute_force_password(password_to_check) -> None:
+    password_to_check_finish = password_to_check[0] + "9" * 7
+    count = 0
+    while password_to_check != password_to_check_finish:
+        count += 1
+        count_pointer = len(str(count))
+        pointer = len(password_to_check) - count_pointer
+        first = password_to_check[:pointer]
+        second = password_to_check[-count_pointer:]
+        if sha256_hash_str(password_to_check) in PASSWORDS_TO_BRUTE_FORCE:
+            print(password_to_check)
+        password_to_check = first + str(int(second) + 1)
 
 
 if __name__ == "__main__":
+    passwords = [
+        "00000000",
+        "10000000",
+        "20000000",
+        "30000000",
+        "40000000",
+        "50000000",
+        "60000000",
+        "70000000",
+        "80000000",
+        "90000000",
+    ]
     start_time = time.perf_counter()
-    brute_force_password()
+    tasks_list = []
+    for password in passwords:
+        task = multiprocessing.Process(target=brute_force_password, args=(password,))
+        tasks_list.append(task)
+        task.start()
+    finished_processes = []
+    while len(finished_processes) != len(PASSWORDS_TO_BRUTE_FORCE):
+        for task in tasks_list:
+            if not task.is_alive():
+                finished_processes.append(task)
+                tasks_list.remove(task)
     end_time = time.perf_counter()
 
     print("Elapsed:", end_time - start_time)
