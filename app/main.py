@@ -21,11 +21,14 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 def find_password(hash_password: str):
-    for i in range(10 ** 8):
+    for i in range(0, 100000000):
         password = f"{i:08d}"
         hashed_password = sha256_hash_str(password)
         if hashed_password == hash_password:
             print(f"{password} equals to {hashed_password}")
+            return
+        print(f"Password doesn't found for hash: {hashed_password}")
+
 
 def brute_force_password():
     tasks = []
