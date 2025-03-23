@@ -1,6 +1,11 @@
+import multiprocessing
+import os
+import threading
 import time
 from hashlib import sha256
-
+from concurrent.futures import ProcessPoolExecutor, wait
+from multiprocessing import current_process
+from threading import current_thread
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -20,13 +25,73 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
-    pass
+def brute_force_password(start: int, stop: int) -> None:
+    for i in map("{:0>8}".format, range(start, stop)):
+        if sha256_hash_str(i) in PASSWORDS_TO_BRUTE_FORCE:
+            pid = os.getpid()
+            thread_name = current_thread().name
+            process_name = current_process().name
+            print(f"{pid} - {process_name} - {thread_name} - Password: {i}")
+
+
+def main_pool_executor() -> None:
+    futures = []
+    start = 0
+    stop = 10_000_000
+
+    with ProcessPoolExecutor(multiprocessing.cpu_count()) as executer:
+        for _ in range(10):
+            futures.append(executer.submit(brute_force_password, start, stop))
+            start += 10_000_000
+            stop += 10_000_000
+
+    wait(futures)
+
+
+def main_threads() -> None:
+    tasks = []
+    start = 0
+    stop = 10_000_000
+
+    for _ in range(10):
+        tasks.append(threading.Thread(
+            target=brute_force_password,
+            args=(start, stop))
+        )
+        tasks[-1].start()
+        start += 10_000_000
+        stop += 10_000_000
+    for task in tasks:
+        task.join()
+
+
+def main_processes() -> None:
+    tasks = []
+    start = 0
+    stop = 10_000_000
+
+    for _ in range(10):
+        tasks.append(multiprocessing.Process(
+            target=brute_force_password,
+            args=(start, stop))
+        )
+        tasks[-1].start()
+        start += 10_000_000
+        stop += 10_000_000
+    for task in tasks:
+        task.join()
 
 
 if __name__ == "__main__":
-    start_time = time.perf_counter()
-    brute_force_password()
-    end_time = time.perf_counter()
+    functions = [main_pool_executor, main_processes, main_threads]
+    for function in functions:
+        start_time = time.perf_counter()
+        print("-" * 50)
 
-    print("Elapsed:", end_time - start_time)
+        print(f"         Starting the {function.__name__}:")
+
+        function()
+
+        end_time = time.perf_counter()
+
+        print("Elapsed:", end_time - start_time)
