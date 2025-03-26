@@ -1,8 +1,16 @@
+import os
+import signal
+
+import win32con
+import win32process
+import win32api
 import time
 from hashlib import sha256
 
+from multiprocessing import Process, Value, Lock
 
-PASSWORDS_TO_BRUTE_FORCE = [
+
+PASSWORDS_TO_BRUTE_FORCE = {
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
     "cf0b0cfc90d8b4be14e00114827494ed5522e9aa1c7e6960515b58626cad0b44",
     "e34efeb4b9538a949655b788dcb517f4a82e997e9e95271ecd392ac073fe216d",
@@ -13,20 +21,49 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "1273682fa19625ccedbe2de2817ba54dbb7894b7cefb08578826efad492f51c9",
     "7e8f0ada0a03cbee48a0883d549967647b3fca6efeb0a149242f19e4b68d53d6",
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
-]
+}
+
+counter = Value("i", 0)
+lock = Lock()
 
 
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
+def check_range(start, end, pid):
+    for i in range(start, end):
+        result = sha256_hash_str(str(i).zfill(8))
+        if result in PASSWORDS_TO_BRUTE_FORCE:
+            with lock:
+                counter.value += 1
+                print(f"{result} representation before hashing is: {i}")
+                if counter.value == len(PASSWORDS_TO_BRUTE_FORCE):
+                    for child_pid in os.listdir("/proc"):
+                        try:
+                            if int(child_pid) != pid:
+                                os.kill(int(child_pid), signal.SIGTERM)
+                        except TimeoutError:
+                            ...
+                    break
+
+
 def brute_force_password() -> None:
-    pass
+    processes = []
+    chunk_size = 12500000
+    for i in range(0, 100000000, chunk_size):
+        p = Process(target=check_range, args=(i, i+chunk_size, os.getpid()))
+        p.start()
+        p_priority = win32process.REALTIME_PRIORITY_CLASS
+        handle = win32api.OpenProcess(win32con.PROCESS_ALL_ACCESS, False, p.pid)
+        win32process.SetPriorityClass(handle, p_priority)
+        processes.append(p)
+    for p in processes:
+        p.join()
 
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
     brute_force_password()
     end_time = time.perf_counter()
-
     print("Elapsed:", end_time - start_time)
