@@ -1,5 +1,10 @@
 import time
 from hashlib import sha256
+from itertools import product
+from multiprocessing import Pool, cpu_count
+from typing import Optional, Tuple, Iterator, List
+
+import numpy as np
 
 
 PASSWORDS_TO_BRUTE_FORCE = [
@@ -15,18 +20,43 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
 
+PASSWORD_LENGTH = 8
+
 
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
-    pass
+def generate_passwords(length: int) -> Iterator[str]:
+    chars = np.array(list("0123456789"))
+    for pwd_tuple in product(chars, repeat=length):
+        yield "".join(pwd_tuple)
+
+
+def check_password(password: str) -> Optional[Tuple[str, str]]:
+    hashed_password = sha256_hash_str(password)
+    if hashed_password in PASSWORDS_TO_BRUTE_FORCE:
+        return password, hashed_password
+    return None
+
+
+def brute_force_password() -> List[Tuple[str, str]]:
+    passwords = generate_passwords(8)
+    with Pool(processes=cpu_count()) as pool:
+        results = pool.imap_unordered(
+            check_password, passwords, chunksize=1000
+        )
+
+        found_passwords = [result for result in results if result is not None]
+        return found_passwords
 
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
-    brute_force_password()
+    found_passwords = brute_force_password()
     end_time = time.perf_counter()
+
+    for pwd, hashed in found_passwords:
+        print(f"Password: {pwd}, Hash: {hashed}")
 
     print("Elapsed:", end_time - start_time)
