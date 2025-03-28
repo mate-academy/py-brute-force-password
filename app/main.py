@@ -1,3 +1,4 @@
+import concurrent.futures
 import time
 from hashlib import sha256
 
@@ -20,13 +21,32 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
+def unhashed_password(start: int, end: int) -> None:
+    for num in range(start, end):
+        password_to_try = "{:08}".format(num)
+        if sha256_hash_str(password_to_try) in PASSWORDS_TO_BRUTE_FORCE:
+            print(password_to_try)
+
+
 def brute_force_password() -> None:
-    pass
+    big_num = 10 ** 7
+    max_workers = 10
+
+    with concurrent.futures.ProcessPoolExecutor(
+            max_workers=max_workers) as executor:
+        for i in range(max_workers):
+            start = i * big_num
+            end = (i + 1) * big_num
+            executor.submit(unhashed_password, start, end)
 
 
-if __name__ == "__main__":
+def run_brute_force_password_async() -> None:
     start_time = time.perf_counter()
     brute_force_password()
     end_time = time.perf_counter()
 
     print("Elapsed:", end_time - start_time)
+
+
+if __name__ == "__main__":
+    run_brute_force_password_async()
