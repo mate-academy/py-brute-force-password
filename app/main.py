@@ -1,6 +1,8 @@
+from itertools import product
 import time
-from hashlib import sha256
+from multiprocessing import Pool, cpu_count
 
+from hashlib import sha256
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -20,8 +22,27 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
+def check_password(password: str) -> None | tuple:
+    hashed_password = sha256_hash_str(password)
+    if hashed_password in PASSWORDS_TO_BRUTE_FORCE:
+        return password, hashed_password
+    return None
+
+
 def brute_force_password() -> None:
-    pass
+    pool = Pool(cpu_count())
+    found_passwords = pool.map(
+        check_password,
+        (
+            "".join(combination)
+            for combination in product("0123456789", repeat=8)
+        ),
+    )
+    found_passwords = [
+        password for password in found_passwords if password is not None
+    ]
+    for password, hashed_password in found_passwords:
+        print(f"Found: {password} -> {hashed_password}")
 
 
 if __name__ == "__main__":
