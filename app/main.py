@@ -1,6 +1,7 @@
 import time
+import itertools
 from hashlib import sha256
-
+import multiprocessing
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -20,8 +21,41 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
-    pass
+def worker(passwords):
+    for password_tuple in passwords:
+        password = "".join(password_tuple)
+        hashed_password = sha256_hash_str(password)
+        if hashed_password in PASSWORDS_TO_BRUTE_FORCE:
+            print("Password:", password)
+            PASSWORDS_TO_BRUTE_FORCE.remove(hashed_password)
+            if not PASSWORDS_TO_BRUTE_FORCE:
+                break
+
+
+def password_chunks(iterable, chunk_size):
+    it = iter(iterable)
+    chunk = list(itertools.islice(it, chunk_size))
+    while chunk:
+        yield chunk
+        chunk = list(itertools.islice(it, chunk_size))
+
+
+def brute_force_password():
+    num_processes = multiprocessing.cpu_count()
+    passwords_per_process = 10 ** 8 // num_processes
+    password_combinations = itertools.product("0123456789", repeat=8)
+
+    processes = []
+    for passwords_chunk in password_chunks(
+            password_combinations,
+            passwords_per_process
+    ):
+        p = multiprocessing.Process(target=worker, args=(passwords_chunk,))
+        processes.append(p)
+        p.start()
+
+    for p in processes:
+        p.join()
 
 
 if __name__ == "__main__":
