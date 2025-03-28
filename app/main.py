@@ -1,6 +1,9 @@
 import time
 from hashlib import sha256
-
+import string
+import itertools
+from multiprocessing import Pool
+from typing import Tuple
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -20,8 +23,18 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
+def try_attempt(args: Tuple[int, str]) -> None:
+    password_num, password_hash = args
+    for attempt in itertools.product(string.digits, repeat=8):
+        password = "".join(attempt)
+        if sha256_hash_str(password) == password_hash:
+            print(f"Password {password_num} decrypted: {password}")
+            return
+
+
 def brute_force_password() -> None:
-    pass
+    with Pool() as pool:
+        pool.map(try_attempt, enumerate(PASSWORDS_TO_BRUTE_FORCE))
 
 
 if __name__ == "__main__":
