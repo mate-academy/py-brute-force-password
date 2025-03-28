@@ -1,6 +1,11 @@
+import multiprocessing
 import time
 from hashlib import sha256
+from multiprocessing.managers import ValueProxy
+from typing import List, Tuple
 
+
+Range = List[Tuple[int, int]]
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -14,19 +19,82 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "7e8f0ada0a03cbee48a0883d549967647b3fca6efeb0a149242f19e4b68d53d6",
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
+NUMBER_OF_PASSWORDS_TO_ITERATE = 100000000
+NUMMER_OF_PROCESSES = 32  # number of chunks
 
 
-def sha256_hash_str(to_hash: str) -> str:
-    return sha256(to_hash.encode("utf-8")).hexdigest()
+class PasswordCracker:
+    def __init__(
+        self,
+        passwords_hash_list: List[str],
+        num_passwords_to_iterate: int,
+        num_processes: int
+    ) -> None:
+        self.passwords_hash_list = passwords_hash_list
+        self.passwords_hash_count = len(passwords_hash_list)
+        self.num_passwords_to_iterate = num_passwords_to_iterate
+        self.num_processes = num_processes
 
+    def sha256_hash_str(self, to_hash: str) -> str:
+        return sha256(to_hash.encode("utf-8")).hexdigest()
 
-def brute_force_password() -> None:
-    pass
+    def print_correct_password(
+            self,
+            start: int,
+            end: int,
+            passwords_cracked: ValueProxy,
+            lock: multiprocessing.Lock
+    ) -> None:
+        with lock:
+            if passwords_cracked.value >= self.passwords_hash_count:
+                return
+
+        for i in range(start, end):
+            hash_pass = self.sha256_hash_str(f"{i:08}")
+            if hash_pass in self.passwords_hash_list:
+                print(f"Password found: {i:08}, hash: {hash_pass}")
+                with lock:
+                    passwords_cracked.value += 1
+                    if passwords_cracked.value >= self.passwords_hash_count:
+                        break
+
+    def calculate_ranges(self, num_processes: int) -> Range:
+        """Make num_processes ranges of as even sizes as possible"""
+        chunk_size = max(self.num_passwords_to_iterate // num_processes, 1)
+        remainder = self.num_passwords_to_iterate % num_processes
+        start = 0
+        ranges = []
+        for i in range(num_processes):
+            end = start + chunk_size + (1 if i < remainder else 0)
+            ranges.append((start, end))
+            start = end
+        return ranges
+
+    def brute_force_password(self) -> None:
+        with multiprocessing.Manager() as manager:
+            # passwords_cracked - counter for stopping unnecessary computations
+            passwords_cracked = manager.Value("i", 0)
+            lock = manager.Lock()
+
+            with multiprocessing.Pool(
+                processes=multiprocessing.cpu_count() - 1
+            ) as pool:
+                ranges = self.calculate_ranges(self.num_processes)
+                pool.starmap(
+                    self.print_correct_password,
+                    [(start, end, passwords_cracked, lock)
+                     for start, end in ranges]
+                )
 
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
-    brute_force_password()
+    password_cracker = PasswordCracker(
+        PASSWORDS_TO_BRUTE_FORCE,
+        NUMBER_OF_PASSWORDS_TO_ITERATE,
+        NUMMER_OF_PROCESSES
+    )
+    password_cracker.brute_force_password()
     end_time = time.perf_counter()
 
     print("Elapsed:", end_time - start_time)
