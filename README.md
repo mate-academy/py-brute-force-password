@@ -43,3 +43,5 @@ Find the **10 passwords** (each an 8-character numeric string) and print them to
 - Optimize your brute-force setup as much as possible to speed up the process.
 - Attach a **screenshot of your script results (console output)** to the PR.
 
+RESULT 
+![img.png](img.png)
