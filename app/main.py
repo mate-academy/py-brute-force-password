@@ -1,4 +1,5 @@
 import time
+import multiprocessing
 from hashlib import sha256
 
 
@@ -15,13 +16,32 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
 
+SET_NUMBER = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+
 
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
+def value_search_recursion(num1: str, level_num: int) -> None:
+    for num in SET_NUMBER:
+        number = num1 + num
+        if level_num == 0:
+            if sha256_hash_str(number) in PASSWORDS_TO_BRUTE_FORCE:
+                print("Password = ", number)
+        else:
+            value_search_recursion(number, level_num - 1)
+
+
 def brute_force_password() -> None:
-    pass
+    tasks = []
+    for num1 in SET_NUMBER:
+        tasks.append(multiprocessing.Process(target=value_search_recursion, args=(num1, 6)))
+
+        tasks[-1].start()
+
+    for task in tasks:
+        task.join()
 
 
 if __name__ == "__main__":
