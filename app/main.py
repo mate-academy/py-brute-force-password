@@ -1,6 +1,8 @@
 import time
+import psutil
 from hashlib import sha256
-
+from itertools import product
+from concurrent.futures import ProcessPoolExecutor, wait
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -14,19 +16,43 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "7e8f0ada0a03cbee48a0883d549967647b3fca6efeb0a149242f19e4b68d53d6",
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
+ENABLED_CPUS = psutil.cpu_count()
 
 
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
-    pass
+def compute_password_product(encode_password: list) -> None:
+    start_time = time.time()
+    for i in product("0123456789", repeat=8):
+        password = "".join(i)
+        hashed_password = sha256_hash_str(password)
+        if hashed_password in encode_password:
+            print("The password has been found")
+            print(f"{password} == hash:{encode_password}")
+            end_time = time.time() - start_time
+            print(
+                f"The password of this hash was found in {end_time} seconds\n"
+            )
+            encode_password.pop(hashed_password)
+
+
+def brute_force_password(hashed_list: list[str]) -> None:
+    futures = []
+    with ProcessPoolExecutor(max_workers=ENABLED_CPUS) as executor:
+        for encode_password in hashed_list:
+            futures.append(executor.submit(
+                compute_password_product,
+                encode_password)
+            )
+    wait(futures)
 
 
 if __name__ == "__main__":
+    print("Start processing...\n")
     start_time = time.perf_counter()
-    brute_force_password()
+    brute_force_password(hashed_list=PASSWORDS_TO_BRUTE_FORCE)
     end_time = time.perf_counter()
 
     print("Elapsed:", end_time - start_time)
