@@ -1,3 +1,4 @@
+import multiprocessing
 import time
 from hashlib import sha256
 
@@ -21,7 +22,23 @@ def sha256_hash_str(to_hash: str) -> str:
 
 
 def brute_force_password() -> None:
-    pass
+    charset = "0123456789"
+    length = 8
+
+    all_combinations = itertools.product(charset, repeat=length)
+
+    pool = multiprocessing.Pool()
+
+    pool.map(compare_hash, (''.join(combination) for combination in all_combinations))
+
+    pool.close()
+    pool.join()
+
+
+def compare_hash(password_str: str) -> None:
+    hashed_password = sha256_hash_str(password_str)
+    if hashed_password in PASSWORDS_TO_BRUTE_FORCE:
+        print(f"Found password: {password_str}")
 
 
 if __name__ == "__main__":
