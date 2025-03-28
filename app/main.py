@@ -1,6 +1,34 @@
 import time
 from hashlib import sha256
 
+import multiprocessing
+import asyncio
+import threading
+
+from concurrent.futures import wait, ProcessPoolExecutor
+
+from typing import Any, Callable
+
+
+def timeit(func: Callable) -> Callable:
+    if asyncio.iscoroutinefunction(func):
+        async def wrapper(*args, **kwargs) -> Any:
+            start_time = time.time()
+            print(f"Test for function {func.__name__}")
+            result = await func(*args, **kwargs)
+            end_time = time.time()
+            print(f"Elapsed:{end_time - start_time}")
+            return result
+    else:
+        def wrapper(*args, **kwargs) -> Any:
+            start_time = time.time()
+            print(f"Test for function {func.__name__}")
+            result = func(*args, **kwargs)
+            end_time = time.time()
+            print(f"Elapsed:{end_time - start_time}\n")
+            return result
+    return wrapper
+
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -20,13 +48,89 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
-    pass
+def selection_of_passwords(data: list) -> None:
+    for password in data:
+        print(f"Brute forcing for {password}")
+        for i in range(100000000):
+            if sha256_hash_str(str(i)) == password:
+                print(f"Password found: {i}")
+                break
+
+
+async def selection_of_passwords_async(data: list) -> None:
+    for password in data:
+        print(f"Brute forcing for {password}")
+        for i in range(100000000):
+            if sha256_hash_str(str(i)) == password:
+                print(f"Password found: {i}")
+                break
+
+
+@timeit
+def brute_force_password(data: list) -> None:
+    selection_of_passwords(data)
+
+
+@timeit
+def brute_force_password_multiprocessing(data: list) -> None:
+    num_processes = multiprocessing.cpu_count()
+    processes = []
+    chunks = [[] for _ in range(num_processes)]
+
+    for i, password in enumerate(data):
+        chunks[i % num_processes].append(password)
+
+    for chunk in chunks:
+        process = multiprocessing.Process(
+            target=selection_of_passwords,
+            args=(chunk,),
+        )
+        processes.append(process)
+        process.start()
+
+    for process in processes:
+        process.join()
+
+
+@timeit
+def brute_force_password_pool_executor(data: list) -> None:
+    futures = []
+    with ProcessPoolExecutor() as executor:
+        for password in data:
+            futures.append(executor.submit(selection_of_passwords, [password]))
+
+    wait(futures)
+
+
+@timeit
+def brute_force_password_threading(data: list) -> None:
+    tasks = []
+
+    for password in data:
+        tasks.append(
+            threading.Thread(
+                target=selection_of_passwords,
+                args=(
+                    [
+                        password,
+                    ],
+                ),
+            )
+        )
+        tasks[-1].start()
+
+    for task in tasks:
+        task.join()
+
+
+@timeit
+async def brute_force_password_async(data: list) -> None:
+    await selection_of_passwords_async(data)
 
 
 if __name__ == "__main__":
-    start_time = time.perf_counter()
-    brute_force_password()
-    end_time = time.perf_counter()
-
-    print("Elapsed:", end_time - start_time)
+    brute_force_password(PASSWORDS_TO_BRUTE_FORCE)
+    brute_force_password_multiprocessing(PASSWORDS_TO_BRUTE_FORCE)
+    brute_force_password_pool_executor(PASSWORDS_TO_BRUTE_FORCE)
+    brute_force_password_threading(PASSWORDS_TO_BRUTE_FORCE)
+    asyncio.run(brute_force_password_async(PASSWORDS_TO_BRUTE_FORCE))
