@@ -1,6 +1,8 @@
 import time
 from hashlib import sha256
-
+from concurrent.futures import ProcessPoolExecutor
+import multiprocessing
+from typing import List, Tuple
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -16,17 +18,101 @@ PASSWORDS_TO_BRUTE_FORCE = [
 ]
 
 
+# Define a function to hash a string using SHA-256 algorithm
 def sha256_hash_str(to_hash: str) -> str:
+    """
+    Hashes a given string using SHA-256
+    algorithm and returns the hexadecimal digest.
+
+    Args:
+        to_hash (str): The string to be hashed.
+
+    Returns:
+        str: The hexadecimal representation of the SHA-256
+        hash of the input string.
+    """
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
-    pass
+def check_password_range(start: int, end: int) -> List[Tuple[str, str]]:
+    """
+    Brute-forces through a range of password numbers, hashes them,
+    and checks if any of the hashes match the target hashes.
+
+    Args:
+        start (int): The starting number in the range of passwords to check.
+        end (int): The ending number in the range of passwords to check.
+
+    Returns:
+        list: A list of tuples containing
+        the matching passwords and their corresponding hashes.
+    """
+    found = []
+    # Loop over the range of numbers (possible passwords)
+    for i in range(start, end):
+        # Format the number as an 8-digit string,
+        # adding leading zeros if necessary
+        password = f"{i:08d}"
+        hashed = sha256_hash_str(password)
+        if hashed in PASSWORDS_TO_BRUTE_FORCE:
+            found.append((password, hashed))
+    return found  # Return the list of found passwords and their hashes
+
+
+def brute_force_password() -> list:
+    """
+    Initiates the brute force process to find passwords by
+    splitting the task across multiple processes.
+    Each process works on a separate chunk of
+    the password space (from 00000000 to 99999999).
+
+    Returns:
+        list: A list of tuples containing
+        the found passwords and their corresponding hashes.
+    """
+    num_processes = (
+        multiprocessing.cpu_count()
+    )  # Get the number of CPU cores available for parallelism
+    chunk_size = (
+        100000000 // num_processes
+    )  # Divide the total range of passwords
+    # (100 million) by the number of processes
+
+    # Using ProcessPoolExecutor to manage multiple processes
+    with ProcessPoolExecutor(max_workers=num_processes) as executor:
+        futures = []
+        # Divide the password space into chunks
+        # and assign each chunk to a process
+        for i in range(0, 100000000, chunk_size):
+            futures.append(
+                executor.submit(
+                    check_password_range,
+                    i,
+                    min(i + chunk_size,
+                        100000000
+                        )
+                )
+            )
+
+        found_passwords = []
+        # Wait for all processes to finish and collect their results
+        for future in futures:
+            found_passwords.extend(
+                future.result()
+            )  # Add the results of each process to the list of found passwords
+
+    return found_passwords
 
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
-    brute_force_password()
+    found = brute_force_password()
     end_time = time.perf_counter()
 
-    print("Elapsed:", end_time - start_time)
+    print("Found passwords:")
+    # Iterate through each found password and its hash
+    for password, hashed in found:
+        print(f"Password: {password}, Hash: {hashed}")
+
+    print(f"\nTotal passwords found: {len(found)}")
+    print(f"Elapsed time: {end_time - start_time:.2f} sec")
