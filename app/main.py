@@ -1,4 +1,5 @@
 import time
+import multiprocessing
 from hashlib import sha256
 
 
@@ -16,12 +17,20 @@ PASSWORDS_TO_BRUTE_FORCE = [
 ]
 
 
+def find_password(password: int):
+    password = str(password).zfill(8)
+    hashed = sha256_hash_str(password)
+    if hashed in PASSWORDS_TO_BRUTE_FORCE:
+        print(f"Password: {password} in {hashed}")
+
+
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
 def brute_force_password() -> None:
-    pass
+    with multiprocessing.Pool() as pool:
+        pool.map(find_password, range(10 ** 8))
 
 
 if __name__ == "__main__":
