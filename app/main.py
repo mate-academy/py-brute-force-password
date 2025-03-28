@@ -1,5 +1,8 @@
+from concurrent.futures import ProcessPoolExecutor
 import time
 from hashlib import sha256
+from itertools import chain
+import os
 
 
 PASSWORDS_TO_BRUTE_FORCE = [
@@ -20,8 +23,35 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
+def generate_passwords(start: int, end: int) -> list:
+    results = []
+    for num in range(start, end):
+        password = f"{num: 08d}"
+        hashed_password = sha256_hash_str(password)
+        if hashed_password in PASSWORDS_TO_BRUTE_FORCE:
+            results.append(password)
+    return results
+
+
 def brute_force_password() -> None:
-    pass
+    num_processes = os.cpu_count()
+    total_combinations = 100000000
+    range_per_process = total_combinations // num_processes
+
+    with ProcessPoolExecutor() as executor:
+        futures = [
+            executor.submit(
+                generate_passwords,
+                i * range_per_process,
+                (i + 1) * range_per_process
+            )
+            for i in range(num_processes)
+        ]
+        results = [future.result() for future in futures]
+
+    found_passwords = list(chain.from_iterable(results))
+    for password in found_passwords:
+        print(password)
 
 
 if __name__ == "__main__":
