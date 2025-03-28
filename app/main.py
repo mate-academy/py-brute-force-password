@@ -1,6 +1,8 @@
+import concurrent.futures as pool
+import gc
+import multiprocessing
 import time
 from hashlib import sha256
-
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -20,8 +22,42 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
+def brute_by_segments(start: int, end: int) -> dict:
+    passwords = {}
+    for number in range(start, end):
+        sha_pass = sha256_hash_str(str(number).zfill(8))
+        if sha_pass in PASSWORDS_TO_BRUTE_FORCE:
+            passwords[number] = sha_pass
+    return passwords
+
+
 def brute_force_password() -> None:
-    pass
+    num_cores = multiprocessing.cpu_count() - 1
+    passwords = {}
+    total_range = 100_000_000
+    step = total_range // num_cores
+
+    with pool.ProcessPoolExecutor(num_cores) as executor:
+        futures = {
+            executor.submit(
+                brute_by_segments,
+                num_core * step,
+                (num_core + 1) * step
+            ): num_core
+            for num_core in range(num_cores)
+        }
+        for future in pool.as_completed(futures):
+            try:
+                passwords.update(future.result())
+            except Exception as e:
+                print(f"An error occurred in {futures[future]} core. {e}")
+            finally:
+                del futures[future]
+                gc.collect()
+
+    for number, sha in passwords.items():
+        print(f"{number}:{sha}")
+    print(f"Total length: {len(passwords)}")
 
 
 if __name__ == "__main__":
