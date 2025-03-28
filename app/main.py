@@ -1,5 +1,8 @@
 import time
 from hashlib import sha256
+import multiprocessing as mp
+import numpy as np
+from concurrent.futures import ProcessPoolExecutor
 
 
 PASSWORDS_TO_BRUTE_FORCE = [
@@ -20,13 +23,21 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
-    pass
+def brute_force_password(cell, hash_list) -> None:
+    counter = 0
+    for to_check in map(str, np.arange(10 ** cell)):
+        if counter == len(hash_list):
+            break
+        else:
+            to_check = to_check.zfill(8)
+            if sha256_hash_str(to_check) in hash_list:
+                print(f"Found password: {to_check}")
+                counter += 1
 
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
-    brute_force_password()
+    brute_force_password(8, PASSWORDS_TO_BRUTE_FORCE)
     end_time = time.perf_counter()
 
     print("Elapsed:", end_time - start_time)
