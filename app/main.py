@@ -1,4 +1,5 @@
 import time
+import multiprocessing as mp
 from hashlib import sha256
 
 
@@ -21,7 +22,13 @@ def sha256_hash_str(to_hash: str) -> str:
 
 
 def brute_force_password() -> None:
-    pass
+    passwords = []
+    for password in PASSWORDS_TO_BRUTE_FORCE:
+        process = mp.Process(target=brute_force_password,
+                                    args=password,).start()
+        passwords.append(process)
+    for password in passwords:
+        password.join()
 
 
 if __name__ == "__main__":
