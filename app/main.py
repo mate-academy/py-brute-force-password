@@ -1,6 +1,8 @@
+import itertools
 import time
+from concurrent.futures import ProcessPoolExecutor, wait
 from hashlib import sha256
-
+import multiprocessing
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -20,8 +22,24 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
+def check_password(passwords: list[str], hash_password: str) -> str:
+    for password in passwords:
+        if sha256_hash_str(password) == hash_password:
+            print(password)
+            return password
+    print("password not found")
+
+
 def brute_force_password() -> None:
-    pass
+    futures = []
+    possible_combinations = [''.join(password) for password in itertools.product("0123456789", repeat=8)]
+    print(f"all posible combinations was created {len(possible_combinations)}")
+
+    with ProcessPoolExecutor(max_workers=multiprocessing.cpu_count() - 1) as executor:
+        for password in PASSWORDS_TO_BRUTE_FORCE:
+            futures.append(executor.submit(check_password, possible_combinations, password))
+
+    wait(futures)
 
 
 if __name__ == "__main__":
