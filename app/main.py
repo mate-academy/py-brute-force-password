@@ -1,3 +1,6 @@
+import multiprocessing
+import os
+import threading
 import time
 from hashlib import sha256
 
@@ -20,8 +23,33 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
+def is_valid_password(start, end):
+    for random_number in range(start, end):
+        password = "{:08}".format(random_number)
+        hashed_password = sha256_hash_str(password)
+        if hashed_password in PASSWORDS_TO_BRUTE_FORCE:
+            print(f"Password index ({PASSWORDS_TO_BRUTE_FORCE.index(hashed_password)}): {password}")
+
+
 def brute_force_password() -> None:
-    pass
+    cores = os.cpu_count()
+    number_of_processes = 100_000_000 // cores
+
+    processes = []
+
+    for i in range(cores):
+        start = i * number_of_processes
+        end = start + number_of_processes
+
+        processes.append(multiprocessing.Process(
+            target=is_valid_password,
+            args=(start, end)
+        ))
+
+        processes[-1].start()
+
+    for process in processes:
+        process.join()
 
 
 if __name__ == "__main__":
