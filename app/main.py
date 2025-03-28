@@ -1,6 +1,8 @@
 import time
+from multiprocessing import Process, cpu_count
 from hashlib import sha256
 
+CPU = cpu_count()
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -14,19 +16,46 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "7e8f0ada0a03cbee48a0883d549967647b3fca6efeb0a149242f19e4b68d53d6",
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
-
+brut_forced_passwords = []
 
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
-    pass
+def brute_force_password(start: int, end: int) -> None:
+    print(f"start brute forcing from {start} to {end}")
+    for number in range(start, end + 1):
+        if len(brut_forced_passwords) == len(PASSWORDS_TO_BRUTE_FORCE):
+            break
+        hashed_number = sha256_hash_str(f"{number:08d}")
+        if hashed_number in PASSWORDS_TO_BRUTE_FORCE:
+            print(f"brute forced password {hashed_number}: {number:08d}")
+            brut_forced_passwords.append(f"{number:08d}")
+    print(f"stop brute forcing from {start} to {end}")
+
+
+def main_multiprocessing():
+    tasks = []
+    chunk_size = 100000000 // CPU
+
+    for i in range(CPU):
+        tasks.append(Process(
+            target=brute_force_password,
+            args=(
+                i * chunk_size,
+                (i + 1) * chunk_size,
+            )
+        )
+        )
+        tasks[-1].start()
+
+    for task in tasks:
+        task.join()
 
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
-    brute_force_password()
+    main_multiprocessing()
     end_time = time.perf_counter()
 
     print("Elapsed:", end_time - start_time)
