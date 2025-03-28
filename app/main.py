@@ -1,4 +1,5 @@
 import time
+import multiprocessing
 from hashlib import sha256
 
 
@@ -20,13 +21,31 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
-    pass
+def get_password(index: int, hash_p: str) -> None:
+    for current in range(10 ** 8):
+        password = f"{current:08d}"
+        if sha256_hash_str(password) == hash_p:
+            print(f"#{index} password: {password}")
+            break
+
+
+def brute_force_password(hash_passwords: list) -> None:
+    tasks = []
+    for i in range(len(hash_passwords)):
+        tasks.append(
+            multiprocessing.Process(
+                target=get_password, args=(i, hash_passwords[i])
+            )
+        )
+        tasks[-1].start()
+
+    for task in tasks:
+        task.join()
 
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
-    brute_force_password()
+    brute_force_password(PASSWORDS_TO_BRUTE_FORCE)
     end_time = time.perf_counter()
 
     print("Elapsed:", end_time - start_time)
