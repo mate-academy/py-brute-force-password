@@ -1,6 +1,7 @@
+from multiprocessing import cpu_count
+from concurrent.futures import ProcessPoolExecutor, wait
 import time
 from hashlib import sha256
-
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -20,8 +21,45 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
+def get_password_guess_and_make_hash(number: int) -> (str, str):
+    current_password = str(number).zfill(8)
+    password_hash = sha256_hash_str(current_password)
+
+    return password_hash, current_password
+
+
+def check_password_and_print(number: int) -> None:
+    password_and_hash = get_password_guess_and_make_hash(number)
+    psw_hash, password = password_and_hash
+
+    if psw_hash in PASSWORDS_TO_BRUTE_FORCE:
+        print(f"Password is {password}")
+
+
+def check_digits_range(first: int, last: int) -> None:
+    for i in range(first, last):
+        check_password_and_print(i)
+
+
 def brute_force_password() -> None:
-    pass
+    cores = cpu_count()
+    cores_to_use = cores - 1
+    combinations_amount = 100_000_000
+    combinations_per_core = combinations_amount // cores_to_use
+
+    passwords = []
+
+    with (ProcessPoolExecutor(cores_to_use) as executor):
+        for core in range(cores_to_use):
+            first_number = core * combinations_per_core
+            last_number = (
+                combinations_amount if core == cores_to_use - 1
+                else first_number + combinations_per_core
+            )
+            passwords.append(executor.submit(check_digits_range,
+                                             first_number, last_number))
+
+    wait(passwords)
 
 
 if __name__ == "__main__":
