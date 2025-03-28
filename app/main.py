@@ -1,6 +1,7 @@
+import itertools
 import time
 from hashlib import sha256
-
+from concurrent.futures import wait, ProcessPoolExecutor
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -15,13 +16,33 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
 
+ALL_NUMBERS = "0123456789"
+
 
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
+def find_password(password: str) -> None:
+    print(f"{password} start search")
+
+    all_possible_numbers = itertools.product(ALL_NUMBERS, repeat=8)
+
+    for possible_variable in all_possible_numbers:
+        possible_password = "".join(possible_variable)
+        if sha256_hash_str(possible_password) == password:
+            print(f"Password for {password} founded {possible_password}")
+            break
+
+
 def brute_force_password() -> None:
-    pass
+    tasks = []
+
+    with ProcessPoolExecutor() as executor:
+        for password in PASSWORDS_TO_BRUTE_FORCE:
+            tasks.append(executor.submit(find_password, password))
+
+    wait(tasks)
 
 
 if __name__ == "__main__":
