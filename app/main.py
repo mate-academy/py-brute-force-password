@@ -1,5 +1,7 @@
 import time
 from hashlib import sha256
+import itertools
+
 
 
 PASSWORDS_TO_BRUTE_FORCE = [
@@ -20,8 +22,25 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
+def brute_force_task(password: str) -> str:
+    hashed_password = sha256_hash_str(password)
+    if hashed_password in PASSWORDS_TO_BRUTE_FORCE:
+        return password
+    return None
+
+
 def brute_force_password() -> None:
-    pass
+    digits = "0123456789"
+    combinations = map("".join, itertools.product(digits, repeat=8))
+    found_passwords = []
+
+    for password in combinations:
+        hashed_password = sha256_hash_str(password)
+        if hashed_password in PASSWORDS_TO_BRUTE_FORCE:
+            print(f"Found password: {password}")
+            found_passwords.append(password)
+            if len(found_passwords) == len(PASSWORDS_TO_BRUTE_FORCE):
+                break
 
 
 if __name__ == "__main__":
