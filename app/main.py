@@ -21,7 +21,14 @@ def sha256_hash_str(to_hash: str) -> str:
 
 
 def brute_force_password() -> None:
-    pass
+    for password in range(100000000):
+        password_str = str(password).zfill(8)
+        hashed_password = sha256_hash_str(password_str)
+        if hashed_password in PASSWORDS_TO_BRUTE_FORCE:
+            print(f"Password: {password_str}, Hash: {hashed_password}")
+            PASSWORDS_TO_BRUTE_FORCE.remove(hashed_password)
+            if not PASSWORDS_TO_BRUTE_FORCE:
+                break
 
 
 if __name__ == "__main__":
