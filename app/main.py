@@ -1,3 +1,5 @@
+import concurrent.futures
+import multiprocessing
 import time
 from hashlib import sha256
 
@@ -20,13 +22,49 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
-    pass
+def find_password_in_range(
+        start: int, end: int, hashes_to_find: list
+) -> dict[str, str]:
+    found = {}
+    for num in range(start, end):
+        password = f"{num: 08d}"
+        hashed_password = sha256_hash_str(password)
+        if hashed_password in hashes_to_find:
+            found[hashed_password] = password
+            print(f"Found password {password} for hash: {hashed_password}")
+    return found
+
+
+def brute_force_password() -> dict:
+    num_workers = multiprocessing.cpu_count()
+    range_size = 100000000 // num_workers
+
+    with concurrent.futures.ProcessPoolExecutor() as executor:
+        futures = []
+        for i in range(num_workers):
+            start = i * range_size
+            end = (i + 1) * range_size if i != num_workers - 1 else 100000000
+            futures.append(
+                executor.submit(
+                    find_password_in_range,
+                    start,
+                    end,
+                    PASSWORDS_TO_BRUTE_FORCE,
+                )
+            )
+
+        results = {}
+        for future in concurrent.futures.as_completed(futures):
+            results.update(future.result())
+
+    return results
 
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
-    brute_force_password()
+    found_passwords = brute_force_password()
     end_time = time.perf_counter()
-
+    print("\nAll found passwords:")
+    for hash_value, password in found_passwords.items():
+        print(f"Hash: {hash_value} -> Password: {password}")
     print("Elapsed:", end_time - start_time)
