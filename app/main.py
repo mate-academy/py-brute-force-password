@@ -30,13 +30,13 @@ def check_password(hashed_password: str) -> None:
         if sha256_hash == hashed_password:
             print(f"Password found: {attempt} | Hash: {hashed_password}")
             return
-    print(f"Password doesn't found for hash: {hashed_password}")
+    print(f"Password not found for hash: {hashed_password}")
 
 
 def brute_force_password() -> None:
     futures = []
 
-    with ProcessPoolExecutor(multiprocessing.cpu_count() - 1) as executor:
+    with ProcessPoolExecutor(max_workers=multiprocessing.cpu_count() - 1) as executor:
         for password in PASSWORDS_TO_BRUTE_FORCE:
             futures.append(
                 executor.submit(check_password, password)
