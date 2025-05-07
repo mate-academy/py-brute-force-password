@@ -40,7 +40,7 @@ def brute_force_password() -> None:
 
     manager = Manager()
     found = manager.dict()
-    n_proc = 6
+    n_proc = cpu_count()
     total = 100_000_000  # от 00000000 до 99999999
     block = total // n_proc
 
