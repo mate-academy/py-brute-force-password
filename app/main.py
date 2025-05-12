@@ -1,7 +1,10 @@
+import os
+from multiprocessing import Pool
 import time
 from hashlib import sha256
 
-
+NUM_OF_CORES = os.process_cpu_count()
+NUM_OF_POSSIBILITIES = 100_000_000
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
     "cf0b0cfc90d8b4be14e00114827494ed5522e9aa1c7e6960515b58626cad0b44",
@@ -16,17 +19,48 @@ PASSWORDS_TO_BRUTE_FORCE = [
 ]
 
 
+def create_ranges() -> list[range]:
+    base = NUM_OF_POSSIBILITIES // NUM_OF_CORES
+    remainder = NUM_OF_POSSIBILITIES % NUM_OF_CORES
+
+    ranges = []
+    start = 0
+
+    for i in range(NUM_OF_CORES - 1):
+        end = start + base
+        ranges.append(range(start, end))
+        start = end
+
+    ranges.append(range(start, start + base + remainder))
+
+    return ranges
+
+
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
-    pass
+def check_password(password: str) -> bool:
+    encrypted_pass = sha256_hash_str(password)
+    for bf_pass in PASSWORDS_TO_BRUTE_FORCE:
+        if encrypted_pass == bf_pass:
+            return True
+    return False
+
+
+def brute_force_password(range_of_pass: range) -> None:
+    for test_num in range_of_pass:
+        test_pass = f"{test_num:08d}"
+        if check_password(test_pass):
+            print(test_pass, flush=True)
 
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
-    brute_force_password()
+
+    with Pool(processes=NUM_OF_CORES) as pool:
+        pool.map(brute_force_password, create_ranges())
+
     end_time = time.perf_counter()
 
     print("Elapsed:", end_time - start_time)
