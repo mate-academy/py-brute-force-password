@@ -21,7 +21,7 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password(_range) -> list:
+def brute_force_password(_range: range) -> list:
     found = []
     for i in _range:
         candidate = f"{i:08d}"
