@@ -1,6 +1,7 @@
+import multiprocessing
 import time
 from hashlib import sha256
-
+from concurrent.futures import ProcessPoolExecutor, as_completed
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -15,18 +16,73 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
 
+diapason = 100_000_000
+
 
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
-    pass
+def worker(start, end, hashes):
+    found = []
+    for number in range(start, end):
+        password = f"{number:08d}"
+        hashed_password = sha256_hash_str(password)
+        if hashed_password in hashes:
+            found.append((password, hashed_password))
+    return found
+
+
+def brute_force_password():
+    password_hashes = set(PASSWORDS_TO_BRUTE_FORCE)
+    cpu_count = multiprocessing.cpu_count()
+    total_range = diapason
+    chunk_size = total_range // cpu_count
+
+    found = []
+    with ProcessPoolExecutor(max_workers=cpu_count) as executor:
+        futures = [
+            executor.submit(
+                worker,
+                number * chunk_size,
+                (number + 1) * chunk_size
+                if number != cpu_count - 1 else total_range,
+                password_hashes,
+            )
+            for number in range(cpu_count)
+        ]
+        for future in as_completed(futures):
+            found.extend(future.result())
+
+    print("Found passwords:")
+    for index_, (password, hash_val) in enumerate(found, start=1):
+        print(f"Password №{index_}: {password} -> {hash_val}")
+
+    return found
+
+
+def brute_force_standard():
+    password_hashes = set(PASSWORDS_TO_BRUTE_FORCE)
+    found = []
+    for number in range(diapason):
+        password = f"{number:08d}"
+        hashed_password = sha256(password.encode("utf-8")).hexdigest()
+        if hashed_password in password_hashes:
+            found.append((password, hashed_password))
+    return found
 
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
     brute_force_password()
     end_time = time.perf_counter()
-
     print("Elapsed:", end_time - start_time)
+
+    start_time_one_process = time.perf_counter()
+    found_passwords = brute_force_standard()
+    end_time_one_process = time.perf_counter()
+
+    print("Found passwords:")
+    for index_, (password, hash_val) in enumerate(found_passwords, start=1):
+        print(f"Password №{index_}: {password} -> {hash_val}")
+    print("Elapsed:", end_time_one_process - start_time_one_process)
