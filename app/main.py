@@ -1,6 +1,8 @@
 import time
+from concurrent.futures import ProcessPoolExecutor
 from hashlib import sha256
-
+from multiprocessing import cpu_count
+from typing import List, Dict
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -15,18 +17,62 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
 
+TARGET_HASHES = set(PASSWORDS_TO_BRUTE_FORCE)
+
 
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
-    pass
+def brute_force_password(
+        start: int,
+        end: int,
+        target_hashes: set
+) -> List[str]:
+    found_passwords = []
+    for i in range(start, end + 1):
+        number = f"{i:08d}"
+        hashed = sha256_hash_str(number)
+        if hashed in target_hashes:
+            found_passwords.append(number)
+    return found_passwords
+
+
+def main_multiprocessing_executor() -> None:
+    total = 100_000_000
+    num_workers = cpu_count() - 1
+    chunk_size = total // num_workers
+
+    passwords = []
+
+    with ProcessPoolExecutor(max_workers=num_workers) as executor:
+        futures = []
+        for i in range(num_workers):
+            start = i * chunk_size
+            end = total if i == num_workers - 1 else (i + 1) * chunk_size
+            futures.append(
+                executor.submit(
+                    brute_force_password,
+                    start, end,
+                    TARGET_HASHES
+                )
+            )
+            print(start, end)
+            print(f"Process {i} working from {start} to {end}")
+
+        for future in futures:
+            passwords.extend(future.result())
+
+    found_hash_map: Dict[str, str] = {sha256_hash_str(p): p for p in passwords}
+
+    print("✅ Found passwords:")
+    for _hash in PASSWORDS_TO_BRUTE_FORCE:
+        print(f"hash: {_hash} pass: {found_hash_map[_hash]}")
 
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
-    brute_force_password()
+    main_multiprocessing_executor()
     end_time = time.perf_counter()
 
     print("Elapsed:", end_time - start_time)
