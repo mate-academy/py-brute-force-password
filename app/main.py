@@ -1,6 +1,11 @@
+from concurrent.futures import ProcessPoolExecutor
 import time
 from hashlib import sha256
 
+CPU_COUNT = 4
+MIN_VALUE = 0
+MAX_VALUE = 100000000
+STEP = max(1000, (MAX_VALUE - MIN_VALUE) // (CPU_COUNT * 4))
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -16,17 +21,42 @@ PASSWORDS_TO_BRUTE_FORCE = [
 ]
 
 
+def streight(number: int) -> str:
+    result = "00000000" + str(number)
+    return result[-8:]
+
+
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
-    pass
+def check_block(start: int, end: int) -> list[str]:
+    result = []
+    for number in range(start, end):
+        number_str = streight(number)
+        hashed = sha256_hash_str(number_str)
+        if hashed in PASSWORDS_TO_BRUTE_FORCE:
+            result.append(number_str)
+    return result
+
+
+def brute_force_password() -> list[str]:
+    results = []
+    with ProcessPoolExecutor() as executor:
+        futures = []
+        for start in range(MIN_VALUE, MAX_VALUE, STEP):
+            end = min(start + STEP, MAX_VALUE)
+            futures.append(executor.submit(check_block, start, end))
+        for ftr in futures:
+            results.extend(ftr.result())
+    return results
 
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
-    brute_force_password()
+    result = brute_force_password()
     end_time = time.perf_counter()
 
+    print("CPU Count:", CPU_COUNT)
     print("Elapsed:", end_time - start_time)
+    print("Results:", result)
