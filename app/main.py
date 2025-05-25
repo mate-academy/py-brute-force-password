@@ -43,8 +43,8 @@ def brute_force_password() -> None:
     step = math.ceil(max_number / cpu_count)
 
     for i in range(cpu_count):
-        start = step * i + (0 if i == 0 else 1)
-        end = min(step * (i + 1), max_number)
+        start = step * i
+        end = min(step * (i + 1) - 1, max_number)
 
         process = multiprocessing.Process(
             target=check_passwords, args=(start, end)
