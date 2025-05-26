@@ -1,6 +1,6 @@
 import time
 from hashlib import sha256
-
+from multiprocessing import Process, cpu_count, Manager
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -20,8 +20,41 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
-    pass
+def worker(start: int, end: int, hashes_set: set, found: dict) -> None:
+    for i in range(start, end):
+        pwd = f"{i:08d}"
+        h = sha256_hash_str(pwd)
+        if h in hashes_set:
+            found[h] = pwd
+            if len(found) == len(hashes_set):
+                break
+
+
+def brute_force_password(nproc: int = None) -> None:
+    hashes_set = set(PASSWORDS_TO_BRUTE_FORCE)
+    manager = Manager()
+    found = manager.dict()
+
+    if nproc is None:
+        nproc = max(1, cpu_count() - 1)  # залишаємо 1 ядро для системи
+
+    max_num = 10 ** 8
+    chunk_size = max_num // nproc
+    procs = []
+
+    for i in range(nproc):
+        start = i * chunk_size
+        end = max_num if i == nproc - 1 else (i + 1) * chunk_size
+        p = Process(target=worker, args=(start, end, hashes_set, found))
+        p.start()
+        procs.append(p)
+
+    for p in procs:
+        p.join()
+
+    for h in PASSWORDS_TO_BRUTE_FORCE:
+        print(found.get(h, "Not found"))
+
 
 
 if __name__ == "__main__":
