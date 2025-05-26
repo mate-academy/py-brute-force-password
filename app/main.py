@@ -1,6 +1,7 @@
 import time
 from hashlib import sha256
-
+from idlelib.run import manage_socket
+from multiprocessing import Process, cpu_count, Manager
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -20,8 +21,31 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
+def worker(start, end, step, hashes_set, found):
+    for i in range(start, end, step):
+        pwd = f"{i:08d}"
+        h = sha256_hash_str(pwd)
+        if h in hashes_set:
+            found[h] = pwd
+            if len(found) == len(hashes_set):
+                break
+
+
 def brute_force_password() -> None:
-    pass
+    hashes_set = set(PASSWORDS_TO_BRUTE_FORCE)
+    manager = Manager()
+    found = manager.dict()
+    nproc = cpu_count()
+    procs = []
+    max_num = 10**8
+    for offset in range(nproc):
+        p = Process(target=worker, args=(offset, max_num, nproc, hashes_set, found))
+        p.start()
+        procs.append(p)
+    for p in procs:
+        p.join()
+    for h in PASSWORDS_TO_BRUTE_FORCE:
+        print(found[h])
 
 
 if __name__ == "__main__":
