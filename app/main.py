@@ -1,5 +1,8 @@
 import time
 from hashlib import sha256
+import itertools
+import string
+from multiprocessing import Pool, cpu_count, Manager
 
 
 PASSWORDS_TO_BRUTE_FORCE = [
@@ -15,13 +18,42 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
 
+CHARSET = string.ascii_lowercase
+
+MAX_LEN = 8
 
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
-    pass
+def brute_worker(start_letter):
+    found = {}
+    hash_set = set(PASSWORDS_TO_BRUTE_FORCE)
+
+    for length in range(1, MAX_LEN + 1):
+        for attempt in itertools.product(CHARSET, repeat=length):
+            if attempt[0] != start_letter:
+                continue
+            password = ''.join(attempt)
+            hashed = sha256_hash_str(password)
+            if hashed in hash_set:
+                print(f"[{start_letter}] Found: {password} -> {hashed}")
+                found[hashed] = password
+                if len(found) == len(PASSWORDS_TO_BRUTE_FORCE):
+                    return found
+    return found
+
+def brute_force_password():
+    with Pool(processes=cpu_count() - 1) as pool:
+        results = pool.map(brute_worker, CHARSET)
+
+    all_found = {}
+    for d in results:
+        all_found.update(d)
+
+    print("\n=== Summary ===")
+    for hash_, password in all_found.items():
+        print(f"{password} -> {hash_}")
 
 
 if __name__ == "__main__":
