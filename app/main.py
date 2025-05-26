@@ -36,7 +36,7 @@ def brute_force_password(nproc: int = None) -> None:
     found = manager.dict()
 
     if nproc is None:
-        nproc = max(1, cpu_count() - 1)  # залишаємо 1 ядро для системи
+        nproc = max(1, cpu_count() - 1)
 
     max_num = 10 ** 8
     chunk_size = max_num // nproc
@@ -54,7 +54,6 @@ def brute_force_password(nproc: int = None) -> None:
 
     for h in PASSWORDS_TO_BRUTE_FORCE:
         print(found.get(h, "Not found"))
-
 
 
 if __name__ == "__main__":
