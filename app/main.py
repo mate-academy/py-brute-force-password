@@ -1,8 +1,10 @@
 import time
 from hashlib import sha256
+from concurrent.futures import ProcessPoolExecutor
+import multiprocessing
 
 
-PASSWORDS_TO_BRUTE_FORCE = [
+PASSWORDS_TO_BRUTE_FORCE = {
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
     "cf0b0cfc90d8b4be14e00114827494ed5522e9aa1c7e6960515b58626cad0b44",
     "e34efeb4b9538a949655b788dcb517f4a82e997e9e95271ecd392ac073fe216d",
@@ -13,15 +15,32 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "1273682fa19625ccedbe2de2817ba54dbb7894b7cefb08578826efad492f51c9",
     "7e8f0ada0a03cbee48a0883d549967647b3fca6efeb0a149242f19e4b68d53d6",
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
-]
+}
 
 
-def sha256_hash_str(to_hash: str) -> str:
-    return sha256(to_hash.encode("utf-8")).hexdigest()
+def check_password_range(start: int, end: int) -> list[tuple[str, str]]:
+    matches = []
+    for num in range(start, end):
+        candidate = f"{num:08d}"
+        hashed = sha256(candidate.encode()).hexdigest()
+        if hashed in PASSWORDS_TO_BRUTE_FORCE:
+            matches.append((candidate, hashed))
+    return matches
 
 
 def brute_force_password() -> None:
-    pass
+    results = []
+    chunk_size = 1_000_000
+    with ProcessPoolExecutor(max(1, multiprocessing.cpu_count() - 1)) as executor:
+        futures = [
+            executor.submit(check_password_range, start, start + chunk_size)
+            for start in range(0, 100_000_000, chunk_size)
+        ]
+        for future in futures:
+            results.extend(future.result())
+
+    for pw, h in results:
+        print(f"{pw} -> {h}")
 
 
 if __name__ == "__main__":
