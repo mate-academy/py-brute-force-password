@@ -48,9 +48,11 @@ def brute_force_passwords() -> None:
     processes: list[Process] = []
     for index in range(process_count):
         start_range = index * block_size
-        end_range = (index + 1) * block_size\
-            if index < process_count - 1\
+        end_range = (
+            (index + 1) * block_size
+            if index < process_count - 1
             else total_combinations
+        )
         process = Process(target=worker,
                           args=(start_range,
                                 end_range,
