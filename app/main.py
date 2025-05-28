@@ -1,5 +1,6 @@
 import time
 from hashlib import sha256
+from multiprocessing import Process, Manager, cpu_count
 
 
 PASSWORDS_TO_BRUTE_FORCE = [
@@ -15,18 +16,63 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
 
+TARGET_HASHES: set[str] = set(PASSWORDS_TO_BRUTE_FORCE)
+
 
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
-    pass
+def worker(start: int,
+           end: int,
+           target_hashes: set[str],
+           found_dict: dict[str, str]) -> None:
+    buffer = bytearray(b"00000000")
+    for current_number in range(start, end):
+        number = current_number
+        for position in range(7, -1, -1):
+            buffer[position] = 48 + (number % 10)
+            number //= 10
+        hash_value = sha256(buffer).hexdigest()
+        if hash_value in target_hashes and hash_value not in found_dict:
+            found_dict[hash_value] = buffer.decode()
+
+
+def brute_force_passwords() -> None:
+    manager = Manager()
+    found_passwords = manager.dict()
+    process_count = cpu_count()
+    total_combinations = 100_000_000
+    block_size = total_combinations // process_count
+
+    processes: list[Process] = []
+    for index in range(process_count):
+        start_range = index * block_size
+        end_range = (index + 1) * block_size\
+            if index < process_count - 1\
+            else total_combinations
+        process = Process(target=worker,
+                          args=(start_range,
+                                end_range,
+                                TARGET_HASHES,
+                                found_passwords))
+        process.start()
+        processes.append(process)
+
+    for process in processes:
+        process.join()
+
+    for hash_value, password in found_passwords.items():
+        print(f"{hash_value} → {password}")
+
+    if len(found_passwords) < len(TARGET_HASHES):
+        missing_hashes = TARGET_HASHES - set(found_passwords.keys())
+        print("Not found:", missing_hashes)
 
 
 if __name__ == "__main__":
+    print("Start")
     start_time = time.perf_counter()
-    brute_force_password()
+    brute_force_passwords()
     end_time = time.perf_counter()
-
     print("Elapsed:", end_time - start_time)
