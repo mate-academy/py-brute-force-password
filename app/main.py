@@ -19,14 +19,30 @@ PASSWORDS_TO_BRUTE_FORCE = [
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
-def brute_force_password() -> None:
+def searcher(start, end):
+
     passwords_set = set(PASSWORDS_TO_BRUTE_FORCE)
 
-    for probable_password in range(100_000_000):
+    for probable_password in range(start, end):
         probable_password = str(probable_password).zfill(8)
         coded_password = sha256_hash_str(probable_password)
         if coded_password in passwords_set:
             print(f"{probable_password} -> {coded_password}")
+
+
+def brute_force_password() -> None:
+    number_of_processes = 8
+    processes = []
+
+    for num in range(number_of_processes):
+        start = num * (100_000_000 // number_of_processes)
+        end = (num + 1) * (100_000_000 // number_of_processes)
+
+        p = Process(target=searcher, args=(start, end,))
+        processes.append(p)
+        p.start()
+
+
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
