@@ -1,5 +1,6 @@
 import time
 from hashlib import sha256
+from multiprocessing import Process
 
 
 PASSWORDS_TO_BRUTE_FORCE = [
@@ -15,13 +16,32 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
 
-
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
+def searcher(start, end):
+
+    passwords_set = set(PASSWORDS_TO_BRUTE_FORCE)
+
+    for probable_password in range(start, end):
+        probable_password = str(probable_password).zfill(8)
+        coded_password = sha256_hash_str(probable_password)
+        if coded_password in passwords_set:
+            print(f"{probable_password} -> {coded_password}")
+
 
 def brute_force_password() -> None:
-    pass
+    number_of_processes = 8
+    processes = []
+
+    for num in range(number_of_processes):
+        start = num * (100_000_000 // number_of_processes)
+        end = (num + 1) * (100_000_000 // number_of_processes)
+
+        p = Process(target=searcher, args=(start, end,))
+        processes.append(p)
+        p.start()
+
 
 
 if __name__ == "__main__":
