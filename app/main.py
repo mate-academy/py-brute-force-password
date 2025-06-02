@@ -1,5 +1,6 @@
 import time
 from hashlib import sha256
+import multiprocessing as mp
 
 
 PASSWORDS_TO_BRUTE_FORCE = [
@@ -21,7 +22,11 @@ def sha256_hash_str(to_hash: str) -> str:
 
 
 def brute_force_password() -> None:
-    pass
+    tasks = []
+
+    for password in range(11111111, 99999999):
+        if sha256_hash_str(str(password)) in PASSWORDS_TO_BRUTE_FORCE:
+            print(password)
 
 
 if __name__ == "__main__":
