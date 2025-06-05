@@ -24,7 +24,7 @@ def sha256_hash_str(to_hash: str) -> str:
 def check_range(start: int, end: int, target_hashes: set) -> dict:
     found = {}
     for i in range(start, end):
-        candidate = f"{i: 08}"
+        candidate = f"{i:08}"
         hashed = sha256_hash_str(candidate)
         if hashed in target_hashes:
             found[hashed] = candidate
