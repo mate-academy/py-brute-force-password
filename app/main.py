@@ -1,5 +1,6 @@
 import time
 from hashlib import sha256
+from multiprocessing import Process, Manager, cpu_count
 
 
 PASSWORDS_TO_BRUTE_FORCE = [
@@ -11,6 +12,8 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "40900aa1d900bee58178ae4a738c6952cb7b3467ce9fde0c3efa30a3bde1b5e2",
     "5e6bc66ee1d2af7eb3aad546e9c0f79ab4b4ffb04a1bc425a80e6a4b0f055c2e",
     "1273682fa19625ccedbe2de2817ba54dbb7894b7cefb08578826efad492f51c9",
+
+
     "7e8f0ada0a03cbee48a0883d549967647b3fca6efeb0a149242f19e4b68d53d6",
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
@@ -20,9 +23,33 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
-    pass
+def worker(start, end, step, hashes_set, found):
+    for i in range(start, end, step):
+        pwd = f"{i:08d}"
+        h = sha256_hash_str(pwd)
+        if h in hashes_set:
+            found[h] = pwd
+            if len(found) == len(hashes_set):
+                break
 
+
+def brute_force_password():
+    hashes_set = Manager().list(PASSWORDS_TO_BRUTE_FORCE)
+    manager = Manager()
+    found = manager.dict()
+    nproc = cpu_count()
+    procs = []
+    max_num = 10**8
+    for offset in range(nproc):
+        p = Process(
+            target=worker, args=(offset, max_num, nproc, hashes_set, found)
+        )
+        p.start()
+        procs.append(p)
+    for p in procs:
+        p.join()
+    for h in PASSWORDS_TO_BRUTE_FORCE:
+        print(found[h])
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
