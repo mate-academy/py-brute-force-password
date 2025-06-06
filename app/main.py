@@ -34,7 +34,7 @@ def worker(start, end, step, hashes_set, found):
 
 
 def brute_force_password():
-    hashes_set = set(PASSWORDS_TO_BRUTE_FORCE)
+    hashes_set = Manager().list(PASSWORDS_TO_BRUTE_FORCE)
     manager = Manager()
     found = manager.dict()
     nproc = cpu_count()
