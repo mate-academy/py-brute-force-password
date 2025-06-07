@@ -19,11 +19,11 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
+def brute_force_password() -> dict:
     target_hashes = set(PASSWORDS_TO_BRUTE_FORCE)
     found = {}
 
-    for i in range(100_000_000):  # от 00000000 до 99999999
+    for i in range(100_000_000):  # from 00000000 to 99999999
         candidate = str(i).zfill(8)
         hashed = sha256_hash_str(candidate)
 
@@ -33,10 +33,16 @@ def brute_force_password() -> None:
             if len(found) == len(target_hashes):
                 break
 
+    return found
+
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
-    brute_force_password()
+    result = brute_force_password()
     end_time = time.perf_counter()
 
-    print("Elapsed:", end_time - start_time)
+    print("\n🔓 All Found Passwords:")
+    for h in PASSWORDS_TO_BRUTE_FORCE:
+        print(f"{h} : {result.get(h, '[NOT FOUND]')}")
+
+    print("\n⏱️ Elapsed:", end_time - start_time, "seconds")
