@@ -26,8 +26,8 @@ def sha256_hash_str(to_hash: str) -> str:
 
 def check_combination(start: int, end: int) -> None:
     for batch_number in range(start, end + 1):
-        if sha256_hash_str(f"{batch_number: 08d}") in PASSWORDS_TO_BRUTE_FORCE:
-            print(f"Found {batch_number: 08d}")
+        if sha256_hash_str(f"{batch_number:08d}") in PASSWORDS_TO_BRUTE_FORCE:
+            print(f"Found {batch_number:08d}")
 
 
 def brute_force_password() -> None:
@@ -37,7 +37,7 @@ def brute_force_password() -> None:
     with ProcessPoolExecutor(cpu_count) as executor:
         for i in range(cpu_count):
             start = i * batch
-            end = min(start + batch, TOTAL_RANGE)
+            end = min(start + batch - 1, TOTAL_RANGE - 1)
             futures.append(executor.submit(check_combination, start, end))
     wait(futures)
 
