@@ -45,7 +45,7 @@ def brute_force_password():
         futures = []
         for i in range(num_workers):
             start = i * step
-            end = (i + 1) * step
+            end = 100_000_000 if i == num_workers - 1 else (i + 1) * step
             futures.append(executor.submit(worker, start, end, targets))
 
         for future in as_completed(futures):
