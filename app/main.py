@@ -1,6 +1,7 @@
 import time
 from hashlib import sha256
-
+from concurrent.futures import ProcessPoolExecutor, as_completed
+import os
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -20,8 +21,42 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
-    pass
+
+def worker(start: int, end: int, targets: set[str]) -> dict[str, str]:
+    result = {}
+    for i in range(start, end):
+        password = f"{i:08d}"
+        hashed = sha256_hash_str(password)
+        if hashed in targets:
+            result[hashed] = password
+            if len(result) == len(targets):
+                break
+    return result
+
+def brute_force_password():
+    num_workers = os.cpu_count() or 4
+    step = 100_000_000 // num_workers
+    targets = set(PASSWORDS_TO_BRUTE_FORCE)
+    found = {}
+
+    print(f"Running with {num_workers} workers")
+
+    with ProcessPoolExecutor(max_workers=num_workers) as executor:
+        futures = []
+        for i in range(num_workers):
+            start = i * step
+            end = (i + 1) * step
+            futures.append(executor.submit(worker, start, end, targets))
+
+        for future in as_completed(futures):
+            result = future.result()
+            found.update(result)
+            if len(found) == len(PASSWORDS_TO_BRUTE_FORCE):
+                break
+
+    print("\n--- RESULTS ---")
+    for h in PASSWORDS_TO_BRUTE_FORCE:
+        print(f"{found[h]} -> {h}")
 
 
 if __name__ == "__main__":
