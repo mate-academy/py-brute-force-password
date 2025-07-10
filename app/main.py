@@ -1,7 +1,7 @@
 import time
 from hashlib import sha256
 import multiprocessing
-from concurrent.futures import ProcessPoolExecutor, as_completed
+from concurrent.futures import ProcessPoolExecutor, wait
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -21,42 +21,25 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_range(
-        start: int,
-        end: int,
-        targets: set,
-    ) -> None:
-    
-    res = {}
-    for i in range(start, end):
-        password = f"{i:08d}"
-        hash_val = sha256_hash_str(password)
-        if hash_val in targets:
-            res[hash_val] = password
-            if len(res) == len(targets):
-                break
-    return res
-    
-def brute_force_password() -> None:
-    total = 100_000_000
-    num_chunks = multiprocessing.cpu_count()
-    chunk_size = total // num_chunks
-    found = {}
+def check_password(start: int, end: int) -> None:
+    for number in range(start, end):
+        to_hash = f"{number:08}"  # noqa E231
+        hash_password = sha256_hash_str(to_hash=to_hash)
+        if hash_password in PASSWORDS_TO_BRUTE_FORCE:
+            print(f"Found password: {hash_password}")
+    return None
 
-    with ProcessPoolExecutor() as executor:
-        futures = [
-            executor.submit(brute_range, i * chunk_size, (i + 1) * chunk_size, PASSWORDS_TO_BRUTE_FORCE)
-            for i in range(num_chunks)
-        ]
-        for future in as_completed(futures):
-            result = future.result()
-            found.update(result)
-            if len(found) == len(PASSWORDS_TO_BRUTE_FORCE):
-                break
-    
-    print("\nAll found passwords:")
-    for h, p in found.items():
-        print(f"{p} -> {h}")
+
+def brute_force_password() -> None:
+    futures = []
+    max_size = 100_000_000
+    size_for_one_process = max_size // multiprocessing.cpu_count()
+
+    with ProcessPoolExecutor(multiprocessing.cpu_count()) as executor:
+        for start in range(0, max_size, size_for_one_process):
+            end = min(start + size_for_one_process, max_size)
+            futures.append(executor.submit(check_password, start, end))
+    wait(futures)
 
 
 if __name__ == "__main__":
