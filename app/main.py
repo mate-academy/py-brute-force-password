@@ -37,7 +37,8 @@ def brute_force_password() -> None:
 
     print("\nAll found passwords:")
     for h in PASSWORDS_TO_BRUTE_FORCE:
-        print(found_passwords[h])
+        print(found_passwords.get(h, 'NOT FOUND'))
+
 
 
 if __name__ == "__main__":
