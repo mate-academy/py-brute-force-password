@@ -23,12 +23,14 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def find_password_in_chunk(start: int, end: int) -> None:
+def find_password_in_chunk(start: int, end: int) -> list:
+    guessed_passwords = []
     for num in range(start, end):
         password = str(num).zfill(8)
         guess = sha256_hash_str(password)
         if guess in PASSWORDS_TO_BRUTE_FORCE:
-            print(password)
+            guessed_passwords.append(password)
+    return guessed_passwords
 
 
 def brute_force_password() -> None:
@@ -41,6 +43,10 @@ def brute_force_password() -> None:
                 executor.submit(find_password_in_chunk, i, i + chunk_size)
             )
     wait(futures)
+
+    futures = sum([future.result() for future in futures], [])
+    if len(futures) == 10:
+        print(futures)
 
 
 if __name__ == "__main__":
