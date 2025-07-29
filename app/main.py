@@ -1,6 +1,14 @@
+import math
 import time
+from concurrent.futures import ProcessPoolExecutor, wait
 from hashlib import sha256
+import multiprocessing
+from typing import Sequence
 
+
+cpu_counter = multiprocessing.cpu_count() - 1
+
+total_number = 100_000_000
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -20,13 +28,38 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
-    pass
+def brute_force_password(passwords: list, num_range: tuple[int, int]) -> None:
+    for num in range(num_range[0], num_range[1]):
+        decoded_password = f"{num:08}"
+        hashed = sha256_hash_str(decoded_password)
+        if hashed in passwords:
+            print(f"{hashed}: {decoded_password}")
+
+
+def main_multiprocess_executor(passwords: list) -> None:
+
+    ranges = get_ranges(total_number, total_chunks=cpu_counter)
+    futures = []
+
+    with ProcessPoolExecutor(cpu_counter) as executor:
+        for index, num_range in enumerate(ranges):
+            futures.append(executor.submit(brute_force_password, passwords, num_range))
+
+    wait(futures)
+
+
+def get_ranges(total_number, total_chunks):
+    ranges = []
+    chunk_size = math.ceil(total_number / total_chunks)
+    for chunk in range(total_chunks):
+        end_range_num = min(total_number, (chunk * chunk_size + chunk_size))
+        ranges.append((chunk * chunk_size, end_range_num))
+    return ranges
 
 
 if __name__ == "__main__":
+    print(f"Running on {cpu_counter} CPUs")
     start_time = time.perf_counter()
-    brute_force_password()
+    main_multiprocess_executor(PASSWORDS_TO_BRUTE_FORCE)
     end_time = time.perf_counter()
-
     print("Elapsed:", end_time - start_time)
