@@ -44,14 +44,14 @@ def brute_force_password() -> list:
         all_found = []
         for future in futures:
             all_found.extend(future.result())
+        for password in all_found:
+            print(password)
 
-    return all_found
 
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
-    found_passwords = brute_force_password()
+    brute_force_password()
     end_time = time.perf_counter()
 
-    print("Found passwords:", found_passwords)
     print("Elapsed:", end_time - start_time)
