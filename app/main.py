@@ -37,14 +37,14 @@ def brute_force_password() -> list:
     futures = []
 
     with ProcessPoolExecutor(cpu_count) as executor:
-        for start in range(1, 100_000_000, chunk_size):
+        for start in range(0, 100_000_000, chunk_size):
             end = min(start + chunk_size, 100_000_000)
             futures.append(executor.submit(check_range, start, end))
 
         all_found = []
         for future in futures:
             all_found.extend(future.result())
-        for password in all_found:
+        for password in set(all_found):
             print(password)
 
 
