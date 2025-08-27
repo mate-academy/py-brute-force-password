@@ -1,3 +1,4 @@
+import multiprocessing
 import time
 from hashlib import sha256
 
@@ -20,13 +21,35 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
-    pass
+def brute_single(hash_number: str):
+    for num in range(100000000):
+        n = f"{num:08d}"
+        if sha256_hash_str(n) == hash_number:
+            return n
+
+def brute_single_print(index: int, hash_number: str):
+    result = brute_single(hash_number)
+    print(result)
+
+
+def brute_force_password(hashes_list) -> None:
+    tasks = []
+    for index, hash_number in enumerate(hashes_list, start=1):
+        tasks.append(
+            multiprocessing.Process(
+                target=brute_single_print,
+                args=(
+                    index,
+                    hash_number,
+                ),
+            )
+        )
+        tasks[-1].start()
+
+    for task in tasks:
+        task.join()
 
 
 if __name__ == "__main__":
-    start_time = time.perf_counter()
-    brute_force_password()
-    end_time = time.perf_counter()
+    brute_force_password(PASSWORDS_TO_BRUTE_FORCE)
 
-    print("Elapsed:", end_time - start_time)
