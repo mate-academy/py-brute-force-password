@@ -1,5 +1,6 @@
 import time
 from hashlib import sha256
+from multiprocessing import Pool, cpu_count, Manager
 
 
 PASSWORDS_TO_BRUTE_FORCE = [
@@ -20,8 +21,42 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
-    pass
+def worker(start: int, end: int, hashes_to_find, found_dict):
+    """Try passwords in a range [start, end)"""
+    for i in range(start, end):
+        candidate = f"{i:08d}"
+        hashed = sha256_hash_str(candidate)
+
+        if hashed in hashes_to_find:
+            print(f"[+] Password found: {candidate}")
+            found_dict[hashed] = candidate
+
+            # If all are found, you can leave early
+            if len(found_dict) == len(hashes_to_find):
+                return
+
+
+def brute_force_password():
+    hashes_to_find = set(PASSWORDS_TO_BRUTE_FORCE)
+
+    manager = Manager()
+    found_dict = manager.dict()
+
+    num_proc = cpu_count()  # number of available cores
+    step = 10**8 // num_proc  # we divide the entire range into equal pieces
+
+    with Pool(num_proc) as pool:
+        jobs = []
+        for i in range(0, 10**8, step):
+            jobs.append(pool.apply_async(worker, (i, i + step, hashes_to_find, found_dict)))
+
+        # We are waiting for all tasks to be completed
+        for job in jobs:
+            job.wait()
+
+    print("\nAll passwords found:")
+    for h, pwd in found_dict.items():
+        print(f"--->>> {pwd}")
 
 
 if __name__ == "__main__":
