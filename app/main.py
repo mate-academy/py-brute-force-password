@@ -23,24 +23,42 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password(expected_password: str) -> str:
-    digits = "0123456789"
-    for password_to_hash in product(digits, repeat=8):
-        candidate = "".join(password_to_hash)
-        if sha256_hash_str(candidate) == expected_password:
-            return candidate
+def brute_force_chunk(start: int, end: int, target_set: set[str]) -> dict[str, str]:
+    found = {}
+    for i in range(start, end):
+        candidate = f"{i:08d}"
+        digest = sha256_hash_str(candidate)
+        if digest in target_set:
+            found[digest] = candidate
+            if len(found) == len(target_set):
+                break
+    return found
 
 def main() -> None:
-    with ProcessPoolExecutor(max_workers=multiprocessing.cpu_count() - 1) as executor:
-        for future in as_completed(
-            executor.submit(brute_force_password, password)
-            for password in PASSWORDS_TO_BRUTE_FORCE
-        ):
-            print(future.result())
+    target_set = set(PASSWORDS_TO_BRUTE_FORCE)
+    found = {}
+    chunk_size = 5_000_000
+    ranges = [(start, min(start + chunk_size, 100_000_000)) for start in range(0, 100_000_000, chunk_size)]
+
+    max_workers = max(1, multiprocessing.cpu_count() - 1)
+    with ProcessPoolExecutor(max_workers=max_workers) as executor:
+        futures = [executor.submit(brute_force_chunk, start, end, target_set) for start, end in ranges]
+
+        for future in as_completed(futures):
+            result = future.result()
+            found.update(result)
+            if len(found) == len(target_set):
+                break
+
+    assert len(found) == len(target_set), "Not all passwords were found!"
+
+    print("\n🔐 Found passwords:")
+    for digest, password in found.items():
+        print(f"{password} → {digest}")
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
     main()
     end_time = time.perf_counter()
-    print("Elapsed:", end_time - start_time)
+    print(f"\n⏱ Elapsed: {end_time - start_time:.2f} seconds")
 
