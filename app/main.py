@@ -1,6 +1,6 @@
 import time
+import multiprocessing
 from hashlib import sha256
-
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -20,8 +20,59 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
+def worker(
+        start: int,
+        end: int,
+        targets: set,
+        result_dict,
+        done_event: multiprocessing.Event):
+
+    for i in range(start, end):
+        if done_event.is_set():
+            break
+
+        candidate = str(i).zfill(8)
+        hashed = sha256_hash_str(candidate)
+
+        if hashed in targets and hashed not in result_dict:
+            result_dict[hashed] = candidate
+
+            if len(result_dict) == len(targets):
+                done_event.set()
+                break
+
+
 def brute_force_password() -> None:
-    pass
+    num_processes = multiprocessing.cpu_count()
+    chunk_size = 100_000_000 // num_processes
+
+    manager = multiprocessing.Manager()
+    result_dict = manager.dict()
+    done_event = manager.Event()
+
+    targets_set = set(PASSWORDS_TO_BRUTE_FORCE)
+
+    processes = []
+    for i in range(num_processes):
+        start = i * chunk_size
+        end = (i + 1) * chunk_size if i < num_processes - 1 else 100_000_000
+        process = multiprocessing.Process(
+            target=worker, args=(start, end, targets_set, result_dict, done_event)
+        )
+        processes.append(process)
+        process.start()
+
+    for p in processes:
+        p.join()
+
+    if len(result_dict) == len(PASSWORDS_TO_BRUTE_FORCE):
+        print("\nAll passwords found!\n")
+        for h in PASSWORDS_TO_BRUTE_FORCE:
+            print(result_dict[h])
+    else:
+        print("\nNot all passwords were found.")
+        missing = set(PASSWORDS_TO_BRUTE_FORCE) - set(result_dict.keys())
+        print("Missing hashes:", missing)
 
 
 if __name__ == "__main__":
