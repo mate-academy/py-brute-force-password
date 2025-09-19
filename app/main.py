@@ -21,12 +21,23 @@ def sha256_hash_str(to_hash: str) -> str:
 
 
 def brute_force_password() -> None:
-    pass
+    total = 0
+    correct_password = []
+    password_set = set(PASSWORDS_TO_BRUTE_FORCE)
+    for number in range(100000000):
+        number = str(number).zfill(8)
+        hash_number = sha256_hash_str(number)
+        if hash_number in password_set:
+            correct_password.append(number)
+            total += 1
+            if total == 10:
+                break
+    return correct_password
 
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
-    brute_force_password()
+    print(brute_force_password())
     end_time = time.perf_counter()
 
     print("Elapsed:", end_time - start_time)
