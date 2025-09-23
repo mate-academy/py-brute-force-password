@@ -31,7 +31,7 @@ def password_finder(start: int, end: int) -> None:
 
 def brute_force_password() -> None:
     futures = []
-    max_number = 99_999_999
+    max_number = 100_000_000
     step = max_number // cpu_count()
     with ProcessPoolExecutor(cpu_count()) as executor:
         for start in range(0, max_number, step):
