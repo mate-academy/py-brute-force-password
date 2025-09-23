@@ -49,6 +49,8 @@ def brute_force_password():
         for job in jobs:
             job.wait()
 
+    for password in found_dict.values():
+        print(password)
 
 
 if __name__ == "__main__":
@@ -56,4 +58,3 @@ if __name__ == "__main__":
     brute_force_password()
     end_time = time.perf_counter()
 
-    print("Elapsed:", end_time - start_time)
