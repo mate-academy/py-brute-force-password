@@ -49,9 +49,7 @@ def brute_force_password():
         for job in jobs:
             job.wait()
 
-    print("\nAll passwords found:")
-    for h, pwd in found_dict.items():
-        print(f"--->>> {pwd}")
+
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
