@@ -1,6 +1,7 @@
+import concurrent.futures
+import multiprocessing
 import time
 from hashlib import sha256
-
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -15,13 +16,51 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
 
+MAX_PASSWORD = 100_000_000
+
 
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
-    pass
+def validate_chunk(args):
+    start, end, target_hashes = args
+    found = {}
+    for i in range(start, end):
+        password = str(i).zfill(8)
+        h = sha256_hash_str(password)
+        if h in target_hashes and h not in found:
+            found[h] = password
+            if len(found) == len(target_hashes):
+                break
+    return found
+
+
+def brute_force_password():
+    cpu_count = multiprocessing.cpu_count()
+    cpu_number = min(cpu_count, MAX_PASSWORD)
+
+    base, remainder = divmod(MAX_PASSWORD, cpu_number)
+    ranges = []
+    start = 0
+    for i in range(cpu_number):
+        size = base + (1 if i < remainder else 0)
+        end = start + size
+        ranges.append((start, end))
+        start = end
+
+    target_hashes = set(PASSWORDS_TO_BRUTE_FORCE)
+    params = [(s, e, target_hashes) for (s, e) in ranges]
+
+    combined = {}
+    with concurrent.futures.ProcessPoolExecutor(max_workers=cpu_number) as exe:
+        for res in exe.map(validate_chunk, params):
+            if res:
+                combined.update(res)
+
+    results = [combined.get(h, "Not found") for h in PASSWORDS_TO_BRUTE_FORCE]
+    print(results)
+    return results
 
 
 if __name__ == "__main__":
