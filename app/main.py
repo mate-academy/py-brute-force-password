@@ -1,5 +1,5 @@
 from hashlib import sha256
-from concurrent.futures import ProcessPoolExecutor, wait
+from concurrent.futures import ProcessPoolExecutor
 import time
 import multiprocessing
 
@@ -22,25 +22,37 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force(index: int, password: str) -> str:
-    start = time.perf_counter()
-    for num in range(0, 100000000):
-        to_hash = str(num).zfill(8)
-        hash_to = sha256_hash_str(to_hash)
-        if hash_to == password:
-            end = time.perf_counter() - start
-            return f"Task {index} END. Result {hash_to} - {to_hash} at {end}"
-    return "Not Found"
+def brute_force_range(start: int, end: int, target_hashes: set[str]) -> dict[str, str]:
+    found = {}
+    for num in range(start, end):
+        candidate = str(num).zfill(8)
+        hash_val = sha256_hash_str(candidate)
+        if hash_val in target_hashes:
+            found[hash_val] = candidate
+            if len(found) == len(target_hashes):
+                break
+    return found
 
 
 def brute_force_password() -> None:
-    futures = []
-    with ProcessPoolExecutor(multiprocessing.cpu_count() - 1) as executor:
-        for index, password in enumerate(PASSWORDS_TO_BRUTE_FORCE):
-            futures.append(executor.submit(brute_force, index, password))
-        wait(futures)
+    cpu_count = max(1, multiprocessing.cpu_count())
+    chunk_size = 100000000 // cpu_count
+    target_hashes = set(PASSWORDS_TO_BRUTE_FORCE)
+
+    with ProcessPoolExecutor(cpu_count) as executor:
+        futures = []
+        for i in range(cpu_count):
+            start = i * chunk_size
+            end = (i + 1) * chunk_size if i < cpu_count - 1 else 100_000_000
+            futures.append(executor.submit(brute_force_range, start, end, target_hashes))
+
+        results = {}
         for future in futures:
-            print(future.result())
+            results.update(future.result())
+
+    for h in PASSWORDS_TO_BRUTE_FORCE:
+        print(results[h])
+
 
 
 if __name__ == "__main__":
