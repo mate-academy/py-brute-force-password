@@ -22,23 +22,25 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brut_forece(index: int, password: str) -> None:
-    print(f"Start Task №{index}")
-    while True:
-        for num in range(1000000, 100000000):
-            to_hash = str(num).zfill(8)
-            hash_to = sha256_hash_str(to_hash)
-            if hash_to == password:
-                print(f"Task {index} END. Result {hash_to} - {to_hash}")
-                return
+def brute_force(index: int, password: str) -> str:
+    start = time.perf_counter()
+    for num in range(0, 100000000):
+        to_hash = str(num).zfill(8)
+        hash_to = sha256_hash_str(to_hash)
+        if hash_to == password:
+            end = time.perf_counter() - start
+            return f"Task {index} END. Result {hash_to} - {to_hash} at {end}"
+    return "Not Found"
 
 
 def brute_force_password() -> None:
     futures = []
     with ProcessPoolExecutor(multiprocessing.cpu_count() - 1) as executor:
         for index, password in enumerate(PASSWORDS_TO_BRUTE_FORCE):
-            futures.append(executor.submit(brut_forece, index, password))
+            futures.append(executor.submit(brute_force, index, password))
         wait(futures)
+        for future in futures:
+            print(future.result())
 
 
 if __name__ == "__main__":
