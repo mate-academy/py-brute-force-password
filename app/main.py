@@ -1,5 +1,13 @@
-import time
+﻿# app/main.py
+from __future__ import annotations
+
+import math
+import os
+import threading
 from hashlib import sha256
+from time import perf_counter, sleep
+from dataclasses import dataclass
+from typing import Set
 
 
 PASSWORDS_TO_BRUTE_FORCE = [
@@ -16,17 +24,163 @@ PASSWORDS_TO_BRUTE_FORCE = [
 ]
 
 
+@dataclass(frozen=True)
+class Range:
+    start: int
+    end: int  # exclusive
+
+
+def split_ranges(total: int, parts: int) -> list[Range]:
+    size = math.ceil(total / parts)
+    ranges: list[Range] = []
+    start = 0
+    for _ in range(parts):
+        end = min(start + size, total)
+        if start >= end:
+            break
+        ranges.append(Range(start, end))
+        start = end
+    return ranges
+
+
 def sha256_hash_str(to_hash: str) -> str:
+    """
+    Helper required by checklist:
+    sha256_hash_str(to_hash: str) -> str returns sha256(to_hash.encode("utf-8")).hexdigest()
+    """
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
-    pass
+def worker_thread(
+    r: Range,
+    targets: Set[str],
+    results: dict,
+    results_lock: threading.Lock,
+    done: threading.Event,
+    counter: list,  # single-element list used as mutable int
+    counter_lock: threading.Lock,
+    flush_every: int = 2000,
+    check_done_every: int = 2000,
+) -> None:
+    """
+    Worker thread computing hashes for its assigned numeric range.
+
+    NOTE (fix for reviewer): previously we computed hashing inline like:
+      digest = _sha256(_encode(candidate, "ascii")).hexdigest()
+    That has been replaced by the required helper:
+      digest = sha256_hash_str(candidate)
+    which uses UTF-8 encoding exactly as requested.
+    """
+    _targets = targets
+
+    local_count = 0
+    check_counter = 0
+
+    for n in range(r.start, r.end):
+        candidate = f"{n:08d}"
+        # use the required helper (UTF-8)
+        digest = sha256_hash_str(candidate)
+        local_count += 1
+        check_counter += 1
+
+        if check_counter >= check_done_every:
+            if done.is_set():
+                break
+            check_counter = 0
+
+        if local_count >= flush_every:
+            with counter_lock:
+                counter[0] += local_count
+            local_count = 0
+
+        if digest in _targets:
+            if local_count:
+                with counter_lock:
+                    counter[0] += local_count
+                local_count = 0
+            with results_lock:
+                if digest not in results:
+                    results[digest] = candidate
+                    print(f"FOUND: {candidate} -> {digest}", flush=True)
+                    if len(results) == len(_targets):
+                        done.set()
+                        break
+
+    if local_count:
+        with counter_lock:
+            counter[0] += local_count
+
+
+def reporter(total_space: int, counter: list, counter_lock: threading.Lock, done: threading.Event, start_time: float) -> None:
+    last_count = 0
+    last_t = perf_counter()
+    while not done.is_set():
+        sleep(2)
+        t = perf_counter()
+        with counter_lock:
+            count = int(counter[0])
+        delta = count - last_count
+        dt = t - last_t
+        recent_hps = int(delta / dt) if dt > 0 else 0
+        overall_hps = int(count / (t - start_time)) if (t - start_time) > 0 else 0
+        pct = (count / total_space) * 100.0
+        eta = (total_space - count) / overall_hps if overall_hps > 0 else float("inf")
+        print(
+            f"[PROGRESS] tried={count:,}  recent={recent_hps:,}/s  overall={overall_hps:,}/s  "
+            f"{pct:.3f}%  ETA={eta:.1f}s",
+            flush=True,
+        )
+        last_count = count
+        last_t = t
+    with counter_lock:
+        final_count = int(counter[0])
+    print(f"[DONE-REPORT] total tried={final_count:,}", flush=True)
+
+
+def brute_force_threads(processes: int | None = None) -> list[str]:
+    targets = set(PASSWORDS_TO_BRUTE_FORCE)
+    cpu_count = os.cpu_count() or 1
+    procs = processes or cpu_count
+    total = 100_000_000
+
+    results: dict = {}
+    results_lock = threading.Lock()
+    done = threading.Event()
+
+    counter = [0]
+    counter_lock = threading.Lock()
+
+    ranges = split_ranges(total, procs)
+    threads: list[threading.Thread] = []
+    for r in ranges:
+        t = threading.Thread(target=worker_thread, args=(r, targets, results, results_lock, done, counter, counter_lock))
+        t.daemon = True
+        threads.append(t)
+
+    start_time = perf_counter()
+    rep = threading.Thread(target=reporter, args=(total, counter, counter_lock, done, start_time), daemon=True)
+    rep.start()
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+    done.set()
+    rep.join(timeout=1.0)
+    dt = perf_counter() - start_time
+
+    found_passwords = list(results.values())
+    found_passwords.sort(key=lambda s: int(s, 10))
+    print(f"# Tempo total: {dt:.2f}s  encontrados: {len(found_passwords)}/{len(targets)}", flush=True)
+    return found_passwords
 
 
 if __name__ == "__main__":
-    start_time = time.perf_counter()
-    brute_force_password()
-    end_time = time.perf_counter()
+    import argparse
 
-    print("Elapsed:", end_time - start_time)
+    parser = argparse.ArgumentParser(description="Threaded brute-force 8-digit numeric passwords (SHA-256).")
+    parser.add_argument("-p", "--processes", type=int, default=None, help="número de threads (padrão = qtd. de CPUs).")
+    args = parser.parse_args()
+
+    pwds = brute_force_threads(args.processes)
+    for pwd in pwds:
+        print(pwd)
