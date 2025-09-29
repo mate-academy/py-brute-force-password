@@ -19,14 +19,14 @@ PASSWORDS_TO_BRUTE_FORCE = {
 
 CORES = cpu_count()
 LEFT_BOUND = 0
-RIGHT_BOUND = 100_000_000
+RIGHT_BOUND = 99_999_999
 
 
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password_in_range(left: int, right: int) -> list[tuple[str, str]]:
+def brute_force_password_in_range(left: int, right: int) -> None:
     for i in range(left, right + 1):
         password = f"{i:08}"
         hashed_password = sha256_hash_str(password)
@@ -34,12 +34,12 @@ def brute_force_password_in_range(left: int, right: int) -> list[tuple[str, str]
             print(f"{hashed_password} - {password}")
 
 
-def split_to_chuncks(left: int, right: int, count: int):
+def split_to_chunks(left: int, right: int, count: int) -> list[tuple[int, int]]:
     base = (right - left) // count
     ranges = []
     for i in range(count - 1):
         start = left + i * base
-        end = start + base
+        end = start + base - 1
         ranges.append((start, end))
     start = left + (count - 1) * base
     ranges.append((start, right))
@@ -50,7 +50,7 @@ def brute_force_password() -> None:
     with concurrent.futures.ProcessPoolExecutor(CORES) as executor:
         futures = [
             executor.submit(brute_force_password_in_range, left, right)
-            for left, right in split_to_chuncks(LEFT_BOUND, RIGHT_BOUND, CORES)
+            for left, right in split_to_chunks(LEFT_BOUND, RIGHT_BOUND, CORES)
         ]
     concurrent.futures.wait(futures)
 
