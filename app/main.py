@@ -1,5 +1,6 @@
 import time
 from hashlib import sha256
+from multiprocessing import Pool, cpu_count
 
 
 PASSWORDS_TO_BRUTE_FORCE = [
@@ -20,8 +21,84 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
+def _worker_range(args: tuple) -> list:
+    start, end, target_hashes = args
+    local_sha256 = sha256
+    targets = set(target_hashes)
+    found = []
+    for number in range(start, end):
+        candidate = f"{number:08d}"
+        digest = local_sha256(candidate.encode("utf-8")).hexdigest()
+        if digest in targets:
+            found.append((digest, candidate))
+            targets.remove(digest)
+            if not targets:
+                break
+    return found
+
+
 def brute_force_password() -> None:
-    pass
+    target_hashes = tuple(PASSWORDS_TO_BRUTE_FORCE)
+    target_set = set(target_hashes)
+    total_targets = len(target_set)
+
+    max_value = 100_000_000
+    workers = max(1, cpu_count())
+    chunk_size = 200_000
+
+    ranges = []
+    for i in range(0, max_value, chunk_size):
+        start = i
+        end = i + chunk_size
+        if end > max_value:
+            end = max_value
+        ranges.append((start, end, target_hashes))
+
+    found_map = {}
+    start_time = time.perf_counter()
+
+    print(
+        f"Starting brute force with {workers} worker(s), "
+        f"{len(ranges)} chunks, chunk_size={chunk_size}"
+    )
+
+    with Pool(processes=workers) as pool:
+        try:
+            for idx, result in (
+                    enumerate(
+                        pool.imap_unordered(_worker_range, ranges), 1
+                    )
+            ):
+                if result:
+                    for digest, plaintext in result:
+                        if digest not in found_map:
+                            found_map[digest] = plaintext
+                            print(
+                                f"FOUND: {plaintext} -> {digest} "
+                                f"(found {len(found_map)}/{total_targets})"
+                            )
+
+                if len(found_map) >= total_targets:
+                    pool.terminate()
+                    break
+
+                if idx % 10 == 0:
+                    elapsed = time.perf_counter() - start_time
+                    print(
+                        f"Processed {idx} chunks, elapsed {elapsed:.1f}s, "
+                        f"found {len(found_map)}/{total_targets}"
+                    )
+        except KeyboardInterrupt:
+            print("Interrupted by user; shutting down pool.")
+            pool.terminate()
+        finally:
+            pool.join()
+
+    elapsed = time.perf_counter() - start_time
+    print(f"\nFinished. Elapsed: {elapsed:.2f}s")
+    print(f"Found {len(found_map)}/{total_targets} passwords:")
+    for digest in PASSWORDS_TO_BRUTE_FORCE:
+        print(found_map.get(digest, "NOT FOUND"), "->", digest)
 
 
 if __name__ == "__main__":
