@@ -1,8 +1,10 @@
 import time
 from hashlib import sha256
+import concurrent.futures
+from multiprocessing import cpu_count
 
 
-PASSWORDS_TO_BRUTE_FORCE = [
+PASSWORDS_TO_BRUTE_FORCE = {
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
     "cf0b0cfc90d8b4be14e00114827494ed5522e9aa1c7e6960515b58626cad0b44",
     "e34efeb4b9538a949655b788dcb517f4a82e997e9e95271ecd392ac073fe216d",
@@ -13,15 +15,44 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "1273682fa19625ccedbe2de2817ba54dbb7894b7cefb08578826efad492f51c9",
     "7e8f0ada0a03cbee48a0883d549967647b3fca6efeb0a149242f19e4b68d53d6",
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
-]
+}
+
+CORES = cpu_count()
+LEFT_BOUND = 0
+RIGHT_BOUND = 100_000_000
 
 
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
+def brute_force_password_in_range(left: int, right: int) -> list[tuple[str, str]]:
+    for i in range(left, right + 1):
+        password = f"{i:08}"
+        hashed_password = sha256_hash_str(password)
+        if hashed_password in PASSWORDS_TO_BRUTE_FORCE:
+            print(f"{hashed_password} - {password}")
+
+
+def split_to_chuncks(left: int, right: int, count: int):
+    base = (right - left) // count
+    ranges = []
+    for i in range(count - 1):
+        start = left + i * base
+        end = start + base
+        ranges.append((start, end))
+    start = left + (count - 1) * base
+    ranges.append((start, right))
+    return ranges
+
+
 def brute_force_password() -> None:
-    pass
+    with concurrent.futures.ProcessPoolExecutor(CORES) as executor:
+        futures = [
+            executor.submit(brute_force_password_in_range, left, right)
+            for left, right in split_to_chuncks(LEFT_BOUND, RIGHT_BOUND, CORES)
+        ]
+    concurrent.futures.wait(futures)
 
 
 if __name__ == "__main__":
