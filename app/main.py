@@ -1,9 +1,9 @@
 import time
 import multiprocessing
-from concurrent.futures import wait
+from concurrent.futures import wait, as_completed
 from concurrent.futures.process import ProcessPoolExecutor
 from hashlib import sha256
-from typing import Sequence, Tuple
+from typing import Sequence, Tuple, Dict
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -37,15 +37,18 @@ def divide_into_ranges(total: int, parts: int) -> Sequence[Tuple[int, int]]:
     return ranges
 
 
-def brut_force_single_thread(start: int, end: int, hash_set):
+def brut_force_single_thread(start: int, end: int, hash_set) -> dict[str, str]:
+    result = {}
     for i in range(start, end):
         password = f"{i:08d}"
         hashed = sha256_hash_str(password)
         if hashed in hash_set:
-            print(f"{password}  ->  {hashed}")
+            result[hashed] = password
+    return result
 
 
 def brute_force_password() -> None:
+    results = {}
     hash_set = set(PASSWORDS_TO_BRUTE_FORCE)
     processor = multiprocessing.cpu_count()
     workers = min(10, max(1, processor - 1))
@@ -58,6 +61,15 @@ def brute_force_password() -> None:
         ]
 
         wait(futures)
+
+    for future in as_completed(futures):
+        res: Dict[str, str] = future.result()
+        for hashed, password in res.items():
+            if hashed not in results:
+                results[hashed] = password
+
+    for hashed, password in results.items():
+        print(f"{hashed} -> {password}")
 
 
 if __name__ == "__main__":
