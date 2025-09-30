@@ -31,7 +31,7 @@ def worker_task(args):
     found = {}
     for i in range(start, end):
         _string = f"{i:0{DIGITS}d}"
-        _hash = sha256(_string.encode("utf-8")).hexdigest()
+        _hash = sha256_hash_str(_string)
         if _hash in TARGETS:
             found[_hash] = _string
             if len(found) == len(TARGETS):
@@ -40,7 +40,7 @@ def worker_task(args):
 
 
 def brute_force_password(chunk_size: int = 100_000) -> None:
-    processes = multiprocessing.cpu_count() - 1
+    processes = max(1, multiprocessing.cpu_count() - 1)
 
     tasks = []
 
@@ -58,6 +58,9 @@ def brute_force_password(chunk_size: int = 100_000) -> None:
             if len(found) >= len(TARGETS):
                 pool.terminate()
                 break
+
+    assert len(found) == len(TARGETS), \
+        f"Found {len(found)}/{len(TARGETS)} passwords — required all 10."
 
     print(f"\nDONE. Found {len(found)}/{len(TARGETS)}")
 
