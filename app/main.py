@@ -2,7 +2,6 @@ import multiprocessing
 import time
 from hashlib import sha256
 
-
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
     "cf0b0cfc90d8b4be14e00114827494ed5522e9aa1c7e6960515b58626cad0b44",
@@ -22,9 +21,22 @@ def sha256_hash_str(to_hash: str) -> str:
 
 
 def brute_force_password() -> None:
+    targets = set(PASSWORDS_TO_BRUTE_FORCE)
+    passwords = []
     with multiprocessing.Pool(10) as pool:
-        print(pool.map(sha256_hash_str, PASSWORDS_TO_BRUTE_FORCE))
+        potential_passwords = (f"{i:08d}" for i in range(100_000_000))
+        for i, hashed_password in enumerate(pool.imap(sha256_hash_str, potential_passwords, 1000)):
+            unhashed_pass = f"{i:08d}"
 
+            if hashed_password in targets:
+                passwords.append(unhashed_pass)
+                targets.remove(hashed_password)
+
+            if not targets:
+                pool.terminate()
+                break
+
+    print(passwords)
 
 
 if __name__ == "__main__":
