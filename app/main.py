@@ -3,7 +3,7 @@ import time
 from concurrent.futures import ProcessPoolExecutor, wait
 from hashlib import sha256
 
-PASSWORDS_TO_BRUTE_FORCE = [
+PASSWORDS_TO_BRUTE_FORCE = {
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
     "cf0b0cfc90d8b4be14e00114827494ed5522e9aa1c7e6960515b58626cad0b44",
     "e34efeb4b9538a949655b788dcb517f4a82e997e9e95271ecd392ac073fe216d",
@@ -14,37 +14,36 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "1273682fa19625ccedbe2de2817ba54dbb7894b7cefb08578826efad492f51c9",
     "7e8f0ada0a03cbee48a0883d549967647b3fca6efeb0a149242f19e4b68d53d6",
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
-]
+}
+
+MAX_PASSWORD_RANGE = 100_000_000
 
 
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def find_passwords(start: int, end: int):
-    for i in range(start, end + 1):
+def find_passwords(start: int, end: int) -> None:
+    for i in range(start, end):
         password = str(i).zfill(8)
-        if (hash_number := sha256_hash_str(password)) in PASSWORDS_TO_BRUTE_FORCE:
-            print(f"For hash '{hash_number}' found password '{password}'")
+        if (_hash := sha256_hash_str(password)) in PASSWORDS_TO_BRUTE_FORCE:
+            print(f"For hash '{_hash}' found password '{password}'")
 
 
 def brute_force_password() -> None:
     futures = []
 
-    threads = multiprocessing.cpu_count() - 1
-    thread_range = 100_000_000 // threads
-    start_range, end_range = 0, thread_range
+    threads = max(1, multiprocessing.cpu_count() - 1)
 
     with ProcessPoolExecutor(threads) as executor:
-        for _ in range(threads):
+        for i in range(threads):
             futures.append(
                 executor.submit(
                     find_passwords,
-                    start_range,
-                    end_range,
+                    MAX_PASSWORD_RANGE * i // threads,
+                    MAX_PASSWORD_RANGE * (i + 1) // threads,
                 )
             )
-            start_range, end_range = end_range, end_range + thread_range
 
     wait(futures)
 
