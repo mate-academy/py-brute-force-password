@@ -1,6 +1,7 @@
+import multiprocessing
 import time
 from hashlib import sha256
-
+from multiprocessing import Pool
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -20,8 +21,51 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
-    pass
+TARGETS = set(PASSWORDS_TO_BRUTE_FORCE)
+DIGITS = 8
+TOTAL = 100_000_000
+
+
+def worker_task(args):
+    start, end = args
+    found = {}
+    for i in range(start, end):
+        _string = f"{i:0{DIGITS}d}"
+        _hash = sha256_hash_str(_string)
+        if _hash in TARGETS:
+            found[_hash] = _string
+            if len(found) == len(TARGETS):
+                break
+    return found
+
+
+def brute_force_password(chunk_size: int = 100_000) -> None:
+    processes = max(1, multiprocessing.cpu_count() - 1)
+
+    tasks = []
+
+    for start in range(0, TOTAL, chunk_size):
+        end = min(start + chunk_size, TOTAL)
+        tasks.append((start, end))
+
+    found = {}
+
+    with Pool(processes=processes) as pool:
+        for result in pool.imap_unordered(worker_task, tasks):
+            for _hash, pw in result.items():
+                if _hash not in found:
+                    found[_hash] = pw
+            if len(found) >= len(TARGETS):
+                pool.terminate()
+                break
+
+    assert len(found) == len(TARGETS), \
+        f"Found {len(found)}/{len(TARGETS)} passwords — required all 10."
+
+    print(f"\nDONE. Found {len(found)}/{len(TARGETS)}")
+
+    for _hash in PASSWORDS_TO_BRUTE_FORCE:
+        print(f"{_hash} -> {found.get(_hash)}")
 
 
 if __name__ == "__main__":
