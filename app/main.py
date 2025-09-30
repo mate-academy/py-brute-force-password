@@ -1,5 +1,6 @@
 import time
 from hashlib import sha256
+from multiprocessing import Pool, cpu_count, Manager
 
 
 PASSWORDS_TO_BRUTE_FORCE = [
@@ -15,13 +16,51 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
 
+target_set = set(PASSWORDS_TO_BRUTE_FORCE)
+
 
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
+def check_batch(args: int) -> list[str]:
+    start, found_hashes = args
+    found = []
+    for num in range(start, min(start + 100_000, 100_000_000)):
+        password = str(num).zfill(8)
+        hash_val = sha256_hash_str(password)
+        if hash_val in target_set and hash_val not in found_hashes:
+            found.append(password)
+    return found
+
+
 def brute_force_password() -> None:
-    pass
+    batches = range(0, 100_000_000, 100_000)
+    manager = Manager()
+    found_hashes = manager.dict()
+    found_passwords = set()
+    with Pool(cpu_count()) as pool:
+        batch_args = ((batch, found_hashes) for batch in batches)
+        for batch_result in pool.imap_unordered(
+                check_batch, batch_args, chunksize=10
+        ):
+            for password in batch_result:
+                hash_val = sha256_hash_str(password)
+                if hash_val not in found_hashes:
+                    found_hashes[hash_val] = True
+                    found_passwords.add(password)
+                    if len(found_passwords) == 10:
+                        pool.terminate()
+                        pool.join()
+                        for idx, password in enumerate(
+                                sorted(found_passwords), 1
+                        ):
+                            hash_val = sha256_hash_str(password)
+                            print(f"{idx}. {hash_val} - {password}")
+                        return
+    if len(found_passwords) < 10:
+        raise RuntimeError(f"Only {len(found_passwords)} "
+                           f"passwords found, expected 10!")
 
 
 if __name__ == "__main__":
