@@ -39,8 +39,9 @@ def brute_force_password() -> None:
             futures.append(
                 executor.submit(
                     get_passwords,
-                    int(MAX_PASSWORD_RANGE * i / cpu_count),
-                    int(MAX_PASSWORD_RANGE * (i + 1) / cpu_count)),
+                    MAX_PASSWORD_RANGE * i // cpu_count,
+                    MAX_PASSWORD_RANGE * (i + 1) // cpu_count,
+                ),
             )
 
     wait(futures)
