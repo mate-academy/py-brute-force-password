@@ -32,8 +32,9 @@ def worker(start: int, end: int, found_dict):
     return
 
 def brute_force_password():
-    num_processes = cpu_count()
+    num_processes = min(cpu_count(), TOTAL)
     chunk_size = TOTAL // num_processes
+
     ranges = []
     for i in range(num_processes):
         start = i * chunk_size
@@ -43,11 +44,16 @@ def brute_force_password():
     manager = Manager()
     found = manager.dict()
 
+    print(f"Starting: TOTAL={TOTAL}, tasks={len(ranges)}, workers={num_processes}, chunk_size={chunk_size}")
+
     with Pool(processes=num_processes) as pool:
         pool.starmap(worker, [(start, end, found) for start, end in ranges])
 
-    for h, pwd in found.items():
-        print(f"{h} (password: {pwd})")
+    if len(found) != len(PASSWORDS_TO_BRUTE_FORCE):
+        print(f"Warning: found {len(found)} of {len(PASSWORDS_TO_BRUTE_FORCE)} targets")
+
+    for idx, h in enumerate(PASSWORDS_TO_BRUTE_FORCE, start=1):
+        print(f"Password {idx}: {found.get(h)}")
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
