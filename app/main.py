@@ -25,17 +25,19 @@ TARGETS = set(PASSWORDS_TO_BRUTE_FORCE)
 DIGITS = 8
 TOTAL = 100_000_000
 
+
 def worker_task(args):
     start, end = args
     found = {}
     for i in range(start, end):
-        s = f"{i:0{DIGITS}d}"
-        h = sha256(s.encode("utf-8")).hexdigest()
-        if h in TARGETS:
-            found[h] = s
+        _string = f"{i:0{DIGITS}d}"
+        _hash = sha256(_string.encode("utf-8")).hexdigest()
+        if _hash in TARGETS:
+            found[_hash] = _string
             if len(found) == len(TARGETS):
                 break
     return found
+
 
 def brute_force_password(chunk_size: int = 100_000) -> None:
     processes = multiprocessing.cpu_count() - 1
@@ -50,17 +52,17 @@ def brute_force_password(chunk_size: int = 100_000) -> None:
 
     with Pool(processes=processes) as pool:
         for result in pool.imap_unordered(worker_task, tasks):
-            for h, pw in result.items():
-                if h not in found:
-                    found[h] = pw
+            for _hash, pw in result.items():
+                if _hash not in found:
+                    found[_hash] = pw
             if len(found) >= len(TARGETS):
                 pool.terminate()
                 break
 
     print(f"\nDONE. Found {len(found)}/{len(TARGETS)}")
 
-    for h in PASSWORDS_TO_BRUTE_FORCE:
-        print(f"{h} -> {found.get(h)}")
+    for _hash in PASSWORDS_TO_BRUTE_FORCE:
+        print(f"{_hash} -> {found.get(_hash)}")
 
 
 if __name__ == "__main__":
