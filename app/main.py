@@ -1,6 +1,7 @@
+
 import time
 from hashlib import sha256
-
+from multiprocessing import Pool, cpu_count
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -15,13 +16,70 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
 
+_hashes_set = None
+
 
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
+def worker_init(hashes_set):
+    global _hashes_set
+    _hashes_set = hashes_set
+
+
+def brute_force_chunk(args: tuple) -> list:
+    start, end = args
+    found = []
+
+    for password_num in range(start, end):
+        password = f"{password_num:08d}"
+        password_hash = sha256_hash_str(password)
+
+        if password_hash in _hashes_set:
+            found.append((password, password_hash))
+
+    return found
+
+
 def brute_force_password() -> None:
-    pass
+    hashes_set = set(PASSWORDS_TO_BRUTE_FORCE)
+
+    num_processes = cpu_count()
+    total_passwords = 100_000_000
+    chunk_size = 1_000_000
+    ranges = []
+
+    for start in range(0, total_passwords, chunk_size):
+        end = min(start + chunk_size, total_passwords)
+        ranges.append((start, end))
+
+    found_map = {}
+
+    with Pool(
+        processes=num_processes,
+        initializer=worker_init,
+        initargs=(hashes_set,)
+    ) as pool:
+        for result in pool.imap_unordered(brute_force_chunk, ranges):
+            for password, password_hash in result:
+                found_map[password_hash] = password
+
+            if len(found_map) >= 10:
+                pool.terminate()
+                pool.join()
+                break
+
+    if len(found_map) != 10:
+        raise SystemExit(
+            f"Error: Found {len(found_map)} passwords instead of 10"
+        )
+
+    found_passwords = sorted(found_map.items(), key=lambda x: x[1])
+
+    print(f"Found {len(found_map)}/10 passwords:")
+    for original_hash, password in found_passwords:
+        print(f"{password} -> {original_hash}")
 
 
 if __name__ == "__main__":
@@ -29,4 +87,4 @@ if __name__ == "__main__":
     brute_force_password()
     end_time = time.perf_counter()
 
-    print("Elapsed:", end_time - start_time)
+    print(f"Elapsed: {end_time - start_time}")
