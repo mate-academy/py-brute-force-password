@@ -1,6 +1,9 @@
 import time
+import multiprocessing
+from concurrent.futures import wait, as_completed
+from concurrent.futures.process import ProcessPoolExecutor
 from hashlib import sha256
-
+from typing import Sequence, Tuple, Dict
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -14,19 +17,63 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "7e8f0ada0a03cbee48a0883d549967647b3fca6efeb0a149242f19e4b68d53d6",
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
+TOTAL = 100_000_000
 
 
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
+def divide_into_ranges(total: int, parts: int) -> Sequence[Tuple[int, int]]:
+    chunk = total // parts
+    ranges = []
+    start = 0
+    for index in range(parts):
+        end = start + chunk
+        if index == parts - 1:
+            end = total
+        ranges.append((start, end))
+        start = end
+    return ranges
+
+
+def brut_force_single_thread(start: int, end: int, hash_set) -> dict[str, str]:
+    result = {}
+    for i in range(start, end):
+        password = f"{i:08d}"
+        hashed = sha256_hash_str(password)
+        if hashed in hash_set:
+            result[hashed] = password
+    return result
+
+
 def brute_force_password() -> None:
-    pass
+    results = {}
+    hash_set = set(PASSWORDS_TO_BRUTE_FORCE)
+    processor = multiprocessing.cpu_count()
+    workers = min(10, max(1, processor - 1))
+    ranges = divide_into_ranges(TOTAL, workers)
+
+    with ProcessPoolExecutor(max_workers=workers) as executor:
+        futures = [
+            executor.submit(brut_force_single_thread, start, end, hash_set)
+            for start, end in ranges
+        ]
+
+        wait(futures)
+
+    for future in as_completed(futures):
+        res: Dict[str, str] = future.result()
+        for hashed, password in res.items():
+            if hashed not in results:
+                results[hashed] = password
+
+    for hashed, password in results.items():
+        print(f"{hashed} -> {password}")
 
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
     brute_force_password()
     end_time = time.perf_counter()
-
     print("Elapsed:", end_time - start_time)
