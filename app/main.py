@@ -1,6 +1,8 @@
 import time
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from hashlib import sha256
-
+from multiprocessing import cpu_count
+from typing import Tuple, List
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -15,13 +17,62 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
 
+TARGET_HASHES = tuple(h.lower() for h in PASSWORDS_TO_BRUTE_FORCE)
+
 
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
+def search_password_range(args: Tuple) -> List:
+    start, end, targets = args
+    tset = set(targets)
+    found = []
+    hfunc = sha256_hash_str
+    for number in range(start, end):
+        password = f"{number:08d}"  # noqa
+        hashh = hfunc(password)
+        if hashh in tset:
+            found.append((hashh, password))
+            tset.remove(hashh)
+            if not tset:
+                break
+    return found
+
+
 def brute_force_password() -> None:
-    pass
+    max_number = 100_000_000
+    total = max_number
+    chunk = 100_000
+
+    cpus = cpu_count() or 1
+    max_workers = max(1, cpus - 1)
+
+    tasks = []
+    for start in range(0, total, chunk):
+        end = min(start + chunk, total)
+        tasks.append((start, end, TARGET_HASHES))
+
+    found_all = {}
+    targets_remaining = set(TARGET_HASHES)
+
+    with ProcessPoolExecutor(max_workers=max_workers) as exe:
+        futures = [exe.submit(search_password_range, t) for t in tasks]
+
+        for fut in as_completed(futures):
+            res = fut.result()
+            for hassh, passw in res:
+                h_norm = hassh.lower()
+                if h_norm in targets_remaining:
+                    found_all[h_norm] = passw
+                    targets_remaining.remove(h_norm)
+                    print(f"found: {h_norm} -> {passw}   ({len(found_all)})")
+
+            if len(found_all) == len(PASSWORDS_TO_BRUTE_FORCE):
+                for fut in futures:
+                    if not fut.done():
+                        fut.cancel()
+                break
 
 
 if __name__ == "__main__":
