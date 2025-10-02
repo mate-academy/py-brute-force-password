@@ -1,0 +1,10 @@
+[lab] Synthetic targets (showing up to 3):
+  8a16c9eda02714b625340df60fa71bca46ed5f10f526eed62346c4f7da22e272 -> 15241241
+  5843a3220dd46f52bbe21ed1faeeb5518348fc45886f1bb5dadd0671c100f63d -> 48291778
+  2b425c13473d61514247061925b53913e0bfe7f72b339f6270b89cca827300f8 -> 49177000
+ ...
+[lab] Start enumeration up to 5,000,000 candidates (early exit on success).
+02479087
+[lab] Found 1/10 in 6.089s. Remaining: 9
+[lab] Increase --limit or run full 1e8 to guarantee all 10 are found.
+Elapsed: 6.08940047500073
