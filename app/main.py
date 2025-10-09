@@ -1,5 +1,8 @@
 import time
 from hashlib import sha256
+import asyncio
+import multiprocessing
+
 
 
 PASSWORDS_TO_BRUTE_FORCE = [
@@ -19,9 +22,24 @@ PASSWORDS_TO_BRUTE_FORCE = [
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
+# # sync code
+# def brute_force_password() -> None:
+#     for password in PASSWORDS_TO_BRUTE_FORCE:
+#         for i in range(100000000):
+#             if sha256_hash_str(str(i).zfill(8)) == password:
+#                 print(i)
+
+
+# # multiprocces best
+def multiprocces_brute_force(password: str) -> int:
+    for i in range(100000000):
+        if sha256_hash_str(str(i).zfill(8)) == password:
+            print(i)
 
 def brute_force_password() -> None:
-    pass
+    with multiprocessing.Pool() as pool:
+        results = pool.map(multiprocces_brute_force, PASSWORDS_TO_BRUTE_FORCE)
+        print(results)
 
 
 if __name__ == "__main__":
