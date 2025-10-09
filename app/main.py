@@ -29,7 +29,6 @@ def sha256_hash_str(to_hash: str) -> str:
 #             if sha256_hash_str(str(i).zfill(8)) == password:
 #                 print(i)
 
-
 # # multiprocces best
 def multiprocces_brute_force(password: str) -> int:
     for i in range(100000000):
