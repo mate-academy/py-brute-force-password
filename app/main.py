@@ -1,6 +1,10 @@
 import time
 from hashlib import sha256
+import multiprocessing
+from typing import Optional, List
 
+# общий диапазон (по умолчанию полный 8-значный: 0..99_999_999)
+MAX_VALUE = 100_000_000
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -20,13 +24,49 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
-    pass
+def multiprocces_brute_force(password: str) -> Optional[str]:
+    """
+    Сканирует диапазон [0, MAX_VALUE) и возвращает первое найденное
+    8-символьное строковое представление числа (zfilled) при совпадении хеша.
+    Если не найдено — возвращает None.
+    """
+    for i in range(MAX_VALUE):
+        candidate = str(i).zfill(8)  # сохраняем ведущие нули
+        if sha256_hash_str(candidate) == password:
+            # возвращаем строку с ведущими нулями, не печатаем число без нулей
+            return candidate
+    return None
+
+
+def brute_force_passwords() -> None:
+    start_time = time.perf_counter()
+
+
+    with multiprocessing.Pool() as pool:
+        results: List[Optional[str]] = pool.map(multiprocces_brute_force, PASSWORDS_TO_BRUTE_FORCE)
+
+    # фильтрация None
+    found_passwords = [r for r in results if r is not None]
+
+    end_time = time.perf_counter()
+    elapsed = end_time - start_time
+
+    # проверяем требование: ровно 10 паролей
+    if len(found_passwords) == len(PASSWORDS_TO_BRUTE_FORCE):
+        print(f"Found all {len(found_passwords)} passwords (each exactly 8 chars):")
+        for pw in found_passwords:
+            print(pw)  # все уже в виде "00001234"
+    else:
+        print("Warning: did not find all passwords.")
+        print(f"Expected {len(PASSWORDS_TO_BRUTE_FORCE)} matches, got {len(found_passwords)}.")
+        print("Found (possibly partial):", found_passwords)
+        # полезная диагностика: показываем raw results (None or value) aligned with input list
+        for idx, (target_hash, res) in enumerate(zip(PASSWORDS_TO_BRUTE_FORCE, results)):
+            status = res if res is not None else "<NOT FOUND>"
+            print(f"{idx+1:02d}: {target_hash[:8]}... -> {status}")
+
+    print("Elapsed:", elapsed)
 
 
 if __name__ == "__main__":
-    start_time = time.perf_counter()
-    brute_force_password()
-    end_time = time.perf_counter()
-
-    print("Elapsed:", end_time - start_time)
+    brute_force_passwords()
