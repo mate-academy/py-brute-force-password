@@ -1,6 +1,8 @@
+import os
 import time
 from hashlib import sha256
-
+from typing import Tuple, List
+from multiprocessing import Pool, Manager, Event
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -15,18 +17,80 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
 
+CHUNK_SIZE = 100_000
+MAX_DIGITS = 8
+
 
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
-    pass
+def worker(args: Tuple[int, int, List[str], Event]) -> List[Tuple[str, str]]:
+    start, end, target_hashes_list, stop_event = args
+    target = set(target_hashes_list)
+
+    found: List[Tuple[str, str]] = []
+
+    for i in range(start, end):
+        if stop_event.is_set():
+            break
+
+        candidate = f"{i:0{MAX_DIGITS}d}"
+        h = sha256_hash_str(candidate)
+        if h in target:
+            found.append((h, candidate))
+    return found
+
+
+def chunk_ranges(total: int, chunk_size: int) -> List[Tuple[int, int]]:
+    ranges = []
+    for start in range(0, total, chunk_size):
+        end = min(start + chunk_size, total)
+        ranges.append((start, end))
+    return ranges
+
+
+def brute_force_password(target_hashes: list[str],
+                         processes: int | None = None,
+                         chunk_size: int = CHUNK_SIZE,
+                         stop_after_first: bool = True):
+    total = 10 ** MAX_DIGITS
+    ranges = chunk_ranges(total, chunk_size)
+    manager = Manager()
+    stop_event = manager.Event()
+    found_results = manager.dict()
+    n_targets = len(target_hashes)
+
+    target_list = list(target_hashes)
+    tasks = [(start, end, target_list, stop_event) for (start, end) in ranges]
+
+    if processes is None:
+        processes = os.cpu_count() or 4
+
+    print(f"Starting search: total={total:,} combos, chunk_size={chunk_size:,}, "
+          f"tasks={len(tasks):,}, processes={processes}")
+
+    with Pool(processes=processes) as pool:
+        for result in pool.imap_unordered(worker, tasks):
+            for h, plain in result:
+
+                found_results[h] = plain
+                print(f"Found: {h} -> {plain}")
+                print("-" * 100 + "\n")
+
+            if stop_after_first and len(found_results) > 0:
+                stop_event.set()
+                print("Stop event set — asking other workers to finish early.")
+                break
+            if len(found_results) >= n_targets:
+                stop_event.set()
+                print("All target hashes found — stopping search.")
+                break
 
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
-    brute_force_password()
+    brute_force_password(target_hashes=PASSWORDS_TO_BRUTE_FORCE, stop_after_first=False)
     end_time = time.perf_counter()
 
     print("Elapsed:", end_time - start_time)
