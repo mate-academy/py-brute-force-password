@@ -1,3 +1,4 @@
+import multiprocessing
 import time
 from hashlib import sha256
 
@@ -15,13 +16,34 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
 
+MAX_NUMBER = 100000000
+
 
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
+def check_number(number: int) -> str | None:
+    numb = str(number).zfill(8)
+
+    numb_hash = sha256_hash_str(numb)
+
+    if numb_hash in PASSWORDS_TO_BRUTE_FORCE:
+        return numb
+    return None
+
+
 def brute_force_password() -> None:
-    pass
+    print("Brute forcing passwords...")
+
+    all_numbers = range(MAX_NUMBER)
+
+    with multiprocessing.Pool() as pool:
+        result = pool.map(check_number, all_numbers)
+
+    passwords = [p for p in result if p is not None]
+
+    print("Found passwords:", passwords)
 
 
 if __name__ == "__main__":
