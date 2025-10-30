@@ -1,6 +1,6 @@
 import time
 from hashlib import sha256
-
+import multiprocessing as mp
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -20,8 +20,40 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
+def brute_force_range(
+        start: int, end: int, passwords: set, result_dict: dict
+) -> None:
+    for num in range(start, end):
+        pwd = f"{num: 08d}"
+        hashed_pwd = sha256_hash_str(pwd)
+        if hashed_pwd in passwords:
+            result_dict[hashed_pwd] = pwd
+            print(f"[FOUND] {pwd} → {hashed_pwd}")
+            if len(result_dict) == len(passwords):
+                break
+
+
 def brute_force_password() -> None:
-    pass
+    manager = mp.Manager()
+    result_dict = manager.dict()
+    passwords = PASSWORDS_TO_BRUTE_FORCE
+    total = 100_000_000
+    cpu_cores = max(1, mp.cpu_count() - 1)
+    chunk_size = total // cpu_cores
+    print(f"Using {cpu_cores} cores, each processing {chunk_size} numbers.\n")
+    with mp.Pool(cpu_cores) as pool:
+        tasks = []
+        for i in range(cpu_cores):
+            start = i * chunk_size
+            end = total if i == cpu_cores - 1 else (i + 1) * chunk_size
+            tasks.append(pool.apply_async(
+                brute_force_range, (start, end, passwords, result_dict)))
+        for task in tasks:
+            task.wait()
+    print("\nAll passwords found:")
+    for hashed_pwd, pwd in result_dict.items():
+        print(f"{pwd} → {hashed_pwd}")
+    print(f"\nTotal found: {len(result_dict)} / {len(passwords)}")
 
 
 if __name__ == "__main__":
