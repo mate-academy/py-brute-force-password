@@ -22,7 +22,7 @@ def sha256_hash_str(to_hash: str) -> str:
 
 def check_range(start: int,
                 end: int,
-                targets: list,
+                targets: set,
                 result_queue: multiprocessing.Queue[str]) -> None:
     for num in range(start, end):
         password = f"{num:08d}"
