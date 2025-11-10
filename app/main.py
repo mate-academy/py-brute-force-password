@@ -25,7 +25,7 @@ def check_range(start: int,
                 targets: list,
                 result_queue: multiprocessing.Queue[str]) -> None:
     for num in range(start, end):
-        password = f"{num: 08d}"
+        password = f"{num:08d}"
         hash_password = sha256_hash_str(password)
         if hash_password in targets:
             result_queue.put(password)
