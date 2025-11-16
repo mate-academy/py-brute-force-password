@@ -1,6 +1,8 @@
+import multiprocessing
 import time
+from concurrent.futures import ProcessPoolExecutor, wait
 from hashlib import sha256
-
+from typing import List
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -16,17 +18,59 @@ PASSWORDS_TO_BRUTE_FORCE = [
 ]
 
 
+SET_BRUTE_FORCE = set(PASSWORDS_TO_BRUTE_FORCE)
+
+
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
-    pass
+def brute_force_worker(start: int, end: int) -> List[str]:
+    found_passwords = []
+    local_target_set = SET_BRUTE_FORCE
+
+    for password in range(start, end):
+        pass_str = f"{password:08d}"
+        sha_result = sha256_hash_str(pass_str)
+
+        if sha_result in local_target_set:
+            found_passwords.append(pass_str)
+
+    return found_passwords
+
+
+def main_multiprocess_executor() -> None:
+    total_numbers = 100_000_000
+    cpu_count = multiprocessing.cpu_count()
+    workers_count = max(1, cpu_count - 1)
+
+    step = total_numbers // workers_count
+    futures = []
+    found_all = []
+
+    print(f"Starting brute force with {workers_count} workers...")
+
+    with ProcessPoolExecutor(max_workers=workers_count) as executor:
+        for i in range(workers_count):
+            start = i * step
+            end = total_numbers if i == workers_count - 1 else (i + 1) * step
+
+            futures.append(executor.submit(brute_force_worker, start, end))
+
+        done, _ = wait(futures)
+
+        for future in done:
+            result = future.result()
+            if result:
+                found_all.extend(result)
+
+    print(f"Found passwords: {found_all}")
 
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
-    brute_force_password()
-    end_time = time.perf_counter()
 
-    print("Elapsed:", end_time - start_time)
+    main_multiprocess_executor()
+
+    end_time = time.perf_counter()
+    print(f"Elapsed time: {end_time - start_time:.4f} seconds")
