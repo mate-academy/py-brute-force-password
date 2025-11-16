@@ -34,7 +34,7 @@ def brute_force_password(index: int, hash_password: str) -> str |None:
 if __name__ == "__main__":
     start_time = time.perf_counter()
     futures = []
-    with ProcessPoolExecutor(multiprocessing.cpu_count() - 1) as executor:
+    with ProcessPoolExecutor(max(1, multiprocessing.cpu_count() - 1)) as executor:
         for index, password in enumerate(PASSWORDS_TO_BRUTE_FORCE):
             futures.append(executor.submit(brute_force_password, index, password))
 
