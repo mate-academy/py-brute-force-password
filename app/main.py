@@ -15,26 +15,32 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "7e8f0ada0a03cbee48a0883d549967647b3fca6efeb0a149242f19e4b68d53d6",
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
+PASSWORDS = set(PASSWORDS_TO_BRUTE_FORCE)
 
 
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def get_password(num: int) -> None:
-    for i in range(num - 2500000, num):
-        password_str = str(i)
-        password_str = "0" * (8 - len(password_str)) + password_str
-        for password in PASSWORDS_TO_BRUTE_FORCE:
-            if password == sha256_hash_str(password_str):
-                print(f"{password} - {password_str}")
+def get_password(r: set) -> None:
+    start, end = r
+    for i in range(start, end):
+        password_str = str(i).zfill(8)
+        password_hash = sha256_hash_str(password_str)
+        if password_hash in PASSWORDS:
+            print(f"{password_str}: {password_hash}")
 
 
 def brute_force_password() -> None:
+    ranges = []
+    step = 5_000_000
+    for i in range(0, 100_000_000, step):
+        ranges.append((i, i + step))
+
     futures = []
     with ProcessPoolExecutor(multiprocessing.cpu_count() - 1) as executor:
-        for i in range(2500000, 100000000, 2500000):
-            futures.append(executor.submit(get_password, i))
+        for range_ in ranges:
+            futures.append(executor.submit(get_password, range_))
 
     wait(futures)
 
