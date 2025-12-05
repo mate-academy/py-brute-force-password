@@ -21,31 +21,22 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def get_password(password: str) -> None:
-    for i in range(100000000):
+def get_password(num: int) -> None:
+    for i in range(num - 2500000, num):
         password_str = str(i)
         password_str = "0" * (8 - len(password_str)) + password_str
-        if password == sha256_hash_str(password_str):
-            print(password_str)
-            break
+        for password in PASSWORDS_TO_BRUTE_FORCE:
+            if password == sha256_hash_str(password_str):
+                print(f"{password} - {password_str}")
 
 
 def brute_force_password() -> None:
     futures = []
-
     with ProcessPoolExecutor(multiprocessing.cpu_count() - 1) as executor:
-        for i in range(100000000):
-            num = str(i)
-            num = "0" * (8 - len(num)) + num
-            futures.append(executor.submit(compare_passwords, num))
+        for i in range(2500000, 100000000, 2500000):
+            futures.append(executor.submit(get_password, i))
 
     wait(futures)
-
-
-def compare_passwords(num: str) -> None:
-    for password in PASSWORDS_TO_BRUTE_FORCE:
-        if password == sha256_hash_str(num):
-            print(password)
 
 
 if __name__ == "__main__":
