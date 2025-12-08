@@ -2,6 +2,7 @@ import time
 from hashlib import sha256
 from multiprocessing import Pool, cpu_count
 
+
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
     "cf0b0cfc90d8b4be14e00114827494ed5522e9aa1c7e6960515b58626cad0b44",
@@ -22,33 +23,53 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-# ВАЖЛИВО: функція тепер на верхньому рівні файлу (не всередині іншої функції)
 def check_range(start: int, end: int):
     found = []
+
     for number in range(start, end):
         password = f"{number:08d}"
         hash_ = sha256_hash_str(password)
+
         if hash_ in TARGETS:
             found.append((hash_, password))
+
     return found
 
 
-def brute_force_password():
+def brute_force_password() -> None:
     total = 100_000_000
     workers = cpu_count()
 
-    print(f"Using {workers} CPU cores...")
+    if workers > total:
+        workers = total
 
     chunk = total // workers
-    ranges = [(i * chunk, (i + 1) * chunk) for i in range(workers)]
+
+    ranges = []
+    for i in range(workers):
+        start = i * chunk
+        end = (i + 1) * chunk if i < workers - 1 else total
+        ranges.append((start, end))
+
+    print(f"Using {workers} CPU cores...")
+
+    all_found = {}
 
     with Pool(workers) as pool:
         results = pool.starmap(check_range, ranges)
 
-    for sub in results:
-        for hash_, password in sub:
-            print(f"FOUND: {password} -> {hash_}")
+    # агрегуємо
+    for worker_results in results:
+        for hash_, password in worker_results:
+            all_found[hash_] = password
 
+    # підсумок + валідація
+    print(f"\nFound {len(all_found)} / {len(TARGETS)} passwords")
+
+    for hash_, password in all_found.items():
+        print(f"{password} -> {hash_}")
+
+    assert len(all_found) == len(TARGETS), "ERROR: Not all passwords were found!"
 
 
 if __name__ == "__main__":
@@ -56,4 +77,5 @@ if __name__ == "__main__":
     brute_force_password()
     end_time = time.perf_counter()
 
-    print("Elapsed:", end_time - start_time)
+    print("\nElapsed:", end_time - start_time)
+
