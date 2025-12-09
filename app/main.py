@@ -1,6 +1,7 @@
+import multiprocessing
 import time
 from hashlib import sha256
-
+from queue import Empty
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -20,8 +21,66 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
+def worker(start: int,
+           end: int,
+           queue: multiprocessing.Queue,
+           stop_event: multiprocessing.Event,
+           passwords_set: set[str]
+           ) -> None:
+    local_passwords_set = passwords_set
+    local_results = []
+    for num in range(start, end):
+        if num % 10000 == 0 and stop_event.is_set():
+            break
+        else:
+            num_str = str(num).zfill(8)
+            hashed = sha256_hash_str(num_str)
+            if hashed in local_passwords_set:
+                local_results.append(num_str)
+    if local_results:
+        queue.put(local_results)
+
+
 def brute_force_password() -> None:
-    pass
+    passwords_set = set(PASSWORDS_TO_BRUTE_FORCE)
+    total = 10 ** 8
+    num_cpu = multiprocessing.cpu_count()
+    base = total // num_cpu
+
+    manager = multiprocessing.Manager()
+    queue = multiprocessing.Queue()
+    stop_event = manager.Event()
+    set_found = set()
+
+    processes = []
+    for num in range(0, num_cpu):
+        start = num * base
+        end = start + base if num < num_cpu - 1 else total
+        process = multiprocessing.Process(
+            target=worker,
+            args=(start, end, queue, stop_event, passwords_set)
+        )
+        process.start()
+        processes.append(process)
+
+    while len(set_found) < 10:
+        try:
+            items = queue.get(timeout=0.5)
+        except Empty:
+            if not any(p.is_alive() for p in processes):
+                break
+            else:
+                continue
+        for psw in items:
+            set_found.add(psw)
+            if len(set_found) >= 10:
+                stop_event.set()
+                break
+
+    for process in processes:
+        process.join()
+
+    print(set_found)
 
 
 if __name__ == "__main__":
