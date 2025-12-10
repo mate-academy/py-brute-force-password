@@ -1,8 +1,10 @@
 import time
 from hashlib import sha256
+from concurrent.futures import ProcessPoolExecutor, wait
+import multiprocessing
 
 
-PASSWORDS_TO_BRUTE_FORCE = [
+PASSWORDS_TO_BRUTE_FORCE = {
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
     "cf0b0cfc90d8b4be14e00114827494ed5522e9aa1c7e6960515b58626cad0b44",
     "e34efeb4b9538a949655b788dcb517f4a82e997e9e95271ecd392ac073fe216d",
@@ -13,15 +15,29 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "1273682fa19625ccedbe2de2817ba54dbb7894b7cefb08578826efad492f51c9",
     "7e8f0ada0a03cbee48a0883d549967647b3fca6efeb0a149242f19e4b68d53d6",
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
-]
+}
 
+RANGES = [(0, 33_000_000), (33_000_000, 66_000_000), (66_000_000, 100_000_000)]
 
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
+def check_correct_password(range_: tuple[int]) -> None:
+    for num in range(range_[0], range_[1]):
+        num = f"{num:08d}"
+        result = sha256_hash_str(num)
+        if result in PASSWORDS_TO_BRUTE_FORCE:
+            print(f"Password for hash {result} is {num}")
+
+
 def brute_force_password() -> None:
-    pass
+    futures = []
+    with ProcessPoolExecutor(3) as executor:
+        for range_ in RANGES:
+            futures.append(executor.submit(check_correct_password, range_))
+
+    wait(futures)
 
 
 if __name__ == "__main__":
