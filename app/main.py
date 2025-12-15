@@ -1,8 +1,10 @@
 import time
 from hashlib import sha256
+from typing import List, Set, Tuple, Dict
+from multiprocessing import Pool, cpu_count
 
 
-PASSWORDS_TO_BRUTE_FORCE = [
+PASSWORDS_TO_BRUTE_FORCE: Set[str] = set([
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
     "cf0b0cfc90d8b4be14e00114827494ed5522e9aa1c7e6960515b58626cad0b44",
     "e34efeb4b9538a949655b788dcb517f4a82e997e9e95271ecd392ac073fe216d",
@@ -13,20 +15,65 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "1273682fa19625ccedbe2de2817ba54dbb7894b7cefb08578826efad492f51c9",
     "7e8f0ada0a03cbee48a0883d549967647b3fca6efeb0a149242f19e4b68d53d6",
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
-]
+])
 
 
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
-    pass
+def worker_force_password(
+        range_tuple: Tuple[int, int]) -> List[Tuple[str, str]]:
+    start, end = range_tuple
+    local_found: List[Tuple[str, str]] = []
+
+    for i in range(start, end):
+        password_candidate = f"{i:08}"
+        password_hash = sha256_hash_str(password_candidate)
+
+        if password_hash in PASSWORDS_TO_BRUTE_FORCE:
+            local_found.append((password_candidate, password_hash))
+
+    return local_found
+
+
+def brute_force_password() -> Dict[str, str]:
+    max_passwords = 100_000_000
+    num_processes = cpu_count()
+
+    chunk_size = max_passwords // num_processes
+    ranges = []
+
+    print(f"Початок брутфорсу на {num_processes} ядрах (CPUs).")
+
+    for i in range(num_processes):
+        start = i * chunk_size
+        end = (i + 1) * chunk_size if i < num_processes - 1 else max_passwords
+        ranges.append((start, end))
+
+    all_results = []
+    with Pool(num_processes) as pool:
+        all_results = pool.map(worker_force_password, ranges)
+
+    final_found_results: Dict[str, str] = {}
+
+    for process_results in all_results:
+        for password, hash_val in process_results:
+            final_found_results[hash_val] = password
+
+    return final_found_results
 
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
-    brute_force_password()
+
+    found_passwords_dict = brute_force_password()
+
     end_time = time.perf_counter()
 
-    print("Elapsed:", end_time - start_time)
+    for hash_val, password in found_passwords_dict.items():
+        print(f"Пароль: {password} -> Хеш: {hash_val}")
+
+    print(f"Знайдено паролів:"
+          f" {len(found_passwords_dict)} / {len(PASSWORDS_TO_BRUTE_FORCE)}")
+    print(f"Час виконання: {end_time - start_time:.4f} секунд")
