@@ -1,5 +1,6 @@
 import time
 from hashlib import sha256
+import multiprocessing
 
 
 PASSWORDS_TO_BRUTE_FORCE = [
@@ -19,10 +20,25 @@ PASSWORDS_TO_BRUTE_FORCE = [
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
+def brute_force_range(start: int, end: int, passwords: set[str]) -> None:
+    for number in range(start, end):
+        candidate = str(number).zfill(8)
+        if sha256_hash_str(candidate) in passwords:
+            print(candidate)
+
 
 def brute_force_password() -> None:
-    pass
+    cpu_count = multiprocessing.cpu_count()
+    chunk_size = 100_000_000 // cpu_count
 
+    tasks = []
+    for i in range(cpu_count):
+        start = i * chunk_size
+        end = start + chunk_size if i != cpu_count - 1 else 100_000_000
+        tasks.append((start, end, set(PASSWORDS_TO_BRUTE_FORCE)))
+
+    with multiprocessing.Pool(cpu_count) as pool:
+        pool.starmap(brute_force_range, tasks)
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
