@@ -21,7 +21,26 @@ def sha256_hash_str(to_hash: str) -> str:
 
 
 def brute_force_password() -> None:
-    pass
+    # Используем set для быстрого поиска O(1)
+    target_hashes = set(PASSWORDS_TO_BRUTE_FORCE)
+    found_count = 0
+
+    # Перебираем все возможные 8-значные пароли (от 00000000 до 99999999)
+    for password_num in range(100000000):
+        # Форматируем число как 8-значную строку с ведущими нулями
+        password = str(password_num).zfill(8)
+
+        # Вычисляем хеш пароля
+        password_hash = sha256_hash_str(password)
+
+        # Проверяем, есть ли этот хеш в списке искомых
+        if password_hash in target_hashes:
+            print(password)
+            found_count += 1
+
+            # Если нашли все 10 паролей, прекращаем поиск
+            if found_count == 10:
+                break
 
 
 if __name__ == "__main__":
