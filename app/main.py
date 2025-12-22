@@ -23,13 +23,13 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_passwords(start: int, end: int) -> None:
+def brute_force_passwords(start: int, end: int, passwords: set[str]) -> None:
     for i in range(start, end):
         password = str(i).zfill(8)
         password_hash = sha256_hash_str(password)
-        if password_hash in PASSWORDS_TO_BRUTE_FORCE:
+        if password_hash in passwords:
             print(
-                f"{PASSWORDS_TO_BRUTE_FORCE.index(password_hash)} Password found: {password}"
+                f"Password found: {password} - {password_hash}"
             )
     return
 
@@ -37,11 +37,11 @@ def brute_force_passwords(start: int, end: int) -> None:
 def brute_force_password() -> None:
     cpu_count = multiprocessing.cpu_count() - 1
 
-    if cpu_count == 0:
-        print("No available CPU found")
-        return
+    cpu_count = min(1, cpu_count)
 
     step = 10 ** 8 // cpu_count
+
+    passwords = set(PASSWORDS_TO_BRUTE_FORCE)
 
     with ProcessPoolExecutor(cpu_count) as executor:
         futures = []
@@ -50,7 +50,7 @@ def brute_force_password() -> None:
             start = i * step
             end = 10 ** 8 if i == cpu_count - 1 else (i + 1) * step
             futures.append(
-                executor.submit(brute_force_passwords, start, end)
+                executor.submit(brute_force_passwords, start, end, passwords)
             )
         wait(futures)
 
