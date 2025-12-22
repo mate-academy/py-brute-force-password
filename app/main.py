@@ -37,7 +37,7 @@ def brute_force_passwords(start: int, end: int, passwords: set[str]) -> None:
 def brute_force_password() -> None:
     cpu_count = multiprocessing.cpu_count() - 1
 
-    cpu_count = min(1, cpu_count)
+    cpu_count = max(1, cpu_count)
 
     step = 10 ** 8 // cpu_count
 
