@@ -1,6 +1,7 @@
 import time
+import psutil
+from concurrent.futures import ProcessPoolExecutor, wait
 from hashlib import sha256
-
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -17,11 +18,53 @@ PASSWORDS_TO_BRUTE_FORCE = [
 
 
 def sha256_hash_str(to_hash: str) -> str:
-    return sha256(to_hash.encode("utf-8")).hexdigest()
+    bytes_st = to_hash.encode("utf-8")
+    sha_256_bit = sha256(bytes_st)
+    sha_64_str = sha_256_bit.hexdigest()
+    return sha_64_str
+
+
+def search_password(
+        start: int,
+        end: int,
+        cpu: int,
+        password_set: set[str]
+) -> None:
+    print(f"start CPU: {cpu}. {start} - {end}")
+    for combination in range(start, end):
+        combination = str(f"{combination:08d}")
+        com_hash = sha256_hash_str(combination)
+        if com_hash in password_set:
+            print(f"Password {com_hash} found: {combination}")
 
 
 def brute_force_password() -> None:
-    pass
+    password_set = set(PASSWORDS_TO_BRUTE_FORCE)
+    total = 100_000_000
+    count_cpu = 0
+    if not psutil.cpu_count() or psutil.cpu_count() == 1:
+        count_cpu = 1
+    else:
+        count_cpu = psutil.cpu_count() - 1
+    range_for_cpu = 100_000_000 // count_cpu
+    start = 0
+    end = range_for_cpu
+    tasks = []
+    with ProcessPoolExecutor(count_cpu) as executor:
+        for cpu in range(count_cpu):
+            cpu += 1
+            if cpu < count_cpu:
+                end = cpu * range_for_cpu
+            else:
+                end = total
+            tasks.append(
+                executor.submit(
+                    search_password,
+                    start, end, cpu, password_set,
+                )
+            )
+            start = end
+        wait(tasks)
 
 
 if __name__ == "__main__":
