@@ -21,7 +21,7 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password(start: int, end: int, target_set: str) -> None:
+def brute_force_password(start: int, end: int, target_set: set[str]) -> None:
 
     for i in range(start, end):
 
@@ -39,7 +39,10 @@ def main_multiprocessing() -> None:
     target_set = set(PASSWORDS_TO_BRUTE_FORCE)
 
     total_combinations = 10 ** 8
-    num_cores = (multiprocessing.cpu_count() - 1)
+    num_cores = (multiprocessing.cpu_count() - 1) \
+        if multiprocessing.cpu_count() > 1 \
+        else 1
+
     step = total_combinations // num_cores
 
     tasks = []
