@@ -1,6 +1,6 @@
 import time
 from hashlib import sha256
-
+import multiprocessing
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -20,13 +20,77 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
-    pass
+def brute_force_worker(chunk_start: int,
+                       chunk_size: int,
+                       target_hashes: set,
+                       result_queue: multiprocessing.Queue,
+                       ) -> None:
+    end = chunk_start + chunk_size
+    for num in range(chunk_start, end):
+        password = f"{num:08d}"
+        hashed = sha256_hash_str(password)
+
+        if hashed in target_hashes:
+            result_queue.put((password, hashed))
+
+
+def brute_force_password() -> dict[str, str]:
+    total_combinations = 100_000_000
+    num_processes = max(1, multiprocessing.cpu_count() - 1)
+    chunk_size = total_combinations // num_processes
+    extra = total_combinations % num_processes
+
+    manager = multiprocessing.Manager()
+    result_queue = manager.Queue()
+
+    target_hashes_set = set(PASSWORDS_TO_BRUTE_FORCE)
+
+    start = 0
+    processes = []
+
+    for i in range(num_processes):
+        current_chunk = chunk_size + (1 if i < extra else 0)
+        task = multiprocessing.Process(
+            target=brute_force_worker,
+            args=(start, current_chunk,
+                  target_hashes_set, result_queue),
+        )
+        processes.append(task)
+        task.start()
+        start += current_chunk
+
+    found_results = {}
+    while len(found_results) < len(PASSWORDS_TO_BRUTE_FORCE):
+        if not result_queue.empty():
+            password, hashed = result_queue.get()
+            if hashed not in found_results:
+                found_results[hashed] = password
+                print(f"Found {password}: {hashed}")
+
+        if all(not task.is_alive() for task in processes) and result_queue.empty():
+            break
+
+        time.sleep(0.01)
+
+    for task in processes:
+        task.join()
+
+    return found_results
 
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
-    brute_force_password()
+    results = brute_force_password()
     end_time = time.perf_counter()
+
+    print("\n" + "=" * 50)
+    print("Results:")
+    print("=" * 50)
+    if results:
+        for password, hashed in results.items():
+            print(f"{password} → {hashed}")
+        print(f"Found: {len(results)} passwords")
+    else:
+        print("Passwords not found in range 00000000–99999999")
 
     print("Elapsed:", end_time - start_time)
