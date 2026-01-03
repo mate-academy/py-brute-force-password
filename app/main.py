@@ -1,6 +1,8 @@
 import time
+import multiprocessing
 from hashlib import sha256
-
+from concurrent.futures import ProcessPoolExecutor
+from typing import List, Tuple, Set
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -19,9 +21,75 @@ PASSWORDS_TO_BRUTE_FORCE = [
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
+# 1 SYNC VERSION -------------------------------------------------------
+# def generate_8digit_combinations():
+#     """Generator - doesn't store all in memory"""
+#     for combo in product(range(10), repeat=8):
+#         yield ''.join(map(str, combo))
+#
+#
+# def brute_force_password() -> None:
+#     for eight_digit_string in generate_8digit_combinations():
+#         hash_str = sha256_hash_str(eight_digit_string)
+#         if hash_str in PASSWORDS_TO_BRUTE_FORCE:
+#             print(eight_digit_string)
+#             print(hash_str)
+# RESULT - 250 sec
+# END SYNC VERSION ------------------------------------------------------
 
+
+def check_password_range(args: Tuple[int, int, Set[str]]) -> List[str]:
+    """
+    Check a range of passwords against target hashes.
+    Returns list of passwords that match.
+    """
+    start, end, target_hashes = args
+    found = []
+
+    for num in range(start, end):
+        password = f"{num:08d}"
+        password_hash = sha256_hash_str(password)
+
+        if password_hash in target_hashes:
+            found.append(password)
+
+    return found
+
+
+# 2 ASYNC VERSION USING executor.map(check_password_range, ranges) ---------
 def brute_force_password() -> None:
-    pass
+    """
+    Brute force all 8-digit numeric passwords using multiprocessing.
+    Prints found passwords to console.
+    """
+    total_combinations = 100_000_000
+    num_workers = multiprocessing.cpu_count()
+
+    # Convert to set for O(1) lookup
+    target_hashes_set = set(PASSWORDS_TO_BRUTE_FORCE)
+
+    # Split work across CPU cores
+    chunk_size = total_combinations // num_workers
+    ranges = []
+
+    for i in range(num_workers):
+        start = i * chunk_size
+        end = start + chunk_size if i < num_workers - 1 else total_combinations
+        ranges.append((start, end, target_hashes_set))
+
+    # Process ranges in parallel
+    all_found = []
+    with ProcessPoolExecutor(max_workers=num_workers) as executor:
+        results = executor.map(check_password_range, ranges)
+
+        for found_passwords in results:
+            all_found.extend(found_passwords)
+
+    # Print results (sorted for consistency)
+    for password in sorted(all_found):
+        print(password)
+# RESULT - 35 sec
+# END ASYNC VERSION USING executor.map(check_password_range, ranges) --------
 
 
 if __name__ == "__main__":
