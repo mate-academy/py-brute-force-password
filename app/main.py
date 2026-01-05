@@ -1,6 +1,6 @@
 import time
 from hashlib import sha256
-
+from multiprocessing import Pool, cpu_count
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -20,9 +20,58 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
-    pass
+def check_password_range(start: int, end: int, target_hashes: set) -> dict:
+    """Check a range of passwords and return found matches"""
+    found = {}
+    for num in range(start, end):
+        password = f"{num:08d}"
+        hash_val = sha256_hash_str(password)
 
+        if hash_val in target_hashes:
+            found[hash_val] = password
+
+    return found
+
+def brute_force_password() -> None:
+    # Create a set for fast hash lookups
+    target_hashes = set(PASSWORDS_TO_BRUTE_FORCE)
+    total_passwords = 10 ** 8  # 100 million
+
+    # Use all available CPU cores
+    num_workers = cpu_count()
+    print(f"Using {num_workers} CPU cores")
+    print(f"Searching through {total_passwords:,} possible passwords...")
+
+    # Divide the work into equal chunks
+    chunk_size = total_passwords // num_workers
+    tasks = []
+
+    for i in range(num_workers):
+        start = i * chunk_size
+        end = (i + 1) * chunk_size if i < num_workers - 1 else total_passwords
+        tasks.append((start, end, target_hashes.copy()))  # Copy for each process
+
+    # Option 1: Use multiprocessing.Pool (fastest approach)
+    found_passwords = {}
+
+    with Pool(processes=num_workers) as pool:
+        # Use starmap to pass multiple arguments
+        results = pool.starmap(check_password_range, tasks)
+
+        # Collect results from all workers
+        for result in results:
+            found_passwords.update(result)
+
+        if found_passwords:
+            print(f"\nFound {len(found_passwords)} passwords out of {len(PASSWORDS_TO_BRUTE_FORCE)}:")
+            print("-" * 40)
+
+            # Sort passwords in ascending order for readability
+            sorted_passwords = sorted(found_passwords.values())
+            for i, password in enumerate(sorted_passwords, 1):
+                print(f"{i:2}. {password}")
+        else:
+            print("\nNo passwords found!")
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
