@@ -21,13 +21,19 @@ def sha256_hash_str(to_hash: str) -> str:
 
 
 def brute_force_password() -> None:
+    hashed_pass = set(PASSWORDS_TO_BRUTE_FORCE)
     results = []
     for number in range(100000000):
 
         number_str = "0" * (8 - len(str(number))) + str(number)
-        if sha256_hash_str(number_str) in PASSWORDS_TO_BRUTE_FORCE:
+        if sha256_hash_str(number_str) in hashed_pass:
             results.append(number_str)
             print(number_str)
+
+            hashed_pass.remove(sha256_hash_str(number_str))
+
+            if len(hashed_pass) == 10:
+                break
 
 
 if __name__ == "__main__":
