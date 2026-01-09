@@ -32,12 +32,12 @@ def brute_force_password() -> None:
             found[hashed] = password
             print("FOUND:", password)
 
-            if len(found) == 10:
+            if len(found) == len(PASSWORDS_TO_BRUTE_FORCE):
                 break
 
     print("\nAll passwords found:")
-    for pwd in found.values():
-        print(pwd)
+    for password in found.values():
+        print(password)
 
 
 if __name__ == "__main__":
