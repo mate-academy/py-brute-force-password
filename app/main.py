@@ -1,7 +1,6 @@
 import time
 from hashlib import sha256
 from concurrent.futures import ProcessPoolExecutor
-import os
 from os import cpu_count
 
 PASSWORDS_TO_BRUTE_FORCE = [
@@ -34,7 +33,7 @@ def brute_force_chunk(start_idx: int, end_idx: int, targets: set):
 def brute_force_password() -> None:
     targets = set(PASSWORDS_TO_BRUTE_FORCE)
     total_combinations = 100_000_000
-    cpus = os.cpu_count()
+    cpus = cpu_count()
     chunk_size = total_combinations // cpus
 
     print(f"Bruteforcing using {cpus} processes")
