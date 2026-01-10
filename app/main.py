@@ -1,6 +1,7 @@
 import time
 from hashlib import sha256
-
+from concurrent.futures import ProcessPoolExecutor
+from os import cpu_count
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -20,9 +21,36 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
-    pass
+def brute_force_chunk(start_idx: int, end_idx: int, targets: set):
+    found_in_chunk = []
+    for i in range (start_idx, end_idx):
+        candidate = f"{i:08d}"
+        if sha256_hash_str(candidate) in targets:
+            print(f"Found: {candidate}")
+            found_in_chunk.append(candidate)
+    return found_in_chunk
 
+def brute_force_password() -> None:
+    targets = set(PASSWORDS_TO_BRUTE_FORCE)
+    total_combinations = 100_000_000
+    cpus = cpu_count()
+    chunk_size = total_combinations // cpus
+
+    print(f"Bruteforcing using {cpus} processes")
+    with ProcessPoolExecutor(max_workers=cpus) as executor:
+        futures = []
+        for i in range(cpus):
+            start = i * chunk_size
+            end = (i + 1) * chunk_size if i < cpus - 1 else total_combinations
+            futures.append(executor.submit(brute_force_chunk, start, end, targets))
+
+        all_found = []
+        for future in futures:
+            all_found.extend(future.result())
+
+        print("\n--- All Passwords Found ---")
+        for pwd in sorted(all_found):
+            print(pwd)
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
