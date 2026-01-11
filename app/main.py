@@ -22,7 +22,7 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_range(start: int, end: int):
+def brute_force_password(start: int, end: int) -> list:
     found = []
     for num in range(start, end):
         password = f"{num:08d}"
@@ -30,26 +30,34 @@ def brute_force_range(start: int, end: int):
 
         if hashed in PASSWORDS_TO_BRUTE_FORCE:
             found.append(password)
-
-    for password in found:
-        print(password)
+    return found
 
 
-def main_multiprocess_executor(total_max: int):
-    cpu_cores = multiprocessing.cpu_count() - 1
+def main_multiprocess_executor(total_max: int) -> list:
+    all_found = []
+    cpu_cores = max(1, multiprocessing.cpu_count() - 1)
     step = total_max // cpu_cores
+
     ranges = [(i * step, (i + 1) * step) for i in range(cpu_cores)]
     ranges[-1] = (ranges[-1][0], total_max)
+
     futures = []
     with ProcessPoolExecutor(max_workers=cpu_cores) as executor:
         for start, end in ranges:
-            futures.append(executor.submit(brute_force_range, start, end))
+            futures.append(executor.submit(brute_force_password, start, end))
 
-    wait(futures)
+        wait(futures)
+
+        for future in futures:
+            all_found.extend(future.result())
+
+    return all_found
 
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
-    main_multiprocess_executor(100000000)
+    results = main_multiprocess_executor(100000000)
     end_time = time.perf_counter()
+    for password in sorted(results):
+        print(password)
     print("Elapsed:", end_time - start_time)
