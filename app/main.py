@@ -21,7 +21,17 @@ def sha256_hash_str(to_hash: str) -> str:
 
 
 def brute_force_password() -> None:
-    pass
+    target_hashes = set(PASSWORDS_TO_BRUTE_FORCE)
+    start = time.time()
+    for num in range(0, 100_000_000):
+        password = f"{num:08d}"
+        hashed = sha256_hash_str(password)
+        if hashed in target_hashes:
+            print(password)
+            target_hashes.remove(hashed)
+            if not target_hashes:
+                break
+    print("Elapsed:", time.time() - start)
 
 
 if __name__ == "__main__":
