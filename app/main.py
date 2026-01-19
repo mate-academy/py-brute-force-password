@@ -1,6 +1,8 @@
+import multiprocessing
 import time
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from hashlib import sha256
-
+from itertools import product
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -20,8 +22,57 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
+def worker(password_chunk):
+    found = {}
+
+    for pwd in password_chunk:
+        h = sha256_hash_str(pwd)
+        if h in PASSWORDS_TO_BRUTE_FORCE:
+            found[h] = pwd
+
+    return found
+
+
 def brute_force_password() -> None:
-    pass
+    digits = "0123456789"
+    length = 8
+    chunk_size = 50_000
+
+    candidates = (
+        "".join(p) for p in product(digits, repeat=length)
+    )
+
+    def chunked():
+        chunk = []
+        for pwd in candidates:
+            chunk.append(pwd)
+            if len(chunk) == chunk_size:
+                yield chunk
+                chunk = []
+        if chunk:
+            yield chunk
+
+    found_all = {}
+
+    with ProcessPoolExecutor(multiprocessing.cpu_count() - 1) as executor:
+        futures = []
+
+        for chunk in chunked():
+            futures.append(executor.submit(worker, chunk))
+
+        for future in as_completed(futures):
+            result = future.result()
+            if result:
+                found_all.update(result)
+                for h, pwd in result.items():
+                    print(f"[FOUND] {h} -> {pwd}")
+
+            if len(found_all) == len(PASSWORDS_TO_BRUTE_FORCE):
+                break
+
+    print("\n=== RESULTS ===")
+    for h, pwd in found_all.items():
+        print(pwd)
 
 
 if __name__ == "__main__":
