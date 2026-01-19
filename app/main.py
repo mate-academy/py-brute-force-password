@@ -22,12 +22,12 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def worker(password_chunk):
+def worker(password_chunk, target_hashes):
     found = {}
 
     for pwd in password_chunk:
         h = sha256_hash_str(pwd)
-        if h in PASSWORDS_TO_BRUTE_FORCE:
+        if h in target_hashes:
             found[h] = pwd
 
     return found
@@ -38,9 +38,9 @@ def brute_force_password() -> None:
     length = 8
     chunk_size = 50_000
 
-    candidates = (
-        "".join(p) for p in product(digits, repeat=length)
-    )
+    target_hashes = set(PASSWORDS_TO_BRUTE_FORCE)
+
+    candidates = ("".join(p) for p in product(digits, repeat=length))
 
     def chunked():
         chunk = []
@@ -54,11 +54,13 @@ def brute_force_password() -> None:
 
     found_all = {}
 
-    with ProcessPoolExecutor(multiprocessing.cpu_count() - 1) as executor:
+    max_workers = max(1, multiprocessing.cpu_count() - 1)
+
+    with ProcessPoolExecutor(max_workers) as executor:
         futures = []
 
         for chunk in chunked():
-            futures.append(executor.submit(worker, chunk))
+            futures.append(executor.submit(worker, chunk, target_hashes))
 
         for future in as_completed(futures):
             result = future.result()
@@ -67,12 +69,8 @@ def brute_force_password() -> None:
                 for h, pwd in result.items():
                     print(f"[FOUND] {h} -> {pwd}")
 
-            if len(found_all) == len(PASSWORDS_TO_BRUTE_FORCE):
+            if len(found_all) == len(target_hashes):
                 break
-
-    print("\n=== RESULTS ===")
-    for h, pwd in found_all.items():
-        print(pwd)
 
 
 if __name__ == "__main__":
