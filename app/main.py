@@ -1,6 +1,8 @@
 import time
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from hashlib import sha256
-
+import multiprocessing
+from typing import Tuple, Any
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -14,19 +16,47 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "7e8f0ada0a03cbee48a0883d549967647b3fca6efeb0a149242f19e4b68d53d6",
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
-
+set_hashes = set(PASSWORDS_TO_BRUTE_FORCE)
 
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
+def try_number(range_: Tuple[int], stop_event) -> list[Any]:
+    found = []
+    for i in range(*range_):
+        if i % 10_000 == 0 and stop_event.is_set():
+            break
+        potential = sha256_hash_str("{:08d}".format(i))
+        if potential in set_hashes:
+            found.append((potential, i))
+    return found
 
-def brute_force_password() -> None:
-    pass
+def brute_force_password() -> dict[Any, Any]:
+    futures = []
+
+    with ProcessPoolExecutor(multiprocessing.cpu_count() - 1) as executor:
+        MAX = 100_000_000
+        chunk = 1_000_000
+        stop_event = multiprocessing.Manager().Event()
+        for start in range(0, MAX, chunk):
+            end = min(start + chunk, MAX)
+            futures.append(executor.submit(try_number, (start, end), stop_event))
+
+    found_map = {}
+    for fut in as_completed(futures):
+        results = fut.result()
+        for h, n in results:
+            if h not in found_map:
+                found_map[h] = f"{n:08d}"
+        if len(found_map) >= 10:
+            stop_event.set()
+            break
+    return found_map
 
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
-    brute_force_password()
+    results = brute_force_password()
     end_time = time.perf_counter()
 
     print("Elapsed:", end_time - start_time)
