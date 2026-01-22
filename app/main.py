@@ -22,7 +22,7 @@ HASHES_SET = set(PASSWORDS_TO_BRUTE_FORCE)
 def check_range(start: int, end: int) -> list:
     results = []
     for i in range(start, end):
-        candidate = f"{i: 08d}"
+        candidate = f"{i:08d}"  # noqa: E231
         password_hash = sha256(candidate.encode()).hexdigest()
         if password_hash in HASHES_SET:
             results.append((password_hash, candidate))
@@ -59,4 +59,4 @@ if __name__ == "__main__":
     start_ts = time.perf_counter()
     asyncio.run(brute_force_password())
     end_ts = time.perf_counter()
-    print(f"Elapsed: {end_ts - start_ts: .2f} seconds")
+    print(f"Elapsed: {end_ts - start_ts:.2f} seconds")  # noqa: E231
