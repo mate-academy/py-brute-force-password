@@ -38,7 +38,7 @@ def check_password(start, end):
 def brute_force_password() -> None:
     all_results = {}
 
-    with ProcessPoolExecutor(multiprocessing.cpu_count() - 1) as executor:
+    with ProcessPoolExecutor(multiprocessing.cpu_count()) as executor:
         _max = 100_000_000
         futures = []
 
