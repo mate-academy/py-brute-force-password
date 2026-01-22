@@ -1,6 +1,7 @@
+import asyncio
 import time
 from hashlib import sha256
-
+from concurrent.futures import ProcessPoolExecutor
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -15,18 +16,47 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
 
-
-def sha256_hash_str(to_hash: str) -> str:
-    return sha256(to_hash.encode("utf-8")).hexdigest()
+HASHES_SET = set(PASSWORDS_TO_BRUTE_FORCE)
 
 
-def brute_force_password() -> None:
-    pass
+def check_range(start: int, end: int) -> list:
+    results = []
+    for i in range(start, end):
+        candidate = f"{i:08d}"  # noqa: E231
+        password_hash = sha256(candidate.encode()).hexdigest()
+        if password_hash in HASHES_SET:
+            results.append((password_hash, candidate))
+    return results
+
+
+async def brute_force_password() -> None:
+    loop = asyncio.get_running_loop()
+    total_combinations = 100_000_000
+    num_workers = 4
+    step = total_combinations // num_workers
+
+    found_passwords = {}
+
+    with ProcessPoolExecutor(max_workers=num_workers) as executor:
+        tasks = []
+        for i in range(num_workers):
+            start = i * step
+            is_last = i == num_workers - 1
+            end = total_combinations if is_last else (i + 1) * step
+            tasks.append(
+                loop.run_in_executor(executor, check_range, start, end)
+            )
+
+        for completed_task in await asyncio.gather(*tasks):
+            for password_hash, pwd in completed_task:
+                found_passwords[password_hash] = pwd
+
+    for password_hash in PASSWORDS_TO_BRUTE_FORCE:
+        print(f"{password_hash}: {found_passwords.get(password_hash)}")
 
 
 if __name__ == "__main__":
-    start_time = time.perf_counter()
-    brute_force_password()
-    end_time = time.perf_counter()
-
-    print("Elapsed:", end_time - start_time)
+    start_ts = time.perf_counter()
+    asyncio.run(brute_force_password())
+    end_ts = time.perf_counter()
+    print(f"Elapsed: {end_ts - start_ts:.2f} seconds")  # noqa: E231
