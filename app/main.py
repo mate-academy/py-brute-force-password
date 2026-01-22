@@ -1,4 +1,7 @@
 import time
+import multiprocessing
+from typing import MutableMapping
+from concurrent.futures import ProcessPoolExecutor, wait
 from hashlib import sha256
 
 
@@ -15,13 +18,45 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
 
+TARGETS = set(PASSWORDS_TO_BRUTE_FORCE)
+
 
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
+def worker(
+    window: tuple[int, int], results: MutableMapping[str, str]
+) -> None:
+    for num in range(*window):
+        guess = f"{num:08d}"
+        _hash = sha256_hash_str(guess)
+        if _hash in TARGETS:
+            results[_hash] = guess
+
+
 def brute_force_password() -> None:
-    pass
+    pass_len = 8
+    guess_range = 10 ** pass_len
+    cpu = max(1, multiprocessing.cpu_count() - 1)
+    step = guess_range // cpu
+
+    manager = multiprocessing.Manager()
+    results = manager.dict()
+
+    with ProcessPoolExecutor(cpu) as executor:
+        futures = set()
+        for i in range(cpu):
+            window = (
+                i * step,
+                (i + 1) * step if i < cpu - 1 else guess_range
+            )
+            futures.add(executor.submit(worker,window, results))
+
+    wait(futures)
+
+    for _hash in PASSWORDS_TO_BRUTE_FORCE:
+       print(f"{_hash} -> {results.get(_hash)}")
 
 
 if __name__ == "__main__":
