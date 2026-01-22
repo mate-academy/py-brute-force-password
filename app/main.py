@@ -25,7 +25,7 @@ def check_range(args: tuple) -> list:
     start, end, targets = args
     found_passwords = []
     for i in range(start, end):
-        password_candidate = f"{i : 08}"
+        password_candidate = f"{i:08}"  # noqa: E231
 
         hashed_candidate = sha256(
             password_candidate.encode("utf-8")).hexdigest()
