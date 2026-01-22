@@ -1,5 +1,7 @@
 import time
 from hashlib import sha256
+from multiprocessing import Pool, cpu_count
+from typing import Tuple
 
 
 PASSWORDS_TO_BRUTE_FORCE = [
@@ -15,14 +17,43 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
 
-
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
+def worker(range_tuple: Tuple[str, str]) -> None:
+    start, end = range_tuple
+    found = {}
+
+    for i in range(start, end):
+        candidate = f"{i:08d}"
+        digest = sha256_hash_str(candidate)
+
+        if digest in PASSWORDS_TO_BRUTE_FORCE:
+            found[digest] = candidate
+
+    return found
 
 def brute_force_password() -> None:
-    pass
+    processes = cpu_count()
+    chunk_size = 100_000_000 // processes
 
+    ranges = [
+        (i * chunk_size, (i + 1) * chunk_size)
+        for i in range(processes)
+    ]
+
+    results = {}
+
+    with Pool(processes) as pool:
+        for result in pool.imap_unordered(worker, ranges):
+            results.update(result)
+
+            if len(results) == len(PASSWORDS_TO_BRUTE_FORCE):
+                pool.terminate()
+                break
+
+    for h, pwd in results.items():
+        print(f"{pwd}  --->  {h}")
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
