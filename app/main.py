@@ -37,7 +37,7 @@ def brute_force_password() -> None:
     with ProcessPoolExecutor(NUMBER_OF_CORES) as executor:
         start = 0
         while start < TOTAL_COMBINATIONS:
-            end = start + CHUNK_SIZE - 1 if start + CHUNK_SIZE <= TOTAL_COMBINATIONS else TOTAL_COMBINATIONS
+            end = start + CHUNK_SIZE - 1 if start + CHUNK_SIZE <= TOTAL_COMBINATIONS else TOTAL_COMBINATIONS - 1
             futures.append(executor.submit(worker, start, end, passwords_set))
             start = end + 1
 
