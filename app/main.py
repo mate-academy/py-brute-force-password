@@ -24,20 +24,21 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def worker(start: int, end: int) -> None:
+def worker(start: int, end: int, passwords_set: set) -> None:
     for num in range(start, end + 1):
         password = f"{num:08d}" # noqa
-        if sha256_hash_str(password) in set(PASSWORDS_TO_BRUTE_FORCE):
+        if sha256_hash_str(password) in passwords_set:
             print(password)
 
 
 def brute_force_password() -> None:
     futures = []
+    passwords_set = set(PASSWORDS_TO_BRUTE_FORCE)
     with ProcessPoolExecutor(NUMBER_OF_CORES) as executor:
         start = 0
-        for _ in range(NUMBER_OF_CORES):
-            end = start + CHUNK_SIZE - 1
-            futures.append(executor.submit(worker, start, end))
+        while start < TOTAL_COMBINATIONS:
+            end = start + CHUNK_SIZE - 1 if start + CHUNK_SIZE <= TOTAL_COMBINATIONS else TOTAL_COMBINATIONS
+            futures.append(executor.submit(worker, start, end, passwords_set))
             start = end + 1
 
     wait(futures)
