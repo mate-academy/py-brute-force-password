@@ -56,6 +56,7 @@ def brute_force_password() -> dict[Any, Any]:
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
+    results_map = brute_force_password()
     end_time = time.perf_counter()
 
-    print("Elapsed:", end_time - start_time)
+    print("Elapsed:", end_time - start_time, "results:", results_map)
