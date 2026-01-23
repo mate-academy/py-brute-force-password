@@ -1,5 +1,6 @@
 import time
 from hashlib import sha256
+from multiprocessing import Pool, cpu_count
 
 
 PASSWORDS_TO_BRUTE_FORCE = [
@@ -15,13 +16,49 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
 
+TARGET_HASHES = set(PASSWORDS_TO_BRUTE_FORCE)
+
 
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
+def check_range(start_end: int) -> list:
+    start, end = start_end
+    found_pairs = []
+    for i in range(start, end):
+        candidate = f"{i:08d}"
+        current_hash = sha256_hash_str(candidate)
+        if current_hash in TARGET_HASHES:
+            found_pairs.append(f"{current_hash} -> {candidate}")
+    return found_pairs
+
+
+def print_result(found_list: list) -> None:
+    for pwd in found_list:
+        print(pwd)
+
+
 def brute_force_password() -> None:
-    pass
+    total_combinations = 100_000_000
+    cpus = cpu_count()
+    step = total_combinations // cpus
+
+    ranges = [(i * step, (i + 1) * step) for i in range(cpus)]
+    ranges[-1] = (ranges[-1][0], total_combinations)
+
+    print(f"Brute-forcing 8-digit passwords using {cpus} CPU cores...")
+
+    with Pool(cpus) as pool:
+        for _range in ranges:
+            pool.apply_async(
+                check_range,
+                args=(_range,),
+                callback=print_result
+            )
+
+        pool.close()
+        pool.join()
 
 
 if __name__ == "__main__":
