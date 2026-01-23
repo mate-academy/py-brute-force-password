@@ -1,6 +1,6 @@
 import time
+from concurrent.futures import ProcessPoolExecutor, wait
 from hashlib import sha256
-
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -15,13 +15,33 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
 
+NUMBER_OF_CORES = 8
+TOTAL_COMBINATIONS = 10 ** 8
+CHUNK_SIZE = TOTAL_COMBINATIONS // NUMBER_OF_CORES
+
 
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
+def worker(start: int, end: int, passwords_set: set) -> None:
+    for num in range(start, end + 1):
+        password = f"{num:08d}" # noqa
+        if sha256_hash_str(password) in passwords_set:
+            print(password)
+
+
 def brute_force_password() -> None:
-    pass
+    futures = []
+    passwords_set = set(PASSWORDS_TO_BRUTE_FORCE)
+    with ProcessPoolExecutor(NUMBER_OF_CORES) as executor:
+        start = 0
+        while start < TOTAL_COMBINATIONS:
+            end = start + CHUNK_SIZE - 1 if start + CHUNK_SIZE <= TOTAL_COMBINATIONS else TOTAL_COMBINATIONS - 1
+            futures.append(executor.submit(worker, start, end, passwords_set))
+            start = end + 1
+
+    wait(futures)
 
 
 if __name__ == "__main__":
