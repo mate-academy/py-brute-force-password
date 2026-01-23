@@ -1,8 +1,9 @@
+import hashlib
 import time
-from hashlib import sha256
+from concurrent.futures import ProcessPoolExecutor, as_completed
+import multiprocessing
 
-
-PASSWORDS_TO_BRUTE_FORCE = [
+PASSWORDS_TO_BRUTE_FORCE = {
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
     "cf0b0cfc90d8b4be14e00114827494ed5522e9aa1c7e6960515b58626cad0b44",
     "e34efeb4b9538a949655b788dcb517f4a82e997e9e95271ecd392ac073fe216d",
@@ -13,20 +14,65 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "1273682fa19625ccedbe2de2817ba54dbb7894b7cefb08578826efad492f51c9",
     "7e8f0ada0a03cbee48a0883d549967647b3fca6efeb0a149242f19e4b68d53d6",
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
-]
+}
+
+MAX = 100_000_000
+CHUNK_SIZE = 25_000_000
 
 
-def sha256_hash_str(to_hash: str) -> str:
-    return sha256(to_hash.encode("utf-8")).hexdigest()
+def check_chunk(start, end, stop_event):
+    chunk_hashes = {}
+
+    for i in range(start, end):
+        if i % 100_000 == 0 and stop_event.is_set():
+            break
+
+        password = f"{i:08d}"
+        hash = hashlib.sha256(password.encode()).hexdigest()
+
+        if hash in PASSWORDS_TO_BRUTE_FORCE:
+            chunk_hashes[hash] = password
+
+    return chunk_hashes
 
 
-def brute_force_password() -> None:
-    pass
+def main():
+    manager = multiprocessing.Manager()
+    stop_event = manager.Event()
+
+    hashes = {}
+
+    with ProcessPoolExecutor() as executor:
+        futures = []
+
+        for start in range(0, MAX, CHUNK_SIZE):
+            end = min(start + CHUNK_SIZE, MAX)
+            futures.append(executor.submit(check_chunk, start, end, stop_event))
+
+        for future in as_completed(futures):
+            result = future.result()
+
+            for hash, password in result.items():
+                if hash not in hashes:
+                    hashes[hash] = password
+                    print(f"{hash}:{password}")
+
+            if len(hashes) == len(PASSWORDS_TO_BRUTE_FORCE):
+                stop_event.set()
+                break
+
+    return hashes
 
 
 if __name__ == "__main__":
-    start_time = time.perf_counter()
-    brute_force_password()
-    end_time = time.perf_counter()
+    t1 = time.time()
+    passwords = main()
+    t2 = time.time()
 
-    print("Elapsed:", end_time - start_time)
+    print("\nPasswords:")
+    for p in passwords.values():
+        print(p)
+
+    print("Time:", t2 - t1)
+
+
