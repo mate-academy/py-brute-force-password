@@ -43,7 +43,6 @@ def brute_force_password() -> None:
         for future in futures:
             all_results.extend(future.result())
 
-    set(all_results)
     for password in all_results:
         print(f"Found a password: {password}")
 
