@@ -24,7 +24,7 @@ def sha256_hash_str(to_hash: str) -> str:
 def _worker(start: int, end: int, target_hashes_set: set) -> str:
     found = []
     for i in range(start, end):
-        candidate = f"{i: 08d}"
+        candidate = f"{i:08d}"
         if sha256_hash_str(candidate) in target_hashes_set:
             found.append(candidate)
     return found
