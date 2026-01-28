@@ -1,9 +1,10 @@
 # Brute Force Passwords
 
-**Please note:** read [the guideline](https://github.com/mate-academy/py-task-guideline/blob/main/README.md)
+> 💡 Read [the guideline](https://github.com/mate-academy/py-task-guideline/blob/main/README.md)
 before starting.
 
-Imagine yourself a hacker. You've successfully SQL-injected some website's DB and got hashed passwords of 10 users.
+Imagine you're a hacker. You've successfully SQL-injected some website's DB and got hashed passwords of 10 users:
+
 ```python
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -18,13 +19,16 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
 ```
-Of course, your first thought was to look through rainbow tables and test your luck. 
-But you visited that website and understand that its password field accepts only numeric symbols from 0 to 9. 
-There is a limitation — the password length always must be 8 symbols (extremely weak security — you must agree). 
-Also, it seems that this website doesn't use any additional security while hashing their passwords (like salting).
 
-So, you as a hacker already got a point, that you can easily brute force all possible variants of passwords
-and check the corresponding hashes using this `sha256_hash_str` function:
+Of course, your first thought was to look through rainbow tables and test your luck.  
+But after visiting the website, you realized that its password field only accepts numeric symbols from `0` to `9`.  
+
+There’s a limitation — the password must always be **8 numeric symbols long** (*extremely weak security — you must agree*).  
+Also, it seems that this website doesn’t use any additional security while hashing their passwords (like salting).
+
+So, as a hacker, you quickly figured out that you can brute force all possible password variants  
+and check the corresponding hashes using the `sha256_hash_str` function:
+
 ```python
 import sha256
 
@@ -33,12 +37,9 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 ```
 
-Your task is to find these 10 passwords (8-numeric symbols strings) and print them to the console.
+Find the **10 passwords** (each an 8-character numeric string) and print them to the console.
 
-
-Notes:
-- you should find `10` passwords (not `9`) — check it;
-- you should use setup to speed up this brute forcing as much as possible;
-- attach the screenshot of your script results (the console) to the PR.
-
+- You should find **10** passwords (*not 9*) — double-check your results.
+- Optimize your brute-force setup as much as possible to speed up the process.
+- Attach a **screenshot of your script results (console output)** to the PR.
 
