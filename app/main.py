@@ -21,7 +21,19 @@ def sha256_hash_str(to_hash: str) -> str:
 
 
 def brute_force_password() -> None:
-    pass
+    found = {}
+    targets = set(PASSWORDS_TO_BRUTE_FORCE)
+
+    for num in range(10**8):
+        candidate = str(num).zfill(8)
+        candidate_hash = sha256_hash_str(candidate)
+        if candidate_hash in targets:
+            found[candidate_hash] = candidate
+            print(f"Found match: {candidate} -> {candidate_hash}")
+            if len(found) == len(targets):
+                break
+
+    print("Summary:", found)
 
 
 if __name__ == "__main__":
