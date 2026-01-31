@@ -15,6 +15,8 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
 
+PASSWORDS_TO_BRUTE_FORCE = set(PASSWORDS_TO_BRUTE_FORCE)
+
 
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
@@ -35,7 +37,7 @@ def brute_force_password() -> None:
     processes = []
     for i in range(cpu_count):
         start = i * chunk_size
-        end = (i + 1) * chunk_size
+        end = (i + 1) * chunk_size if i < cpu_count - 1 else 100_000_000
         process = multiprocessing.Process(target=worker, args=(start, end))
         processes.append(process)
         process.start()
