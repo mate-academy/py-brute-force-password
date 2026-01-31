@@ -1,5 +1,4 @@
 import time
-from itertools import product
 from multiprocessing import Pool, cpu_count
 import hashlib
 
@@ -30,7 +29,7 @@ def process_chunk(chunk_range):
         _hash = sha256(pwd_str.encode()).hexdigest()
 
         if _hash in targets:
-            found.append((pwd_str, _hash))
+            found.append(pwd_str)
 
     return found
 
