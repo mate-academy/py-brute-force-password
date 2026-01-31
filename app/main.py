@@ -29,7 +29,7 @@ def process_chunk(chunk_range):
         _hash = sha256(pwd_str.encode()).hexdigest()
 
         if _hash in targets:
-            found.append(pwd_str)
+            found.append((pwd_str, _hash))
 
     return found
 
@@ -47,15 +47,11 @@ def brute_force_password() -> None:
         r_end = TOTAL_START + ((i + 1) * step) if i != cores - 1 else TOTAL_END
         ranges.append((r_start, r_end))
 
-    found_passwords = []
-
     with Pool(cores) as pool:
         results = pool.map(process_chunk, ranges)
 
         for res in results:
-            found_passwords.extend(res)
-
-    print(found_passwords)
+            print(res)
 
 
 if __name__ == "__main__":
