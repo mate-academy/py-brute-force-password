@@ -1,5 +1,6 @@
 import time
 from hashlib import sha256
+from multiprocessing import cpu_count, Pool
 
 
 PASSWORDS_TO_BRUTE_FORCE = [
@@ -15,18 +16,48 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
 
+def worker(start: int, end: int, hashes_to_find: set) -> list[str]:
+    found = []
+
+    for i in range(start, end):
+        password_str = str(i).zfill(8)
+        password_hash = sha256_hash_str(password_str)
+
+        if password_hash in hashes_to_find:
+            print(f"Senha encontrada: {password_str}")
+            found.append(password_str)
+
+    return found
 
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
-    pass
+def brute_force_password_multiprocess() -> None:
+    hashes_to_find = set(PASSWORDS_TO_BRUTE_FORCE)
+
+    total = 100_000_000
+    n_processes = cpu_count()
+    chunk_size = total // n_processes
+
+    tasks = []
+
+    for i in range(n_processes):
+        start = i * chunk_size
+        end = total if i == n_processes - 1 else start + chunk_size
+        tasks.append((start, end, hashes_to_find))
+
+    with Pool(processes=n_processes) as pool:
+        results = pool.starmap(worker, tasks)
+
+    passwords_found = [pwd for sublist in results for pwd in sublist]
+    print("Senhas encontradas:", passwords_found)
 
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
-    brute_force_password()
-    end_time = time.perf_counter()
 
+    brute_force_password_multiprocess()
+
+    end_time = time.perf_counter()
     print("Elapsed:", end_time - start_time)
