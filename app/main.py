@@ -21,7 +21,24 @@ def sha256_hash_str(to_hash: str) -> str:
 
 
 def brute_force_password() -> None:
-    pass
+    targets = set(PASSWORDS_TO_BRUTE_FORCE)
+    found: dict[str, str] = {}
+    hash_fn = sha256_hash_str
+
+    for i in range(100_000_000):
+        candidate = f"{i:08d}"
+        digest = hash_fn(candidate)
+
+        if digest in targets:
+            found[digest] = candidate
+            targets.remove(digest)
+            print(candidate)
+
+            if not targets:
+                break
+
+    if targets:
+        print("Not found hashes count:", len(targets))
 
 
 if __name__ == "__main__":
