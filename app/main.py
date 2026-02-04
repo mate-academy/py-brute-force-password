@@ -1,4 +1,5 @@
 import time
+import multiprocessing
 from hashlib import sha256
 
 
@@ -19,10 +20,59 @@ PASSWORDS_TO_BRUTE_FORCE = [
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
+def worker(
+        start: int,
+        end: int,
+        target_hashes: set[str],
+        found: dict[str, str],
+        stop_event,
+    ) -> None:
+
+
+    for number in range(start, end):
+        if stop_event.is_set():
+            return
+
+        password = f"{number:08d}"
+        hashed = sha256_hash_str(password)
+
+        if hashed in target_hashes:
+            found[hashed] = password
+            if len(found) == len(target_hashes):
+                stop_event.set()
+                return
+
 
 def brute_force_password() -> None:
-    pass
+    cpu_count = multiprocessing.cpu_count()
+    chunk_size = 100_000_000 // cpu_count
 
+    manager = multiprocessing.Manager()
+    found = manager.dict()
+    stop_event = multiprocessing.Event()
+    target_hashes = set(PASSWORDS_TO_BRUTE_FORCE)
+
+    processes = []
+
+
+    for i in range(cpu_count):
+        start = i * chunk_size
+        end = 100_000_000 if i == cpu_count - 1 else (i + 1) * chunk_size
+
+        process = multiprocessing.Process(
+                target=worker,
+                args=(start, end, target_hashes, found, stop_event),
+                )
+
+        processes.append(process)
+        process.start()
+
+
+    for process in processes:
+        process.join()
+
+    for password in found.values():
+        print(password)
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
