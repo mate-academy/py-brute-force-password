@@ -57,7 +57,7 @@ def brute_force_password() -> None:
 
     for i in range(cpu_count):
         start = i * chunk_size
-        end = 100_000_000 if i == cpu_count - 1 else (i * 1) * chunk_size
+        end = 100_000_000 if i == cpu_count - 1 else (i + 1) * chunk_size
 
         process = multiprocessing.Process(
                 target=worker,
