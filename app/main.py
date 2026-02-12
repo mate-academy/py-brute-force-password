@@ -1,5 +1,7 @@
 import time
+
 from hashlib import sha256
+from typing import Dict
 
 
 PASSWORDS_TO_BRUTE_FORCE = [
@@ -21,7 +23,24 @@ def sha256_hash_str(to_hash: str) -> str:
 
 
 def brute_force_password() -> None:
-    pass
+    found: Dict[str, str] = {}
+    target_hashes = set(PASSWORDS_TO_BRUTE_FORCE)
+    target_count = len(target_hashes)
+    start = time.perf_counter()
+
+    for i in range(100_000_000):
+        if len(found) == target_count:
+            break
+
+        possible_password = f"{i:08d}"
+        hashed_password = sha256_hash_str(possible_password)
+
+        if hashed_password in target_hashes:
+            found[hashed_password] = possible_password
+            print(f"Found password: {possible_password} for hash: {hashed_password}")
+            duration = time.perf_counter() - start
+            print(f"Duration: {duration}")
+            start = time.perf_counter()
 
 
 if __name__ == "__main__":
