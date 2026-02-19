@@ -1,5 +1,8 @@
 import time
+from concurrent.futures import wait
 from hashlib import sha256
+import concurrent.futures
+import os
 
 
 PASSWORDS_TO_BRUTE_FORCE = [
@@ -15,18 +18,69 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
 
+CPU_COUNT = os.cpu_count() or 1
+NUM_OF_PROCESSORS = max(1, CPU_COUNT - 1)
+
+LENGTH_OF_PASSWORD = 8
+AMOUNT_OF_SYMBOLS = 10
+MAIN_RANGE = AMOUNT_OF_SYMBOLS**LENGTH_OF_PASSWORD
+TARGETS = set(PASSWORDS_TO_BRUTE_FORCE)
+
+
+def check_range(start: int, end: int) -> list:
+    found = []
+
+    for passwd in range(start, end):
+        candidate = f"{passwd:08d}"
+        hash_r = sha256_hash_str(candidate)
+
+        if hash_r in TARGETS:
+            print(f"[!] MATCH FOUND: {candidate=} | {hash_r=}")
+            found.append((candidate, hash_r))
+    return found
+
 
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
-    pass
+def brute_force_password() -> dict:
+    recovered_data = {}
+    with concurrent.futures.ProcessPoolExecutor(
+            max_workers=NUM_OF_PROCESSORS
+    ) as executor:
+        futures = []
+        chunk = MAIN_RANGE // NUM_OF_PROCESSORS
+
+        for unit in range(NUM_OF_PROCESSORS):
+            start = unit * chunk
+            end = (unit + 1) * chunk
+            if unit == NUM_OF_PROCESSORS - 1:
+                end = MAIN_RANGE
+
+            futures.append(executor.submit(check_range, start, end))
+
+    for f in concurrent.futures.as_completed(futures):
+        batch = f.result()
+        for passw, hash_v in batch:
+            recovered_data[hash_v] = passw
+    return recovered_data
 
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
-    brute_force_password()
-    end_time = time.perf_counter()
+    results_map = brute_force_password()
 
-    print("Elapsed:", end_time - start_time)
+    expected_count = len(PASSWORDS_TO_BRUTE_FORCE)
+    actual_count = len(results_map)
+
+    assert actual_count == expected_count, (
+        f"Expected {expected_count} unique passwords, but found {actual_count}"
+    )
+    print("\n--- FINAL REPORT ---")
+    for hash_v, password in results_map.items():
+        print(f"Password: {password} -> Hash: {hash_v}")
+
+    end_time = time.perf_counter()
+    print(f"\n[SUCCESS] All {actual_count} passwords recovered.")
+    print(f"Elapsed: {end_time - start_time:.2f} seconds")
