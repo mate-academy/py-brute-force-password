@@ -4,7 +4,8 @@ from concurrent.futures import (
     ProcessPoolExecutor,
 )
 from hashlib import sha256
-from typing import Callable
+from typing import Callable, Any
+from multiprocessing import Manager
 
 
 PASSWORDS_TO_BRUTE_FORCE = [
@@ -20,6 +21,19 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
 TARGET_HASHES = set(PASSWORDS_TO_BRUTE_FORCE)
+
+
+STOP_EVENT = None
+FOUND_MAP = None
+LOCK = None
+
+def init_worker(
+        stop_event: Any, found_map: Any, lock: Any
+) -> None:
+    global STOP_EVENT, FOUND_MAP, LOCK
+    STOP_EVENT = stop_event
+    FOUND_MAP = found_map
+    LOCK = lock
 
 
 def sha256_hash_str(to_hash: str) -> str:
@@ -42,27 +56,50 @@ def build_tasks(
 def brute_force_password(
         start: int, end: int
 ) -> list[str]:
-    found_candidates: list[str] = []
+    local_found: list[str] = []
 
     for number in range(start, end):
-        candidate = f"{number:08d}"
-        if sha256_hash_str(candidate) in TARGET_HASHES:
-            found_candidates.append(candidate)
+        if (
+                STOP_EVENT is not None
+                and (number & 1023) == 0
+                and STOP_EVENT.is_set()
+        ):
+            break
 
-    return found_candidates
+        candidate = f"{number:08d}"
+        digest = sha256_hash_str(candidate)
+
+        if digest in TARGET_HASHES:
+            local_found.append(candidate)
+
+            if FOUND_MAP is not None:
+                with LOCK:
+                    FOUND_MAP[digest] = candidate
+                    if len(FOUND_MAP) >= len(TARGET_HASHES):
+                        STOP_EVENT.set()
+
+    return local_found
 
 
 def run_with_executor(
         tasks: list[tuple[int, int]],
-        workers: int
+        workers: int,
 ) -> list[list[str]]:
-    with ProcessPoolExecutor(max_workers=workers) as executor:
-        futures = [
-            executor.submit(
-                brute_force_password, start, end
-            ) for start, end in tasks
-        ]
-        return [f.result() for f in futures]
+    with Manager() as manager:
+        stop_event = manager.Event()
+        found_map = manager.dict()
+        lock = manager.Lock()
+
+        with ProcessPoolExecutor(
+                max_workers=workers,
+                initializer=init_worker,
+                initargs=(stop_event, found_map, lock),
+        ) as executor:
+            futures = [
+                executor.submit(brute_force_password, start, end)
+                for start, end in tasks
+            ]
+            return [f.result() for f in futures]
 
 
 def run_with_pool(
@@ -70,10 +107,19 @@ def run_with_pool(
         workers: int,
         chunksize: int = 1
 ) -> list[list[str]]:
-    with multiprocessing.Pool(processes=workers) as pool:
-        return pool.starmap(
-            brute_force_password, tasks, chunksize=chunksize
-        )
+    with Manager() as manager:
+        stop_event = manager.Event()
+        found_map = manager.dict()
+        lock = manager.Lock()
+
+        with multiprocessing.Pool(
+                processes=workers,
+                initializer=init_worker,
+                initargs=(stop_event, found_map, lock),
+        ) as pool:
+            return pool.starmap(
+                brute_force_password, tasks, chunksize=chunksize
+            )
 
 
 def flatten(nested: list[list[str]]) -> list[str]:
@@ -154,6 +200,25 @@ if __name__ == "__main__":
                 run_with_pool, tasks, workers, 1
             )
         )
+
+        unique_found_executor = sorted(set(rows[0][2]))
+        unique_found_pool = sorted(set(rows[1][2]))
+        expected_count = len(TARGET_HASHES)
+
+        if len(unique_found_executor) != expected_count:
+            raise RuntimeError(
+                f"Executor: expected {expected_count} passwords, "
+                f"but found {len(unique_found_executor)}."
+            )
+
+        if len(unique_found_pool) != expected_count:
+            raise RuntimeError(
+                f"Pool: expected {expected_count} passwords, "
+                f"but found {len(unique_found_pool)}."
+            )
+
+        rows[0] = (rows[0][0], rows[0][1], unique_found_executor)
+        rows[1] = (rows[1][0], rows[1][1], unique_found_pool)
 
         print("\nFound passwords:")
         for value in rows[0][2]:
