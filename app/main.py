@@ -16,19 +16,19 @@ PASSWORDS_TO_BRUTE_FORCE = [
 
 
 def brute_force_password() -> None:
-    target_hashes = set(PASSWORDS_TO_BRUTE_FORCE)
-    found_count = 0
+    hashes_to_find = set(PASSWORDS_TO_BRUTE_FORCE)
+    found_passwords = []
 
     for i in range(100_000_000):
         candidate = f"{i: 08d}"
 
         guess_hash = sha256(candidate.encode("utf-8")).hexdigest()
 
-        if guess_hash in target_hashes:
-            print(f"Encontrada: {candidate}")
-            found_count += 1
+        if guess_hash in hashes_to_find:
+            print(candidate)
+            found_passwords.append(candidate)
 
-            if found_count == 10:
+            if len(found_passwords) == 10:
                 break
 
 
