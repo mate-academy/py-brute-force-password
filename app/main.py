@@ -1,7 +1,6 @@
 import time
 from hashlib import sha256
 
-
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
     "cf0b0cfc90d8b4be14e00114827494ed5522e9aa1c7e6960515b58626cad0b44",
@@ -16,12 +15,21 @@ PASSWORDS_TO_BRUTE_FORCE = [
 ]
 
 
-def sha256_hash_str(to_hash: str) -> str:
-    return sha256(to_hash.encode("utf-8")).hexdigest()
-
-
 def brute_force_password() -> None:
-    pass
+    hashes_to_find = set(PASSWORDS_TO_BRUTE_FORCE)
+    found_passwords = []
+
+    for i in range(100_000_000):
+        candidate = f"{i: 08d}"
+
+        guess_hash = sha256(candidate.encode("utf-8")).hexdigest()
+
+        if guess_hash in hashes_to_find:
+            print(candidate)
+            found_passwords.append(candidate)
+
+            if len(found_passwords) == 10:
+                break
 
 
 if __name__ == "__main__":
@@ -29,4 +37,4 @@ if __name__ == "__main__":
     brute_force_password()
     end_time = time.perf_counter()
 
-    print("Elapsed:", end_time - start_time)
+    print(f"\nElapsed: {end_time - start_time: .4f} seconds")
