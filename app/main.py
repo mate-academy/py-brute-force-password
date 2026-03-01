@@ -1,8 +1,8 @@
 import time
 import multiprocessing
-from concurrent.futures import ProcessPoolExecutor, wait
+from concurrent.futures import ProcessPoolExecutor
 from hashlib import sha256
-from typing import List
+
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -17,44 +17,65 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
 
+TARGETS = set(PASSWORDS_TO_BRUTE_FORCE)
+TARGETS_LENGTH = len(TARGETS)
+
 
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
-def search_password(start: int, end: int, targets: set[str]) -> List[str]:
-    found = []
-    for i in range(start, end):
-        password = f"{i:08d}"
-        if sha256_hash_str(password) in targets:
-            found.append(password)
 
-    return found
+def search_password(
+        start: int,
+        end: int,
+        stop_event,
+        found_password,
+) -> None:
+    check_every = 10_000
+    for i in range(start, end):
+        if i % check_every == 0 and stop_event.is_set():
+            break
+        password = f"{i:08d}"
+        if sha256_hash_str(password) in TARGETS:
+            if password not in found_password:
+                found_password[password] = True
+                if len(found_password) >= TARGETS_LENGTH:
+                    stop_event.set()
+                    break
 
 
 def brute_force_password() -> None:
-    n = 100_000_000 # межа пошуку
+    search_limit = 100_000_000  # межа пошуку
 
     cpu_count = multiprocessing.cpu_count()
-    chunk_size = (n + cpu_count - 1) // cpu_count
+    chunk_size = (search_limit + cpu_count - 1) // cpu_count
 
-    targets = set(PASSWORDS_TO_BRUTE_FORCE)
+    manager = multiprocessing.Manager()
+    stop_event = manager.Event()
+    found_password = manager.dict()
 
     futures = []
-    results: List[str] = []
+
     with ProcessPoolExecutor(cpu_count) as executor:
         for i in range(cpu_count):
             start = i * chunk_size
-            end = min(n, start + chunk_size)
+            end = min(search_limit, start + chunk_size)
             if start >= end:
                 break
-            futures.append(executor.submit(search_password, start, end, targets))
+            futures.append(
+                executor.submit(
+                    search_password,
+                    start=start,
+                    end=end,
+                    stop_event=stop_event,
+                    found_password=found_password,
+                )
+            )
 
-        done, _ = wait(futures)
-        for f in done:
-            results.extend(f.result())
+    unique_results = sorted(found_password.keys())
 
-    for num, password in enumerate(sorted(results)):
-        print(f"Found password {num + 1}: {password}")
+    for num, password in enumerate(unique_results, 1):
+        print(f"Found password {num}: {password}")
 
 
 if __name__ == "__main__":
