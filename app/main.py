@@ -16,28 +16,20 @@ PASSWORDS_TO_BRUTE_FORCE = [
 
 
 def brute_force_password() -> None:
-
-    hashes_to_find = set(PASSWORDS_TO_BRUTE_FORCE)
-    found_passwords = []
-
-    print("Iniciando brute force...")
+    target_hashes = set(PASSWORDS_TO_BRUTE_FORCE)
+    found_count = 0
 
     for i in range(100_000_000):
         candidate = f"{i: 08d}"
 
         guess_hash = sha256(candidate.encode("utf-8")).hexdigest()
 
-        if guess_hash in hashes_to_find:
-            found_passwords.append(candidate)
-            print(f"[+] Senha encontrada: "
-                  f"{candidate} (Hash: {guess_hash[:10]}...)")
+        if guess_hash in target_hashes:
+            print(f"Encontrada: {candidate}")
+            found_count += 1
 
-            if len(found_passwords) == 10:
+            if found_count == 10:
                 break
-
-    print("\n--- RESULTADO FINAL ---")
-    for pw in sorted(found_passwords):
-        print(pw)
 
 
 if __name__ == "__main__":
@@ -45,4 +37,4 @@ if __name__ == "__main__":
     brute_force_password()
     end_time = time.perf_counter()
 
-    print(f"\nElapsed: {end_time - start_time: .2f} seconds")
+    print(f"\nElapsed: {end_time - start_time: .4f} seconds")
