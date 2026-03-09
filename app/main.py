@@ -1,6 +1,7 @@
 import time
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from hashlib import sha256
-
+from math import ceil
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -15,13 +16,52 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
 
+targets = set(PASSWORDS_TO_BRUTE_FORCE)
+
 
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
+def divide_range():
+    total = 100000000
+    cores = 8
+    chunk = ceil(total / cores)
+    ranges = []
+    for core in range(cores):
+        start = core * chunk
+        end = min((core + 1) * chunk, total)
+        ranges.append((start, end))
+
+    return ranges
+
+
+def worker_range(start: int, end: int, targets: set) -> dict:
+    found = {}
+    local_targets = set(targets)
+    for i in range(start, end):
+        pwd = f"{i:08d}"
+        h = sha256_hash_str(pwd)
+        if h in local_targets:
+            found[h] = pwd
+            local_targets.remove(h)
+            if not local_targets:
+                break
+
+    return found
+
 
 def brute_force_password() -> None:
-    pass
+    ranges = divide_range()
+    total_found = {}
+    with ProcessPoolExecutor(max_workers=8) as ex:
+        futures = [ex.submit(worker_range, start, end, targets) for start, end in ranges]
+        for fut in as_completed(futures):
+            res = fut.result()
+            total_found.update(res)
+            if len(total_found) >= len(targets):
+                break
+        ex.shutdown(cancel_futures=True)
+    print(total_found)
 
 
 if __name__ == "__main__":
