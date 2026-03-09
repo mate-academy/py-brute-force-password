@@ -55,12 +55,12 @@ def brute_force_password() -> None:
     total_found = {}
     with ProcessPoolExecutor(max_workers=8) as ex:
         futures = [ex.submit(worker_range, start, end, targets) for start, end in ranges]
-    for fut in as_completed(futures):
-        res = fut.result()
-        total_found.update(res)
-        if len(total_found) >= len(targets):
-            break
-    print(total_found)
+        for fut in as_completed(futures):
+            res = fut.result()
+            total_found.update(res)
+            if len(total_found) >= len(targets):
+                break
+        print(total_found)
 
 
 if __name__ == "__main__":
