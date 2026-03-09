@@ -60,7 +60,8 @@ def brute_force_password() -> None:
             total_found.update(res)
             if len(total_found) >= len(targets):
                 break
-        print(total_found)
+        ex.shutdown(cancel_futures=True)
+    print(total_found)
 
 
 if __name__ == "__main__":
