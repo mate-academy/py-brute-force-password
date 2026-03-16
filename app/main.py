@@ -21,7 +21,19 @@ def sha256_hash_str(to_hash: str) -> str:
 
 
 def brute_force_password() -> None:
-    pass
+    targets = set(PASSWORDS_TO_BRUTE_FORCE)
+
+    for i in range(100000000):
+        password = f"{i:08d}"
+        pwd_hash = sha256_hash_str(password)
+
+        if pwd_hash in targets:
+            print(f"Password found: {password} -> {pwd_hash}")
+            targets.remove(pwd_hash)
+
+            if not targets:
+                print("\nAll passwords have been successfully cracked!")
+                break
 
 
 if __name__ == "__main__":
