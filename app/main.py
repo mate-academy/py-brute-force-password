@@ -1,6 +1,9 @@
+import multiprocessing
 import time
+from concurrent.futures import ProcessPoolExecutor
 from hashlib import sha256
-
+from functools import partial
+from typing import Generator
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -20,8 +23,42 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
+def process_chunk(start: int, end: int, set_target_hashes: set) -> list[int]:
+    found = []
+    for i in range(start, end):
+        password = f"{i:08d}"
+        hash_str = sha256_hash_str(password)
+        if hash_str in set_target_hashes:
+            found.append(password)
+    return found
+
+
+def iter_chunks(total: int, chunksize: int) \
+        -> Generator[tuple[int, int], None, None]:
+    for start in range(0, total, chunksize):
+        yield (start, min(start + chunksize, total))
+
+
+def process_chunk_wrapper(start_end: int, set_target_hashes: set) -> list[int]:
+    return process_chunk(start_end[0], start_end[1], set_target_hashes)
+
+
 def brute_force_password() -> None:
-    pass
+    set_target_hashes = set(PASSWORDS_TO_BRUTE_FORCE)
+    workers = max(1, multiprocessing.cpu_count() - 1)
+    all_found = []
+
+    worker = partial(
+        process_chunk_wrapper,
+        set_target_hashes=set_target_hashes
+    )
+
+    with ProcessPoolExecutor(max_workers=workers) as ex:
+        for chunk_result in ex.map(worker, iter_chunks(10 ** 8, 100_000)):
+            if chunk_result:
+                all_found.extend(chunk_result)
+
+    print({index + 1: value for index, value in enumerate(all_found)})
 
 
 if __name__ == "__main__":
