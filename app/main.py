@@ -1,7 +1,6 @@
+import multiprocessing
 import time
 from hashlib import sha256
-from itertools import product
-import multiprocessing
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -16,42 +15,64 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
 
-NUMBERS = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+PASSWORD_LENGTH = 8
+SEARCH_SPACE_SIZE = 10 ** PASSWORD_LENGTH
+
 
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password(password_brute: str, numbers: list) -> None:
-    for comb in product(numbers, repeat=8):
-        temp = "".join(comb)
-        password = sha256_hash_str(temp)
-        if password == password_brute:
-            print(temp)
+def brute_force_range(start: int, stop: int, target_hashes: set[str]) -> list[str]:
+    found_passwords = []
+
+    for number in range(start, stop):
+        candidate = f"{number:0{PASSWORD_LENGTH}d}"
+        candidate_hash = sha256_hash_str(candidate)
+
+        if candidate_hash in target_hashes:
+            found_passwords.append(candidate)
+
+            if len(found_passwords) == len(target_hashes):
+                break
+
+    return found_passwords
 
 
-def main_multiprocessing(in_passwords: list):
-    tasks = []
+def build_ranges(process_count: int) -> list[tuple[int, int]]:
+    chunk_size = SEARCH_SPACE_SIZE // process_count
+    ranges = []
 
-    for i in in_passwords:
-        tasks.append(
-            multiprocessing.Process(
-                target=brute_force_password,
-                args=(
-                    i,
-                    NUMBERS
-                )
-            )
+    for index in range(process_count):
+        start = index * chunk_size
+        stop = SEARCH_SPACE_SIZE if index == process_count - 1 else start + chunk_size
+        ranges.append((start, stop))
+
+    return ranges
+
+
+def main_multiprocessing() -> list[str]:
+    target_hashes = set(PASSWORDS_TO_BRUTE_FORCE)
+    process_count = multiprocessing.cpu_count()
+    ranges = build_ranges(process_count)
+
+    with multiprocessing.Pool(process_count) as pool:
+        results = pool.starmap(
+            brute_force_range,
+            [(start, stop, target_hashes) for start, stop in ranges],
         )
-        tasks[-1].start()
 
-    for task in tasks:
-        task.join()
+    found_passwords = sorted(password for batch in results for password in batch)
+
+    for password in found_passwords:
+        print(password)
+
+    return found_passwords
 
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
-    main_multiprocessing(PASSWORDS_TO_BRUTE_FORCE)
+    passwords = main_multiprocessing()
     end_time = time.perf_counter()
 
     print("Elapsed:", end_time - start_time)
