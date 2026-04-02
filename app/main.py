@@ -1,5 +1,7 @@
 import time
 from hashlib import sha256
+import multiprocessing
+from concurrent.futures import ProcessPoolExecutor, wait
 
 
 PASSWORDS_TO_BRUTE_FORCE = [
@@ -16,17 +18,50 @@ PASSWORDS_TO_BRUTE_FORCE = [
 ]
 
 
+STEPS = [
+    4000000, 8000000, 12000000, 16000000, 20000000,
+    24000000, 28000000, 32000000, 36000000, 40000000,
+    44000000, 48000000, 52000000, 56000000, 60000000,
+    64000000, 68000000, 72000000, 76000000, 80000000,
+    84000000, 88000000, 92000000, 96000000, 100000000
+]
+
+
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
-    pass
+def brute_force_password(passwords: list, step: int, index: int) -> None:
+    dif = 4000000
+
+    for number in range(0 if index == 0 else step - dif, step):
+        password = str(number).zfill(8)
+        hashed_password = sha256_hash_str(password)
+
+        if hashed_password in passwords:
+            print(f"Founded password: {password}")
+
+
+def main_multiprocess_executor(passwords: list, steps: list) -> None:
+    futures = []
+
+    with ProcessPoolExecutor(multiprocessing.cpu_count()) as executor:
+        for index, step in enumerate(steps):
+            futures.append(
+                executor.submit(
+                    brute_force_password, passwords, step, index
+                )
+            )
+
+    wait(futures)
 
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
-    brute_force_password()
+    main_multiprocess_executor(
+        passwords=PASSWORDS_TO_BRUTE_FORCE,
+        steps=STEPS,
+    )
     end_time = time.perf_counter()
 
     print("Elapsed:", end_time - start_time)
