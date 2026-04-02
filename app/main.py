@@ -1,3 +1,6 @@
+import itertools
+import multiprocessing
+import string
 import time
 from hashlib import sha256
 
@@ -14,19 +17,63 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "7e8f0ada0a03cbee48a0883d549967647b3fca6efeb0a149242f19e4b68d53d6",
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
-
+PASSWORDS = set(PASSWORDS_TO_BRUTE_FORCE)
+chars = string.digits
+min_length = 1
+max_length = 8
 
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
-    pass
+# def brute_force_password() -> None:
+#     chars = string.digits
+#     i = 0
+#     for length in range(9):
+#         for candidate in itertools.product(chars, repeat=length):
+#             password_str = "".join(candidate)
+#             hashed_password = sha256_hash_str(password_str)
+#             if hashed_password in PASSWORDS_TO_BRUTE_FORCE:
+#                 print(f"Found password: {password_str}")
+#                 i += 1
+#                 if i == 10:
+#                     return
 
+def brute_force_password(args):
+    start, end = args
+    found = []
+    for num in range(start, end):
+        password_str = str(num).zfill(max_length)
+        hashed_password = sha256_hash_str(password_str)
+        if hashed_password in PASSWORDS:
+            found.append(password_str)
+    return found
+
+def main():
+    max_num = 10 ** max_length
+    step = 100_000
+
+    ranges = [
+        (i, min(i + step, max_num))
+        for i in range(0, max_num, step)
+    ]
+
+    found_total = []
+
+    with multiprocessing.Pool() as p:
+        for result in p.imap_unordered(brute_force_password, ranges, chunksize=10):
+            if result:
+                found_total.extend(result)
+                for r in result:
+                    print("Found password:", r)
+
+            if len(found_total) >= len(PASSWORDS_TO_BRUTE_FORCE):
+                p.terminate()
+                break
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
-    brute_force_password()
+    main()
     end_time = time.perf_counter()
 
     print("Elapsed:", end_time - start_time)
