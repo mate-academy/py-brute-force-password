@@ -24,10 +24,10 @@ def sha256_hash_str(to_hash: str) -> str:
 def worker_range(args: list[int]) -> list[tuple[str, str]]:
     start, end = args
     local_found = []
-    targets = PASSWORDS_TO_BRUTE_FORCE
+    targets = set(PASSWORDS_TO_BRUTE_FORCE)
 
     for i in range(start, end):
-        password = f"{i: 08d}"
+        password = f"{i:08d}"
         hash_str = sha256_hash_str(password)
 
         if hash_str in targets:
