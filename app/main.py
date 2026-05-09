@@ -30,13 +30,11 @@ def brute_force_password() -> None:
         password = str(i).zfill(8)
         password_to_check = sha256_hash_str(password)
         if len(passwords_set) == 10:
-            print(passwords_set)
             break
         if password_to_check in PASSWORDS_TO_BRUTE_FORCE_set:
+            print(password)
             passwords_set.add(password)
 
-
-brute_force_password()
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
