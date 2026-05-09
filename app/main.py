@@ -20,9 +20,23 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
-    pass
+passwords = []
+passwords_set = set(passwords)
+PASSWORDS_TO_BRUTE_FORCE_set = set(PASSWORDS_TO_BRUTE_FORCE)
 
+
+def brute_force_password() -> None:
+    for i in range(100_000_000):
+        password = str(i).zfill(8)
+        password_to_check = sha256_hash_str(password)
+        if len(passwords_set) == 10:
+            print(passwords_set)
+            break
+        if password_to_check in PASSWORDS_TO_BRUTE_FORCE_set:
+            passwords_set.add(password)
+
+
+brute_force_password()
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
