@@ -28,7 +28,6 @@ def check_password(num_password: int) -> None:
     else:
         password = str(num_password)
 
-    print(password)
     if sha256_hash_str(password) in PASSWORDS_TO_BRUTE_FORCE:
         print(password)
 
