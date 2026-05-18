@@ -1,8 +1,7 @@
-from concurrent.futures import ProcessPoolExecutor, wait
+from concurrent.futures import ProcessPoolExecutor
 import time
 import multiprocessing as mp
 from hashlib import sha256
-import itertools
 
 
 PASSWORDS_TO_BRUTE_FORCE = [
@@ -23,40 +22,29 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def find_five_passwords(in_password_hashes: list) -> None:
-    passwords_combinations = (
-        "".join(password)
-        for password in itertools.product("0123456789", repeat=8)
-    )
-    count = 0
-    for password_combination in passwords_combinations:
-        password_hash = sha256_hash_str(password_combination)
-        if password_hash in in_password_hashes:
-            index = in_password_hashes.index(password_hash)
-            print(
-                f"Hash value: {in_password_hashes[index]} "
-                f"Password: {password_combination}"
-            )
-            count += 1
+def find_passwords(start_index: int, end_index: int) -> None:
+    for number in range(start_index, end_index):
+        password = str(number).zfill(8)
+        password_hash = sha256_hash_str(password)
 
-        if count == len(in_password_hashes):
-            break
+        if password_hash in PASSWORDS_TO_BRUTE_FORCE:
+            print(
+                f"Hash value: {password_hash} "
+                f"Password: {password}"
+            )
 
 
 def brute_force_password() -> None:
-    futures = []
-    slicer = 0
-    with ProcessPoolExecutor(mp.cpu_count()) as executor:
-        for _ in range(2):
-            futures.append(
-                executor.submit(
-                    find_five_passwords,
-                    PASSWORDS_TO_BRUTE_FORCE[slicer:slicer + 5]
-                )
+    num_processes = mp.cpu_count() - 1
+    num_combinations = 10 ** 8
+    chunk_size = num_combinations // num_processes
+    with ProcessPoolExecutor(num_processes) as executor:
+        for start_index in range(0, num_combinations, chunk_size):
+            executor.submit(
+                find_passwords,
+                start_index,
+                start_index + chunk_size
             )
-            slicer += 5
-
-    wait(futures)
 
 
 if __name__ == "__main__":
