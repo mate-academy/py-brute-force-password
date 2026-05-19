@@ -21,7 +21,29 @@ def sha256_hash_str(to_hash: str) -> str:
 
 
 def brute_force_password() -> None:
-    pass
+    target_hashes: set[str] = set(PASSWORDS_TO_BRUTE_FORCE)
+    found_passwords: dict[str, str] = {}
+
+    for number in range(100_000_000):
+        password: str = f"{number:08d}"
+        password_hash: str = sha256_hash_str(password)
+
+        if password_hash in target_hashes:
+            found_passwords[password_hash] = password
+            target_hashes.remove(password_hash)
+
+            print(
+                f"Found password: {password} "
+                f"for hash: {password_hash}"
+            )
+
+            if not target_hashes:
+                break
+
+    print("\nAll passwords found:")
+
+    for password in found_passwords.values():
+        print(password)
 
 
 if __name__ == "__main__":
@@ -29,4 +51,4 @@ if __name__ == "__main__":
     brute_force_password()
     end_time = time.perf_counter()
 
-    print("Elapsed:", end_time - start_time)
+    print(f"\nElapsed: {end_time - start_time:.2f} seconds")
