@@ -40,6 +40,9 @@ def brute_force_password() -> None:
             if result is not None:
                 print(f"Found password: {result}")
                 found_passwords.append(result)
+                if len(found_passwords) == 10:
+                    pool.terminate()
+                    break
     print(f"\nTotal found: {len(found_passwords)}")
 
 
