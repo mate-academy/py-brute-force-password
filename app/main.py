@@ -1,5 +1,8 @@
+import multiprocessing
 import time
+from concurrent.futures import ProcessPoolExecutor
 from hashlib import sha256
+from itertools import product
 
 
 PASSWORDS_TO_BRUTE_FORCE = [
@@ -14,14 +17,42 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "7e8f0ada0a03cbee48a0883d549967647b3fca6efeb0a149242f19e4b68d53d6",
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
+HASH_PASSWORDS = set(PASSWORDS_TO_BRUTE_FORCE)
 
 
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
+def attempt_match(prefix: str) -> list[str]:
+    found_in_this_prefix = []
+
+    for suffix in product("0123456789", repeat=6):
+        attempt = prefix + "".join(suffix)
+
+        if sha256_hash_str(attempt) in PASSWORDS_TO_BRUTE_FORCE:
+            print(f"Found: {attempt}")
+            found_in_this_prefix.append(attempt)
+
+    return found_in_this_prefix
+
+
 def brute_force_password() -> None:
-    pass
+    cores = multiprocessing.cpu_count()
+    prefixes = [f"{i:02d}" for i in range(100)]
+    total_found = 0
+
+    with ProcessPoolExecutor(max_workers=cores) as executor:
+        results = executor.map(attempt_match, prefixes, chunksize=1)
+
+        for match_list in results:
+            if match_list:
+                total_found += len(match_list)
+
+                if total_found == len(PASSWORDS_TO_BRUTE_FORCE):
+                    print("Found all passwords")
+                    executor.shutdown(wait=False, cancel_futures=True)
+                    break
 
 
 if __name__ == "__main__":
