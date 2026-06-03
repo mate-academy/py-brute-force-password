@@ -37,7 +37,7 @@ def brute_force_password(start_num, stop_num) -> None:
         h = sha256_hash_str(password)
         if h in PASS_SET:
             print(f"Found password: {password} Hash: {h}")
-            break
+
 
 def main_multiprocessing():
     cpu_count = multiprocessing.cpu_count() - 1
