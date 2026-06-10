@@ -52,4 +52,4 @@ if __name__ == "__main__":
     start_time = time.perf_counter()
     brute_force_password()
     end_time = time.perf_counter()
-    print("Elapsed:", end_time - start_time)
+    print("Total time:", end_time - start_time)
