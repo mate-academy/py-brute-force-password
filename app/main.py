@@ -21,7 +21,20 @@ def sha256_hash_str(to_hash: str) -> str:
 
 
 def brute_force_password() -> None:
-    pass
+    targets = {h:None for h in PASSWORDS_TO_BRUTE_FORCE}
+
+    for i in range(100000000):
+        num_to_hash = f"{i:08}"
+        hash_num = sha256_hash_str(num_to_hash)
+
+        if hash_num in targets:
+            print(f"Password has been found: {hash_num}")
+            del targets[hash_num]
+
+            if not targets:
+                print(f"All passwords have been found")
+                break
+
 
 
 if __name__ == "__main__":
