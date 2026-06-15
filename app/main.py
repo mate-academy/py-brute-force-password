@@ -1,6 +1,7 @@
+import itertools
+import multiprocessing
 import time
 from hashlib import sha256
-
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -15,18 +16,60 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
 
+TARGET_HASHES = set(PASSWORDS_TO_BRUTE_FORCE)
+TOTAL_TARGETS = len(TARGET_HASHES)
+
+CHECK_EVERY = 50_000
+
 
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
-    pass
+def brute_force_password(
+        start_digit: str,
+        found_passwords,
+        stop_event
+) -> None:
+    for index, combination in enumerate(itertools.product(
+            "0123456789",
+            repeat=7)
+    ):
+        if index % CHECK_EVERY == 0 and stop_event.is_set():
+            return
+
+        combination_str = start_digit + "".join(combination)
+        if sha256_hash_str(combination_str) in TARGET_HASHES:
+            found_passwords.append(combination_str)
+            if len(found_passwords) >= TOTAL_TARGETS:
+                stop_event.set()
+                return
 
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
-    brute_force_password()
+
+    with multiprocessing.Manager() as manager:
+        found_passwords = manager.list()
+        stop_event = manager.Event()
+
+        tasks = []
+        for digit in "0123456789":
+            task = multiprocessing.Process(
+                target=brute_force_password,
+                args=(digit, found_passwords, stop_event),
+            )
+            tasks.append(task)
+            task.start()
+
+        for task in tasks:
+            task.join()
+
+        results = sorted(found_passwords)
+
     end_time = time.perf_counter()
+
+    for password in results:
+        print(password)
 
     print("Elapsed:", end_time - start_time)
