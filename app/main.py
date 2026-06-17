@@ -14,6 +14,7 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "7e8f0ada0a03cbee48a0883d549967647b3fca6efeb0a149242f19e4b68d53d6",
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
+TARGET_HASHES = set(PASSWORDS_TO_BRUTE_FORCE)
 
 
 def sha256_hash_str(to_hash: str) -> str:
@@ -21,7 +22,19 @@ def sha256_hash_str(to_hash: str) -> str:
 
 
 def brute_force_password() -> None:
-    pass
+    found_passwords = []
+
+    for number in range(10**8):
+        password = format(number, "08d")
+
+        if sha256_hash_str(password) in TARGET_HASHES:
+            found_passwords.append(password)
+
+            if len(found_passwords) == len(PASSWORDS_TO_BRUTE_FORCE):
+                break
+
+    for password in sorted(found_passwords):
+        print(password)
 
 
 if __name__ == "__main__":
