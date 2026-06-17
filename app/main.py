@@ -1,8 +1,9 @@
 import time
+import os
 from hashlib import sha256
+import multiprocessing
 
-
-PASSWORDS_TO_BRUTE_FORCE = [
+PASSWORDS_TO_BRUTE_FORCE = {
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
     "cf0b0cfc90d8b4be14e00114827494ed5522e9aa1c7e6960515b58626cad0b44",
     "e34efeb4b9538a949655b788dcb517f4a82e997e9e95271ecd392ac073fe216d",
@@ -13,15 +14,37 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "1273682fa19625ccedbe2de2817ba54dbb7894b7cefb08578826efad492f51c9",
     "7e8f0ada0a03cbee48a0883d549967647b3fca6efeb0a149242f19e4b68d53d6",
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
-]
+}
 
 
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
+def check_range(limits: tuple) -> list:
+    passwords = []
+    start, end = limits
+    for password in range(start, end):
+        password = str(password).zfill(8)
+        if sha256_hash_str(password) in PASSWORDS_TO_BRUTE_FORCE:
+            passwords.append(password)
+    return passwords
+
+
 def brute_force_password() -> None:
-    pass
+    chunk = 10**6
+    ranges = [(i, i + chunk) for i in range(0, 10**8, chunk)]
+    pool_size = max(1, (os.cpu_count() or 1) - 1)
+    with multiprocessing.Pool(pool_size) as pool:
+        results = pool.map(check_range, ranges)
+
+    flat_results = sum(results, [])
+    if len(flat_results) == len(PASSWORDS_TO_BRUTE_FORCE):
+        print(f"Found {len(flat_results)} passwords: ")
+        for order, password in enumerate(flat_results, 1):
+            print(f"{order}. {password}")
+    else:
+        print(f"Passwords found {len(flat_results)}.")
 
 
 if __name__ == "__main__":
