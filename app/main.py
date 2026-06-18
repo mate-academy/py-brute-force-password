@@ -23,7 +23,7 @@ def sha256_hash_str(to_hash: str) -> str:
 
 def brute_force_password(start: int, end: int, target_set: set) -> None:
     for i in range(start, end):
-        password_candidate = f"{i: 08d}"
+        password_candidate = f"{i:08d}"
         hashed = sha256_hash_str(password_candidate)
         if hashed in target_set:
             print(password_candidate)
