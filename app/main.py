@@ -1,7 +1,6 @@
 import time
 from hashlib import sha256
 from multiprocessing import Pool, cpu_count
-from itertools import islice
 
 
 PASSWORDS_TO_BRUTE_FORCE = [
@@ -61,8 +60,8 @@ def brute_force_password(num_workers: int = None) -> dict:
         results = pool.map(worker, chunks)
 
     merged = {}
-    for r in results:
-        merged.update(r)
+    for result in results:
+        merged.update(result)
 
     return merged
 
@@ -73,7 +72,7 @@ if __name__ == "__main__":
     end_time = time.perf_counter()
 
     print(f"\nFound {len(results)}/{len(PASSWORDS_TO_BRUTE_FORCE)} passwords:")
-    for h, p in sorted(results.items(), key=lambda x: x[1]):
-        print(f"  {p}  =>  {h}")
+    for hash_value, password in sorted(results.items(), key=lambda x: x[1]):
+        print(f"{password} = {hash_value}")
 
     print(f"\nElapsed: {end_time - start_time:.3f}s")
