@@ -25,7 +25,7 @@ def worker(start: int, end: int, target_hashes: set[str]) -> dict[str, str]:
     found = {}
 
     for number in range(start, end):
-        password = f"{number: 08d}"
+        password = f"{number:08d}"
         hashed = sha256_hash_str(password)
         if hashed in target_hashes:
             found[hashed] = password
