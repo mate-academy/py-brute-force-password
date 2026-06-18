@@ -1,6 +1,6 @@
 import time
 from hashlib import sha256
-
+from multiprocessing import Pool, cpu_count
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -15,18 +15,65 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
 
+TARGET_SET = set(PASSWORDS_TO_BRUTE_FORCE)
+TOTAL = 100_000_000
+
 
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
-    pass
+def worker(args: tuple) -> dict:
+    start, end, targets = args
+    local_results = {}
+
+    for i in range(start, end):
+        candidate = f"{i:08d}"
+        if sha256_hash_str(candidate) in targets:
+            local_results[sha256_hash_str(candidate)] = candidate
+            print(f"  [+] Found: {candidate}", flush=True)
+
+    return local_results
+
+
+def brute_force_password() -> dict:
+    num_workers = cpu_count()
+    print(f"Workers: {num_workers} | Search space: {TOTAL:,} candidates")
+
+    chunk_size = TOTAL // num_workers
+    chunks = [
+        (
+            i * chunk_size,
+            (i + 1) * chunk_size if i < num_workers - 1 else TOTAL,
+            TARGET_SET,
+        )
+        for i in range(num_workers)
+    ]
+
+    with Pool(processes=num_workers) as pool:
+        results = pool.map(worker, chunks)
+
+    merged = {}
+    for result in results:
+        merged.update(result)
+
+    return merged
 
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
-    brute_force_password()
+    results = brute_force_password()
     end_time = time.perf_counter()
 
-    print("Elapsed:", end_time - start_time)
+    not_found = TARGET_SET - set(results.keys())
+
+    print(f"\nFound {len(results)}/{len(PASSWORDS_TO_BRUTE_FORCE)} passwords:")
+    for hash_value, password in sorted(results.items(), key=lambda x: x[1]):
+        print(f"{password} = {hash_value}")
+
+    if not_found:
+        raise ValueError(
+            f"{len(not_found)} password(s) not found in search space"
+        )
+
+    print(f"\nElapsed: {end_time - start_time:.3f}s")
