@@ -23,7 +23,7 @@ def sha256_hash_str(to_hash: str) -> str:
 def check_range(start_letter: str) -> list[str]:
     found = []
     for i in range(10000000):
-        password = f"{start_letter}{i:07d}"
+        password = f"{start_letter}{i: 07d}"
         pwd_hash = sha256(password.encode("utf-8")).hexdigest()
         if pwd_hash in PASSWORDS_TO_BRUTE_FORCE:
             found.append(password)
