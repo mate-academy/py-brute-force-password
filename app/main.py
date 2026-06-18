@@ -2,7 +2,6 @@ import time
 from hashlib import sha256
 from multiprocessing import Pool, cpu_count
 
-
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
     "cf0b0cfc90d8b4be14e00114827494ed5522e9aa1c7e6960515b58626cad0b44",
@@ -30,20 +29,15 @@ def worker(args: tuple) -> dict:
 
     for i in range(start, end):
         candidate = f"{i:08d}"
-        digest = sha256(candidate.encode()).hexdigest()
-        if digest in targets:
-            local_results[digest] = candidate
-            print(f"  [+] Found: {candidate} -> {digest[:20]}...", flush=True)
-            if len(local_results) == len(targets):
-                break
+        if sha256_hash_str(candidate) in targets:
+            local_results[sha256_hash_str(candidate)] = candidate
+            print(f"  [+] Found: {candidate}", flush=True)
 
     return local_results
 
 
-def brute_force_password(num_workers: int = None) -> dict:
-    if num_workers is None:
-        num_workers = cpu_count()
-
+def brute_force_password() -> dict:
+    num_workers = cpu_count()
     print(f"Workers: {num_workers} | Search space: {TOTAL:,} candidates")
 
     chunk_size = TOTAL // num_workers
@@ -71,8 +65,15 @@ if __name__ == "__main__":
     results = brute_force_password()
     end_time = time.perf_counter()
 
+    not_found = TARGET_SET - set(results.keys())
+
     print(f"\nFound {len(results)}/{len(PASSWORDS_TO_BRUTE_FORCE)} passwords:")
     for hash_value, password in sorted(results.items(), key=lambda x: x[1]):
         print(f"{password} = {hash_value}")
+
+    if not_found:
+        print(f"\nWARNING: {len(not_found)} hashes not found in search space:")
+        for hash_value in not_found:
+            print(f"{hash_value}")
 
     print(f"\nElapsed: {end_time - start_time:.3f}s")
