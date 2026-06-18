@@ -72,8 +72,8 @@ if __name__ == "__main__":
         print(f"{password} = {hash_value}")
 
     if not_found:
-        print(f"\nWARNING: {len(not_found)} hashes not found in search space:")
-        for hash_value in not_found:
-            print(f"{hash_value}")
+        raise ValueError(
+            f"{len(not_found)} password(s) not found in search space"
+        )
 
     print(f"\nElapsed: {end_time - start_time:.3f}s")
