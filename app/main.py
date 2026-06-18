@@ -23,9 +23,12 @@ def sha256_hash_str(to_hash: str) -> str:
 def check_range(start_letter: str) -> list[str]:
     found = []
     for i in range(10000000):
-        password = f"{start_letter}{i: 07d}"
-        pwd_hash = sha256(password.encode("utf-8")).hexdigest()
-        if pwd_hash in PASSWORDS_TO_BRUTE_FORCE:
+        password = f"{start_letter}{i:07d}"  # noqa: E231
+
+        if sha256_hash_str(password) in PASSWORDS_TO_BRUTE_FORCE:
+            assert (
+                len(password) == 8 and password.isdigit()
+            )
             found.append(password)
 
     return found
@@ -37,6 +40,9 @@ def brute_force_password() -> None:
         results = pool.map(check_range, tasks)
 
     flat_results = [pwd for sublist in results for pwd in sublist]
+
+    if len(flat_results) != 10:
+        raise ValueError()
 
     for pwd in flat_results:
         print(pwd)
