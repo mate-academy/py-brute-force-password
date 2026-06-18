@@ -1,5 +1,7 @@
 import time
 from hashlib import sha256
+from multiprocessing import Pool, cpu_count
+from itertools import islice
 
 
 PASSWORDS_TO_BRUTE_FORCE = [
@@ -15,18 +17,63 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
 
+TARGET_SET = set(PASSWORDS_TO_BRUTE_FORCE)
+TOTAL = 100_000_000
+
 
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
-    pass
+def worker(args: tuple) -> dict:
+    start, end, targets = args
+    local_results = {}
+
+    for i in range(start, end):
+        candidate = f"{i:08d}"
+        digest = sha256(candidate.encode()).hexdigest()
+        if digest in targets:
+            local_results[digest] = candidate
+            print(f"  [+] Found: {candidate} -> {digest[:20]}...", flush=True)
+            if len(local_results) == len(targets):
+                break
+
+    return local_results
+
+
+def brute_force_password(num_workers: int = None) -> dict:
+    if num_workers is None:
+        num_workers = cpu_count()
+
+    print(f"Workers: {num_workers} | Search space: {TOTAL:,} candidates")
+
+    chunk_size = TOTAL // num_workers
+    chunks = [
+        (
+            i * chunk_size,
+            (i + 1) * chunk_size if i < num_workers - 1 else TOTAL,
+            TARGET_SET,
+        )
+        for i in range(num_workers)
+    ]
+
+    with Pool(processes=num_workers) as pool:
+        results = pool.map(worker, chunks)
+
+    merged = {}
+    for r in results:
+        merged.update(r)
+
+    return merged
 
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
-    brute_force_password()
+    results = brute_force_password()
     end_time = time.perf_counter()
 
-    print("Elapsed:", end_time - start_time)
+    print(f"\nFound {len(results)}/{len(PASSWORDS_TO_BRUTE_FORCE)} passwords:")
+    for h, p in sorted(results.items(), key=lambda x: x[1]):
+        print(f"  {p}  =>  {h}")
+
+    print(f"\nElapsed: {end_time - start_time:.3f}s")
