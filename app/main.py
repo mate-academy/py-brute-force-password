@@ -71,5 +71,9 @@ if __name__ == "__main__":
     found = brute_force_password()
     end_time = time.perf_counter()
 
-    print(found)
+    assert len(found) == 10
+
+    for password in sorted(found):
+        print(password)
+
     print("Elapsed:", end_time - start_time)
