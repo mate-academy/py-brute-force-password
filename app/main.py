@@ -29,11 +29,11 @@ def search_for_password(start, finish, stop_event):
         if num % 10000 == 0 and stop_event.is_set():
             break
 
-        # inline, але з тим самим zfill + utf-8 що дав кращий час
-        candidate_hash = sha256(str(num).zfill(8).encode("utf-8")).hexdigest()
+        password_str = str(num).zfill(8)
+        candidate_hash = sha256_hash_str(password_str)
 
         if candidate_hash in PASSWORDS_TO_BRUTE_FORCE:
-            result.append(num)
+            result.append(password_str)
 
     return result
 
