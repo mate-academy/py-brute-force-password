@@ -1,6 +1,7 @@
+import hashlib
+import multiprocessing
 import time
-from hashlib import sha256
-
+from concurrent.futures import ProcessPoolExecutor, wait
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -17,16 +18,53 @@ PASSWORDS_TO_BRUTE_FORCE = [
 
 
 def sha256_hash_str(to_hash: str) -> str:
-    return sha256(to_hash.encode("utf-8")).hexdigest()
+    return hashlib.sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
-    pass
+def brute_force_range(start: int, end: int) -> list:
+    found = []
+    for num in range(start, end):
+        password_text = str(num).zfill(8)
+        if sha256_hash_str(password_text) in PASSWORDS_TO_BRUTE_FORCE:
+            found.append(password_text)
+    return found
+
+
+def brute_force_passwords() -> None:
+    total_combinations = 100_000_000
+    workers_count = multiprocessing.cpu_count() - 1
+    parts = workers_count
+    part_size = total_combinations // parts
+
+    all_passwords = []
+
+    with ProcessPoolExecutor(workers_count) as executor:
+        futures = []
+
+        for i in range(parts):
+            start = i * part_size
+            end = total_combinations if i == parts - 1 else (i + 1) * part_size
+
+            future = executor.submit(brute_force_range, start, end)
+            futures.append(future)
+
+        wait(futures)
+
+        for future in futures:
+            all_passwords.extend(future.result())
+
+    unique_passwords = list(set(all_passwords))
+
+    if len(unique_passwords) != 10:
+        raise ValueError("Validation failed: Wrong number of passwords!")
+
+    unique_passwords.sort()
+    for password in unique_passwords:
+        print(password)
 
 
 if __name__ == "__main__":
-    start_time = time.perf_counter()
-    brute_force_password()
-    end_time = time.perf_counter()
-
-    print("Elapsed:", end_time - start_time)
+    start = time.perf_counter()
+    brute_force_passwords()
+    sync_duration = time.perf_counter() - start
+    print(sync_duration)
