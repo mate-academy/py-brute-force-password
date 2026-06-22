@@ -36,12 +36,19 @@ def brute_force_password() -> None:
     target = set(PASSWORDS_TO_BRUTE_FORCE)
 
     workers = cpu_count()
-    step =     step = 100000000 // workers
+    step = 100000000 // workers
 
-    ranges = [
-        (i * step, (i + 1) * step, target)
-        for i in range(workers)
-    ]
+    ranges = []
+
+    for i in range(workers):
+        start = i * step
+
+        if i == workers - 1:
+            end = 100000000
+        else:
+            end = (i + 1) * step
+
+        ranges.append((start, end, target))
 
     with Pool(workers) as pool:
         results = pool.map(check_range, ranges)
