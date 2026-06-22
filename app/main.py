@@ -1,6 +1,5 @@
-import time
-from hashlib import sha256
-
+import sha256
+from multiprocessing import Process, Manager, cpu_count
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -20,13 +19,50 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
-    pass
+def worker(start: int, end: int, targets: set, result: dict, stop_flag):
+    for i in range(start, end):
+        if stop_flag.value:
+            return
+
+        pwd = f"{i:08d}"
+        h = sha256_hash_str(pwd)
+
+        if h in targets:
+            result[h] = pwd
+            print(f"FOUND: {pwd}")
+
+            if len(result) == len(targets):
+                stop_flag.value = True
+                return
+
+
+def main():
+    targets = set(PASSWORDS_TO_BRUTE_FORCE)
+
+    manager = Manager()
+    result = manager.dict()
+    stop_flag = manager.Value("b", False)
+
+    cpu = cpu_count()
+    chunk = 100_000_000 // cpu
+
+    processes = []
+
+    for i in range(cpu):
+        start = i * chunk
+        end = (i + 1) * chunk if i != cpu - 1 else 100_000_000
+
+        p = Process(target=worker, args=(start, end, targets, result, stop_flag))
+        processes.append(p)
+        p.start()
+
+    for p in processes:
+        p.join()
+
+    print("\nRESULT:")
+    for k, v in result.items():
+        print(v)
 
 
 if __name__ == "__main__":
-    start_time = time.perf_counter()
-    brute_force_password()
-    end_time = time.perf_counter()
-
-    print("Elapsed:", end_time - start_time)
+    main()
