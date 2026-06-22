@@ -1,5 +1,7 @@
 import time
+from concurrent.futures import FIRST_COMPLETED, ProcessPoolExecutor, wait
 from hashlib import sha256
+from os import cpu_count
 
 
 PASSWORDS_TO_BRUTE_FORCE = [
@@ -20,8 +22,77 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
+def find_passwords_in_range(
+    start: int,
+    stop: int,
+    hashes_to_find: set[bytes],
+) -> dict[bytes, str]:
+    found_passwords = {}
+    hash_password = sha256
+
+    for password_number in range(start, stop):
+        password = f"{password_number:08d}"
+        hashed_password = hash_password(password.encode()).digest()
+
+        if hashed_password in hashes_to_find:
+            found_passwords[hashed_password] = password
+
+    return found_passwords
+
+
 def brute_force_password() -> None:
-    pass
+    hashes_to_find = {
+        bytes.fromhex(password_hash)
+        for password_hash in PASSWORDS_TO_BRUTE_FORCE
+    }
+    found_passwords: dict[bytes, str] = {}
+    passwords_count = 100_000_000
+    chunk_size = 100_000
+    workers_count = cpu_count() or 1
+    next_range_start = 0
+
+    with ProcessPoolExecutor(max_workers=workers_count) as executor:
+        futures = set()
+
+        while (
+            len(futures) < workers_count
+            and next_range_start < passwords_count
+        ):
+            futures.add(executor.submit(
+                find_passwords_in_range,
+                next_range_start,
+                next_range_start + chunk_size,
+                hashes_to_find,
+            ))
+            next_range_start += chunk_size
+
+        while futures and len(found_passwords) < len(hashes_to_find):
+            done_futures, futures = wait(
+                futures,
+                return_when=FIRST_COMPLETED,
+            )
+
+            for future in done_futures:
+                found_passwords.update(future.result())
+
+            while (
+                len(futures) < workers_count
+                and next_range_start < passwords_count
+                and len(found_passwords) < len(hashes_to_find)
+            ):
+                futures.add(executor.submit(
+                    find_passwords_in_range,
+                    next_range_start,
+                    next_range_start + chunk_size,
+                    hashes_to_find,
+                ))
+                next_range_start += chunk_size
+
+        for future in futures:
+            future.cancel()
+
+    for password_hash in PASSWORDS_TO_BRUTE_FORCE:
+        print(found_passwords[bytes.fromhex(password_hash)])
 
 
 if __name__ == "__main__":
