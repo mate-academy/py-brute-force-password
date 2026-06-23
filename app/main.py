@@ -46,17 +46,12 @@ def brute_force_password() -> None:
     with Pool(processes=num_workers) as pool:
         results = pool.map(check_range, ranges)
 
-    found_passwords = [pwd for sublist in results for pwd in sublist]
-
-    for password in sorted(found_passwords):
+    for password in sorted(pwd for sublist in results for pwd in sublist):
         print(password)
-
-    print(f"\nЗнайдено паролів: {len(found_passwords)}")
 
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
     brute_force_password()
     end_time = time.perf_counter()
-
     print("Elapsed:", end_time - start_time)
