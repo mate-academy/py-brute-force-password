@@ -24,7 +24,7 @@ def sha256_hash_str(to_hash: str) -> str:
 
 def find_password(start: int, end: int) -> list[tuple[str, str]]:
     target_hashes = set(PASSWORDS_TO_BRUTE_FORCE)
-    found_passwords = []
+    found_passwords: list[tuple[str, str]] = []
 
     for i in range(start, end):
         guess = str(i).zfill(8)
@@ -32,7 +32,6 @@ def find_password(start: int, end: int) -> list[tuple[str, str]]:
 
         if guess_hash in target_hashes:
             found_passwords.append((guess_hash, guess))
-            print(f"Found password: {guess} for hash: {guess_hash}")
 
     return found_passwords
 
@@ -40,7 +39,7 @@ def find_password(start: int, end: int) -> list[tuple[str, str]]:
 def brute_force_password() -> None:
     futures = []
     step = 10_000_000
-    cracked_passwords = {}
+    found_pairs: list[tuple[str, str]] = []
 
     with ProcessPoolExecutor(
         max(1, multiprocessing.cpu_count() - 1)
@@ -51,12 +50,29 @@ def brute_force_password() -> None:
     wait(futures)
 
     for future in futures:
-        for password_hash, password in future.result():
-            cracked_passwords[password_hash] = password
+        found_pairs.extend(future.result())
+
+    unique_pairs = set(found_pairs)
+    cracked_passwords = dict(unique_pairs)
+    target_hashes = set(PASSWORDS_TO_BRUTE_FORCE)
+    missing_hashes = target_hashes - set(cracked_passwords)
+
+    if (
+        len(unique_pairs) != len(PASSWORDS_TO_BRUTE_FORCE)
+        or len(cracked_passwords) != len(PASSWORDS_TO_BRUTE_FORCE)
+        or missing_hashes
+    ):
+        raise RuntimeError(
+            f"Found {len(cracked_passwords)}/"
+            f"{len(PASSWORDS_TO_BRUTE_FORCE)} passwords"
+        )
+
+    for password_hash in PASSWORDS_TO_BRUTE_FORCE:
+        print(f"Password found: {cracked_passwords[password_hash]}")
 
     print(
         f"Found {len(cracked_passwords)}/"
-        f"{len(PASSWORDS_TO_BRUTE_FORCE)} passwords!"
+        f"{len(PASSWORDS_TO_BRUTE_FORCE)} passwords, all hashes cracked"
     )
 
 
