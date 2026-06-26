@@ -36,8 +36,6 @@ def brute_force_password() -> None:
         if len(passwords) == 10:
             break
 
-    print(passwords)
-
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
