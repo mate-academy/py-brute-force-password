@@ -23,13 +23,14 @@ def brute_force_password() -> None:
     passwords = []
     found_target_hashes = set()
     target_hashes_set = set(PASSWORDS_TO_BRUTE_FORCE)
+
     for p in range(0, 100000000):
         password_str = str(p).zfill(8)
         hash_result = sha256_hash_str(password_str)
 
         if hash_result in target_hashes_set and hash_result not in found_target_hashes:
-            passwords.append(password_str + " " + hash_result)
-            print(password_str + " " + hash_result)
+            passwords.append(password_str)
+            print(password_str)
             found_target_hashes.add(hash_result)
 
         if len(passwords) == 10:
