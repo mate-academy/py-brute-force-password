@@ -1,4 +1,5 @@
 import time
+import multiprocessing
 from hashlib import sha256
 
 
@@ -20,8 +21,40 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
+def check_range(args: tuple) -> dict:
+    start, end, passwords_set = args
+    found = {}
+    for i in range(start, end):
+        candidate = f"{i: 08d}"
+        candidate_hash = sha256(candidate.encode()).hexdigest()
+        if candidate_hash in passwords_set:
+            found[candidate_hash] = candidate
+    return found
+
+
 def brute_force_password() -> None:
-    pass
+    passwords_set = set(PASSWORDS_TO_BRUTE_FORCE)
+    total = 100_000_000
+    cpu_count = multiprocessing.cpu_count()
+    chunk_size = total // cpu_count
+
+    ranges = [
+        (i * chunk_size, (i + 1) * chunk_size, passwords_set)
+        for i in range(cpu_count)
+    ]
+    ranges[-1] = (ranges[-1][0], total, passwords_set)
+
+    with multiprocessing.Pool(processes=cpu_count) as pool:
+        results = pool.map(check_range, ranges)
+
+    found_passwords = {}
+    for partial in results:
+        found_passwords.update(partial)
+
+    for hash_value, password in found_passwords.items():
+        print(f"Hash: {hash_value} -> Password: {password}")
+
+    print(f"\nTotal found: {len(found_passwords)}")
 
 
 if __name__ == "__main__":
