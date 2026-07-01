@@ -25,8 +25,8 @@ def check_range(args: tuple) -> dict:
     start, end, passwords_set = args
     found = {}
     for i in range(start, end):
-        candidate = f"{i: 08d}"
-        candidate_hash = sha256(candidate.encode()).hexdigest()
+        candidate = f"{i:08d}"  # noqa: E231
+        candidate_hash = sha256_hash_str(candidate)
         if candidate_hash in passwords_set:
             found[candidate_hash] = candidate
     return found
