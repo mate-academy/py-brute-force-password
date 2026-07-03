@@ -1,5 +1,6 @@
 import time
-from hashlib import sha256
+import hashlib
+import multiprocessing as mp
 
 
 PASSWORDS_TO_BRUTE_FORCE = [
@@ -15,13 +16,50 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
 
+TARGET_SET = set(PASSWORDS_TO_BRUTE_FORCE)
+
 
 def sha256_hash_str(to_hash: str) -> str:
-    return sha256(to_hash.encode("utf-8")).hexdigest()
+    return hashlib.sha256(to_hash.encode("utf-8")).hexdigest()
+
+
+def worker(bounds: tuple[int, int]) -> dict[str, str]:
+    """Scan a numeric range [start, end) and return any matching hashes."""
+    start, end = bounds
+    sha256 = hashlib.sha256
+    found = {}
+    for i in range(start, end):
+        s = "%08d" % i
+        h = sha256(s.encode("utf-8")).hexdigest()
+        if h in TARGET_SET:
+            found[h] = s
+    return found
 
 
 def brute_force_password() -> None:
-    pass
+    start = time.time()
+    total = 100_000_000
+    n_workers = mp.cpu_count()
+    chunk = total // n_workers + 1
+    ranges = [(i, min(i + chunk, total)) for i in range(0, total, chunk)]
+
+    print(f"Using {n_workers} worker process(es), chunk size {chunk}")
+
+    results = {}
+    with mp.Pool(n_workers) as pool:
+        for found in pool.imap_unordered(worker, ranges):
+            results.update(found)
+            for h, s in found.items():
+                print(f"FOUND {h} -> {s}  ({len(results)}/{len(TARGET_SET)})  t={time.time() - start:.1f}s")
+            if len(results) == len(TARGET_SET):
+                pool.terminate()
+                break
+
+    print("\n--- Results in original order ---")
+    for h in PASSWORDS_TO_BRUTE_FORCE:
+        print(h, "->", results.get(h))
+
+    print(f"\nDone in {time.time() - start:.1f}s")
 
 
 if __name__ == "__main__":
