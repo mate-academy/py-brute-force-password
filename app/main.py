@@ -26,11 +26,10 @@ def sha256_hash_str(to_hash: str) -> str:
 def worker(bounds: tuple[int, int]) -> dict[str, str]:
     """Scan a numeric range [start, end) and return any matching hashes."""
     start, end = bounds
-    sha256 = hashlib.sha256
     found = {}
     for i in range(start, end):
         s = "%08d" % i
-        h = sha256(s.encode("utf-8")).hexdigest()
+        h = sha256_hash_str(s)
         if h in TARGET_SET:
             found[h] = s
     return found
@@ -55,9 +54,13 @@ def brute_force_password() -> None:
                 pool.terminate()
                 break
 
-    print("\n--- Results in original order ---")
+    print("\n--- Results in original order (hash -> password) ---")
     for h in PASSWORDS_TO_BRUTE_FORCE:
         print(h, "->", results.get(h))
+
+    print("\n--- Recovered passwords (plain, one per line) ---")
+    for h in PASSWORDS_TO_BRUTE_FORCE:
+        print(results.get(h))
 
     print(f"\nDone in {time.time() - start:.1f}s")
 
