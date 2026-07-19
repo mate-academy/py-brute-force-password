@@ -27,9 +27,7 @@ def check_range(args: tuple[int, int]) -> dict:
 
     for i in range(start, end):
         password_candidate = format(i, "08d")
-        hashed_val = hashlib.sha256(
-            password_candidate.encode("utf-8")
-        ).hexdigest()
+        hashed_val = sha256_hash_str(password_candidate)
         if hashed_val in HASH_SET:
             local_found[hashed_val] = password_candidate
 
@@ -62,6 +60,10 @@ def brute_force_password() -> None:
 
     for target_hash in PASSWORDS_TO_BRUTE_FORCE:
         print(all_found.get(target_hash))
+
+
+def sha256_hash_str(to_hash: str) -> str:
+    return hashlib.sha256(to_hash.encode("utf-8")).hexdigest()
 
 
 if __name__ == "__main__":
