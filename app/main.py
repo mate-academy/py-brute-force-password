@@ -1,5 +1,6 @@
+import hashlib
+import multiprocessing
 import time
-from hashlib import sha256
 
 
 PASSWORDS_TO_BRUTE_FORCE = [
@@ -15,13 +16,54 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
 
+HASH_SET = frozenset(PASSWORDS_TO_BRUTE_FORCE)
 
-def sha256_hash_str(to_hash: str) -> str:
-    return sha256(to_hash.encode("utf-8")).hexdigest()
+
+def check_range(args: tuple[int, int]) -> dict:
+    """Processes a small chunk of the search space
+    (e.g., 1,000,000 combinations)."""
+    start, end = args
+    local_found = {}
+
+    for i in range(start, end):
+        password_candidate = format(i, "08d")
+        hashed_val = sha256_hash_str(password_candidate)
+        if hashed_val in HASH_SET:
+            local_found[hashed_val] = password_candidate
+
+    return local_found
 
 
 def brute_force_password() -> None:
-    pass
+    num_cores = multiprocessing.cpu_count()
+    total_space = 100000000
+
+    step = 1000000
+    tasks = [
+        (start, min(start + step, total_space))
+        for start in range(0, total_space, step)
+    ]
+
+    all_found = {}
+
+    with multiprocessing.Pool(processes=num_cores) as pool:
+
+        iterator = pool.imap_unordered(check_range, tasks, chunksize=4)
+
+        for partial_dict in iterator:
+            if partial_dict:
+                all_found.update(partial_dict)
+
+                # М'який ранній вихід без примусового вбивства
+                if len(all_found) == len(HASH_SET):
+                    break
+
+    for target_hash in PASSWORDS_TO_BRUTE_FORCE:
+        print(all_found.get(target_hash))
+
+
+def sha256_hash_str(to_hash: str) -> str:
+    return hashlib.sha256(to_hash.encode("utf-8")).hexdigest()
 
 
 if __name__ == "__main__":
