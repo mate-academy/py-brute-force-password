@@ -1,6 +1,7 @@
+import multiprocessing
 import time
+from concurrent.futures import ProcessPoolExecutor
 from hashlib import sha256
-
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -15,13 +16,45 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
 
+MAX_WORKERS = multiprocessing.cpu_count() - 2
+
 
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
+def print_password(start: int, end: int) -> None:
+    for combo_int in range(start, end):
+        combo = str(combo_int).zfill(8)
+        if sha256_hash_str(combo) in PASSWORDS_TO_BRUTE_FORCE:
+            print(combo)
+
+
+def get_range_list_search(combs: int) -> list[tuple[int, int]]:
+    range_list = []
+    range_count = max(1, multiprocessing.cpu_count() - 2)
+
+    interval = combs // range_count
+    start = 0
+
+    while start < combs:
+        end = start + interval
+
+        if end > combs or len(range_list) == range_count - 1:
+            end = combs
+
+        range_list.append((start, end))
+        start = end
+
+    return range_list
+
+
 def brute_force_password() -> None:
-    pass
+    combs = 10 ** 8
+    range_list = get_range_list_search(combs)
+    with ProcessPoolExecutor(len(range_list)) as executor:
+        for start_end in range_list:
+            executor.submit(print_password, *start_end)
 
 
 if __name__ == "__main__":
