@@ -1,5 +1,6 @@
 import time
 from hashlib import sha256
+from multiprocessing import Queue, Process
 
 
 PASSWORDS_TO_BRUTE_FORCE = [
@@ -20,13 +21,39 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
-    pass
+def brute_force_password(start: int, end: int, queue: Queue) -> None:
+    passwords_to_brute_force = set(PASSWORDS_TO_BRUTE_FORCE)
+    for password in range(start, end):
+        password_str = str(password).zfill(8)
+        new_pass = sha256_hash_str(password_str)
+        if new_pass in passwords_to_brute_force:
+            queue.put(password_str)
 
 
 if __name__ == "__main__":
+    queue = Queue()
+    process_count = 10
+
+    chunk_size = 100_000_000 // process_count
+
+    processes = []
+
+    for i in range(process_count):
+        start = i * chunk_size
+        end = start + chunk_size
+        proc = Process(target=brute_force_password, args=(start, end, queue))
+        processes.append(proc)
+
     start_time = time.perf_counter()
-    brute_force_password()
+    for process in processes:
+        process.start()
+
+    for process in processes:
+        process.join()
+
+    for _ in range(10):
+        print(queue.get())
+
     end_time = time.perf_counter()
 
     print("Elapsed:", end_time - start_time)
