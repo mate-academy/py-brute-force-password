@@ -2,6 +2,7 @@ import time
 from hashlib import sha256
 from multiprocessing import Queue, Process
 
+
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
     "cf0b0cfc90d8b4be14e00114827494ed5522e9aa1c7e6960515b58626cad0b44",
@@ -20,7 +21,7 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password(start, end, queue) -> None:
+def brute_force_password(start: int, end: int, queue: Queue) -> None:
     passwords_to_brute_force = set(PASSWORDS_TO_BRUTE_FORCE)
     for password in range(start, end):
         password_str = str(password).zfill(8)
@@ -31,26 +32,24 @@ def brute_force_password(start, end, queue) -> None:
 
 if __name__ == "__main__":
     queue = Queue()
-    start_for_p1, end_for_p1 = 0, 25_000_000
-    start_for_p2, end_for_p2 = 25_000_000, 50_000_000
-    start_for_p3, end_for_p3 = 50_000_000, 75_000_000
-    start_for_p4, end_for_p4 = 75_000_000, 100_000_000
+    process_count = 10
 
-    p1 = Process(target=brute_force_password, args=(start_for_p1, end_for_p1, queue ))
-    p2 = Process(target=brute_force_password, args=(start_for_p2, end_for_p2, queue ))
-    p3 = Process(target=brute_force_password, args=(start_for_p3, end_for_p3, queue ))
-    p4 = Process(target=brute_force_password, args=(start_for_p4, end_for_p4, queue ))
+    chunk_size = 100_000_000 // process_count
+
+    processes = []
+
+    for i in range(process_count):
+        start = i * chunk_size
+        end = start + chunk_size
+        proc = Process(target=brute_force_password, args=(start, end, queue))
+        processes.append(proc)
 
     start_time = time.perf_counter()
-    p1.start()
-    p2.start()
-    p3.start()
-    p4.start()
+    for process in processes:
+        process.start()
 
-    p1.join()
-    p2.join()
-    p3.join()
-    p4.join()
+    for process in processes:
+        process.join()
 
     for _ in range(10):
         print(queue.get())
