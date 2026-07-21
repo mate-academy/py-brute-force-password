@@ -24,7 +24,7 @@ def sha256_hash_str(to_hash: str) -> str:
 
 
 def check_password(i: int) -> str | None:
-    password = f"{i: 08d}"
+    password = f"{i:08d}"  # noqa: E231
     if sha256_hash_str(password) in PASSWORDS_TO_BRUTE_FORCE:
         return password
     return None
