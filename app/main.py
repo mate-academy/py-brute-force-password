@@ -1,6 +1,6 @@
 import time
+import multiprocessing
 from hashlib import sha256
-
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -15,13 +15,28 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
 
+TARGETS = set(PASSWORDS_TO_BRUTE_FORCE)
+
 
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
+def _check_chunk(start: int, end: int) -> None:
+    for i in range(start, end):
+        pwd = f"{i:08d}"  # noqa: E231
+        if sha256_hash_str(pwd) in TARGETS:
+            print(f"Found: {pwd}")
+
+
 def brute_force_password() -> None:
-    pass
+    cores = multiprocessing.cpu_count()
+    chunk = 100_000_000 // cores
+
+    ranges = [(i * chunk, (i + 1) * chunk) for i in range(cores)]
+
+    with multiprocessing.Pool(cores) as pool:
+        pool.starmap(_check_chunk, ranges)
 
 
 if __name__ == "__main__":
