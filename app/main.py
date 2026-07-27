@@ -24,14 +24,14 @@ def sha256_hash_str(to_hash: str) -> str:
 
 def _check_chunk(start: int, end: int) -> None:
     for i in range(start, end):
-        pwd = f"{i:010d}"  # noqa: E231
+        pwd = f"{i:08d}" # noqa: E231
         if sha256_hash_str(pwd) in TARGETS:
             print(f"Found: {pwd}")
 
 
 def brute_force_password() -> None:
     cores = multiprocessing.cpu_count()
-    chunk = 10_000_000_000 // cores
+    chunk = 100_000_000 // cores
 
     ranges = [(i * chunk, (i + 1) * chunk) for i in range(cores)]
 
