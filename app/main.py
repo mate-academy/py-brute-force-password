@@ -24,7 +24,7 @@ def sha256_hash_str(to_hash: str) -> str:
 
 def _check_chunk(start: int, end: int) -> None:
     for i in range(start, end):
-        pwd = f"{i:08d}" # noqa: E231
+        pwd = f"{i:08d}"    # noqa: E231
         if sha256_hash_str(pwd) in TARGETS:
             print(f"Found: {pwd}")
 
