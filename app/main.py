@@ -15,13 +15,22 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
 
+password_hashes = set(PASSWORDS_TO_BRUTE_FORCE)
 
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
-
 def brute_force_password() -> None:
-    pass
+    for number in range(100_000_000):
+        password = str(number).zfill(8)
+        hashed_password = sha256_hash_str(password)
+
+        if hashed_password in password_hashes:
+            print(password)
+            password_hashes.remove(hashed_password)
+
+            if not password_hashes:
+                break
 
 
 if __name__ == "__main__":
