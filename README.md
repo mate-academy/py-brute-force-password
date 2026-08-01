@@ -30,7 +30,7 @@ So, as a hacker, you quickly figured out that you can brute force all possible p
 and check the corresponding hashes using the `sha256_hash_str` function:
 
 ```python
-import sha256
+from hashlib import sha256
 
 
 def sha256_hash_str(to_hash: str) -> str:
