@@ -1,4 +1,6 @@
 import time
+import multiprocessing
+from concurrent.futures import ProcessPoolExecutor, wait
 from hashlib import sha256
 
 
@@ -14,14 +16,37 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "7e8f0ada0a03cbee48a0883d549967647b3fca6efeb0a149242f19e4b68d53d6",
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
+WORKERS = multiprocessing.cpu_count()
+CHUNK = 100000000 // WORKERS
 
 
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
+def brute_force_chunk(start: int, end: int, hash_list: list) -> None:
+    for num in range(start, end):
+        password = str(num).zfill(8)
+
+        pass_hash = sha256_hash_str(password)
+        if pass_hash in hash_list:
+            print(f"{pass_hash}: {password}")
+
+
 def brute_force_password() -> None:
-    pass
+    futures = []
+
+    with ProcessPoolExecutor(WORKERS) as executor:
+        for i in range(WORKERS):
+            start = i * CHUNK
+            end = start + CHUNK if i < WORKERS - 1 else 100_000_000
+            futures.append(
+                executor.submit(
+                    brute_force_chunk, start, end, PASSWORDS_TO_BRUTE_FORCE
+                )
+            )
+
+    wait(futures)
 
 
 if __name__ == "__main__":
