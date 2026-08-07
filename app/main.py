@@ -61,7 +61,7 @@ def brute_force_password(passwords_to_save) -> None:
     for process in processes:
         process.join()
 
-    print(f"Found passwords: {passwords}")
+    print(f"Found passwords: {passwords_to_save}")
 
 
 if __name__ == "__main__":
