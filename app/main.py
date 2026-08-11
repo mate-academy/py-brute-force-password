@@ -1,6 +1,6 @@
-import time
 from hashlib import sha256
-
+import time
+import multiprocessing as mp
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -20,8 +20,56 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
-    pass
+def worker(args):
+    start, end, targets = args
+    remaining = set(targets)
+    found = {}
+    for n in range(start, end):
+        if not remaining:
+            break
+        candidate = f"{n:08d}"
+        h = sha256_hash_str(candidate)
+        if h in remaining:
+            found[h] = candidate
+            remaining.discard(h)
+    return found
+
+
+def brute_force_password():
+    targets = set(PASSWORDS_TO_BRUTE_FORCE)
+    total_space = 10**8
+    num_workers = mp.cpu_count()
+
+    base, extra = divmod(total_space, num_workers)
+    chunks = []
+    start = 0
+    for i in range(num_workers):
+        size = base + (1 if i < extra else 0)
+        end = start + size
+        chunks.append((start, end, targets))
+        start = end
+
+    print(
+        f"Searching {total_space:,} candidates across {num_workers} process(es)...")
+    t0 = time.time()
+
+    results = {}
+    with mp.Pool(processes=num_workers) as pool:
+        for partial in pool.imap_unordered(worker, chunks):
+            results.update(partial)
+
+    elapsed = time.time() - t0
+
+    print(
+        f"\nDone in {elapsed:.2f} seconds. Found {len(results)}/{len(targets)} passwords:\n"
+    )
+    for h in PASSWORDS_TO_BRUTE_FORCE:
+        pw = results.get(h, "NOT FOUND")
+        print(f"{h} -> {pw}")
+
+    assert (
+        len(results) == 10
+    ), f"Expected 10 passwords, found {len(results)} — check ranges/targets"
 
 
 if __name__ == "__main__":
