@@ -1,4 +1,4 @@
-import time
+import multiprocessing
 from hashlib import sha256
 
 
@@ -20,13 +20,54 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
-    pass
+def brute_force(start: int, end: int) -> list:
+    found = []
+
+    for number in range(start, end):
+        password = f"{number:08d}"
+        password_hash = sha256_hash_str(password)
+
+        if password_hash in PASSWORDS_TO_BRUTE_FORCE:
+            found.append((password, password_hash))
+
+    return found
 
 
 if __name__ == "__main__":
-    start_time = time.perf_counter()
-    brute_force_password()
-    end_time = time.perf_counter()
+    cpu_count = multiprocessing.cpu_count()
 
-    print("Elapsed:", end_time - start_time)
+    print(f"Usando {cpu_count} processos...")
+    print("Iniciando força bruta...\n")
+
+    total = 100_000_000
+    chunk_size = total // cpu_count
+
+    ranges = []
+
+    for i in range(cpu_count):
+        start = i * chunk_size
+
+        if i == cpu_count - 1:
+            end = total
+        else:
+            end = start + chunk_size
+
+        ranges.append((start, end))
+
+    with multiprocessing.Pool(cpu_count) as pool:
+        results = pool.starmap(brute_force, ranges)
+
+    passwords_found = []
+
+    for result in results:
+        passwords_found.extend(result)
+
+    print("\nSenhas encontradas:")
+    print("-" * 40)
+
+    for password, password_hash in sorted(passwords_found):
+        print(f"Senha: {password}")
+        print(f"Hash:  {password_hash}")
+        print()
+
+    print(f"Total encontrado: {len(passwords_found)}")
