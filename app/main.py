@@ -21,7 +21,12 @@ def sha256_hash_str(to_hash: str) -> str:
 
 
 def brute_force_password() -> None:
-    pass
+    for number in range(100_000_000):
+        password = f"{number:08d}"
+        password_hash = sha256_hash_str(password)
+
+        if password_hash in PASSWORDS_TO_BRUTE_FORCE:
+            print(password)
 
 
 if __name__ == "__main__":
