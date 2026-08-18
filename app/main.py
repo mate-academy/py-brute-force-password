@@ -1,8 +1,10 @@
 import time
+import multiprocessing
 from hashlib import sha256
+from concurrent.futures import ProcessPoolExecutor
 
 
-PASSWORDS_TO_BRUTE_FORCE = [
+PASSWORDS_TO_BRUTE_FORCE = {
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
     "cf0b0cfc90d8b4be14e00114827494ed5522e9aa1c7e6960515b58626cad0b44",
     "e34efeb4b9538a949655b788dcb517f4a82e997e9e95271ecd392ac073fe216d",
@@ -13,20 +15,61 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "1273682fa19625ccedbe2de2817ba54dbb7894b7cefb08578826efad492f51c9",
     "7e8f0ada0a03cbee48a0883d549967647b3fca6efeb0a149242f19e4b68d53d6",
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
-]
+}
 
 
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
-    pass
+def brute_force_password(
+        start: int,
+        end: int,
+        passwords: list[str] = PASSWORDS_TO_BRUTE_FORCE) -> list[str]:
+    found = []
+
+    for password in range(start, end):
+        candidate = str(password).zfill(8)
+
+        if sha256_hash_str(candidate) in passwords:
+            found.append(candidate)
+
+    return found
+
+
+def main_multiprocessing() -> None:
+    cores = multiprocessing.cpu_count()
+
+    total = 100_000_000
+    total_for_core = total // cores
+
+    with ProcessPoolExecutor(max_workers=cores) as executor:
+        futures = []
+
+        for i in range(cores):
+            start = i * total_for_core
+
+            if i == cores - 1:
+                end = total
+            else:
+                end = start + total_for_core
+
+            futures.append(
+                executor.submit(
+                    brute_force_password,
+                    start,
+                    end
+                )
+            )
+
+        for future in futures:
+            for password in future.result():
+                print(password)
 
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
-    brute_force_password()
-    end_time = time.perf_counter()
 
-    print("Elapsed:", end_time - start_time)
+    main_multiprocessing()
+
+    print("Elapsed:", time.perf_counter() - start_time)
