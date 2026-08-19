@@ -67,6 +67,10 @@ def multiprocess_brute_force_password() -> None:
             all_right_passwords.extend(found_in_chunk)
 
             if len(all_right_passwords) == len(PASSWORDS_TO_BRUTE_FORCE):
+                print(
+                    f"Found {len(all_right_passwords)} "
+                    f"passwords: {all_right_passwords}"
+                )
                 pool.close()
                 break
 
