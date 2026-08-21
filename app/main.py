@@ -24,7 +24,7 @@ def sha256_hash_str(to_hash: str) -> str:
 def search_range(start: int, end: int, targets: set[str]) -> dict[str, str]:
     found = {}
     for number in range(start, end):
-        candidate = f"{number: 08d}"
+        candidate = f"{number:08d}"
         digest = sha256_hash_str(candidate)
         if digest in targets:
             found[digest] = candidate
