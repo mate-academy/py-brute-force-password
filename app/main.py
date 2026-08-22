@@ -1,3 +1,4 @@
+import multiprocessing
 import time
 from hashlib import sha256
 
@@ -20,8 +21,32 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
+def generate_password(start: int, end: int) -> None:
+    print("Start generating...")
+
+    for password in range(start, end):
+        num = str(password).zfill(8)
+        generator_sha256 = sha256_hash_str(num)
+
+        if generator_sha256 in PASSWORDS_TO_BRUTE_FORCE:
+            print(num)
+
 def brute_force_password() -> None:
-    pass
+    tasks = []
+
+    for password in range(10):
+        start = password * 10000000
+        end = (password + 1) * 10000000
+
+        task = multiprocessing.Process(
+            target=generate_password,
+            args=(start, end)
+        )
+        tasks.append(task)
+        task.start()
+
+    for task in tasks:
+        task.join()
 
 
 if __name__ == "__main__":
