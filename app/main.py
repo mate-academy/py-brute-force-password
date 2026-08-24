@@ -21,32 +21,34 @@ PASSWORDS_TO_BRUTE_FORCE = [
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
-def compute_list_of_passwords(start: int, end: int):
+def brut_force_range_of_numbers(start: int, end: int):
     for password in range(start, end):
-        for hash in PASSWORDS_TO_BRUTE_FORCE:
-            if sha256_hash_str(str(password).zfill(8)) == hash:
-                print(f"{str(password).zfill(8)} -> {hash}")
+        password = str(password).zfill(8)
+        password_hash = sha256_hash_str(password)
+
+        if password_hash in PASSWORDS_TO_BRUTE_FORCE:
+            print(f"{password} -> {password_hash}")
 
 def brute_force_password() -> None:
-    passwords = []
+    tasks = []
 
     cpu_count = multiprocessing.cpu_count()
-    size_of_the_values_range_to_one_process = ceil(100_000_000 / cpu_count)
+    chunk_size = ceil(100_000_000 / cpu_count)
 
     for i in range(cpu_count):
-        passwords.append(
+        tasks.append(
             multiprocessing.Process(
-                target=compute_list_of_passwords,
+                target=brut_force_range_of_numbers,
                 args=(
-                    size_of_the_values_range_to_one_process * i,
-                    size_of_the_values_range_to_one_process * (i + 1)
+                    chunk_size * i,
+                    chunk_size * (i + 1)
                 )
             )
         )
-        passwords[-1].start()
+        tasks[-1].start()
 
-    for password in passwords:
-        password.join()
+    for task in tasks:
+        task.join()
 
 
 if __name__ == "__main__":
