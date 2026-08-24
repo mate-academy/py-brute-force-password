@@ -1,6 +1,8 @@
+import multiprocessing
+
 import time
 from hashlib import sha256
-
+from math import ceil
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -19,9 +21,32 @@ PASSWORDS_TO_BRUTE_FORCE = [
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
+def compute_list_of_passwords(start: int, end: int):
+    for password in range(start, end):
+        for hash in PASSWORDS_TO_BRUTE_FORCE:
+            if sha256_hash_str(str(password).zfill(8)) == hash:
+                print(f"{str(password).zfill(8)} -> {hash}")
 
 def brute_force_password() -> None:
-    pass
+    passwords = []
+
+    cpu_count = multiprocessing.cpu_count()
+    size_of_the_values_range_to_one_process = ceil(100_000_000 / cpu_count)
+
+    for i in range(cpu_count):
+        passwords.append(
+            multiprocessing.Process(
+                target=compute_list_of_passwords,
+                args=(
+                    size_of_the_values_range_to_one_process * i,
+                    size_of_the_values_range_to_one_process * (i + 1)
+                )
+            )
+        )
+        passwords[-1].start()
+
+    for password in passwords:
+        password.join()
 
 
 if __name__ == "__main__":
