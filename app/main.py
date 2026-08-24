@@ -2,7 +2,6 @@ import multiprocessing
 
 import time
 from hashlib import sha256
-from math import ceil
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -21,7 +20,7 @@ PASSWORDS_TO_BRUTE_FORCE = [
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
-def brut_force_range_of_numbers(start: int, end: int):
+def brute_force_chunk(start: int, end: int):
     for password in range(start, end):
         password = str(password).zfill(8)
         password_hash = sha256_hash_str(password)
@@ -33,12 +32,12 @@ def brute_force_password() -> None:
     tasks = []
 
     cpu_count = multiprocessing.cpu_count()
-    chunk_size = ceil(100_000_000 / cpu_count)
+    chunk_size = 100_000_000 // cpu_count
 
     for i in range(cpu_count):
         tasks.append(
             multiprocessing.Process(
-                target=brut_force_range_of_numbers,
+                target=brute_force_chunk,
                 args=(
                     chunk_size * i,
                     chunk_size * (i + 1)
