@@ -1,5 +1,8 @@
 import time
 from hashlib import sha256
+from itertools import product
+
+from multiprocessing import Pool, cpu_count
 
 
 PASSWORDS_TO_BRUTE_FORCE = [
@@ -16,17 +19,63 @@ PASSWORDS_TO_BRUTE_FORCE = [
 ]
 
 
-def sha256_hash_str(to_hash: str) -> str:
-    return sha256(to_hash.encode("utf-8")).hexdigest()
+# def sha256_hash_str(to_hash: str) -> str:
+#     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
-    pass
+def worker(args):
+    prefix_digits, passwords = args
+    results = {}
+    remaining = set(passwords)
+
+    for rest in product('0123456789', repeat=8 - len(prefix_digits)):
+        
+        if not remaining:
+            break
+        
+        candidate = prefix_digits + ''.join(rest)
+        hashed = sha256(candidate.encode()).hexdigest()
+        
+        if hashed in remaining:
+            results[hashed] = candidate
+            remaining.discard(hashed)
+        
+    return results
+
+
+def brute_force_password(passwords_to_find):
+    passwords_to_find = set(passwords_to_find)
+    n_workers = cpu_count()
+    prefixes = [''.join(p) for p in product('0123456789', repeat=1)]
+
+    with Pool(n_workers) as pool:
+        chunks = pool.map(worker, [(prefix, passwords_to_find) for prefix in prefixes])
+    
+    merged = {}
+    
+    for c in chunks:
+        merged.update(c)
+    
+    for hashed, password in merged.items():
+        print(f"pass found: {password}")
+    
+    return merged
+
+
+# def brute_force_password() -> None:
+#     digits = '0123456789'
+
+#     for attempt in product(digits, repeat=8):
+#         candidate = ''.join(attempt)
+#         hashed = sha256_hash_str(candidate)
+
+#         if hashed in PASSWORDS_TO_BRUTE_FORCE:
+#             print(f"pass found: {candidate}")
 
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
-    brute_force_password()
+    brute_force_password(PASSWORDS_TO_BRUTE_FORCE)
     end_time = time.perf_counter()
 
     print("Elapsed:", end_time - start_time)
