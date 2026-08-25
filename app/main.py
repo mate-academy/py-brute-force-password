@@ -1,5 +1,6 @@
-import time
 from hashlib import sha256
+from multiprocessing import Pool, cpu_count
+from time import perf_counter
 
 
 PASSWORDS_TO_BRUTE_FORCE = [
@@ -20,13 +21,74 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
-    pass
+def brute_force_range(args: tuple[int, int]) -> list[str]:
+    start, end = args
+    found_passwords = []
+
+    for number in range(start, end):
+        password = f"{number:08d}"
+
+        if sha256_hash_str(password) in PASSWORDS_TO_BRUTE_FORCE:
+            found_passwords.append(password)
+
+    return found_passwords
+
+
+def split_ranges(
+    start: int,
+    end: int,
+    processes: int,
+) -> list[tuple[int, int]]:
+    total_numbers = end - start
+    chunk_size = total_numbers // processes
+
+    ranges = []
+
+    for process_number in range(processes):
+        chunk_start = start + process_number * chunk_size
+
+        if process_number == processes - 1:
+            chunk_end = end
+        else:
+            chunk_end = chunk_start + chunk_size
+
+        ranges.append((chunk_start, chunk_end))
+
+    return ranges
+
+
+def main() -> None:
+    process_count = cpu_count()
+
+    ranges = split_ranges(
+        start=0,
+        end=100_000_000,
+        processes=process_count,
+    )
+
+    start_time = perf_counter()
+
+    with Pool(processes=process_count) as pool:
+        results = pool.map(brute_force_range, ranges)
+
+    found_passwords = [
+        password
+        for process_result in results
+        for password in process_result
+    ]
+
+    elapsed_time = perf_counter() - start_time
+
+    print(f"Processes: {process_count}")
+    print(f"Passwords found: {len(found_passwords)}")
+    print()
+
+    for password in sorted(found_passwords):
+        print(password)
+
+    print()
+    print(f"Execution time: {elapsed_time:.2f} seconds")
 
 
 if __name__ == "__main__":
-    start_time = time.perf_counter()
-    brute_force_password()
-    end_time = time.perf_counter()
-
-    print("Elapsed:", end_time - start_time)
+    main()
