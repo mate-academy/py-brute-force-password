@@ -1,5 +1,7 @@
 import time
 from hashlib import sha256
+from multiprocessing import Pool, cpu_count
+from typing import Iterable
 
 
 PASSWORDS_TO_BRUTE_FORCE = [
@@ -15,13 +17,51 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
 
+PASSWORD_LENGTH = 8
+NUMBER_OF_VARIANTS = 10 ** PASSWORD_LENGTH
+CHUNK_SIZE = 100_000
+PASSWORD_HASHES = frozenset(bytes.fromhex(password_hash) for password_hash in (
+    PASSWORDS_TO_BRUTE_FORCE
+))
+
 
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
+def find_passwords_in_range(numbers: tuple[int, int]) -> list[str]:
+    start, stop = numbers
+    found_passwords = []
+
+    for number in range(start, stop):
+        password = str(number).zfill(PASSWORD_LENGTH)
+        if sha256(password.encode("utf-8")).digest() in PASSWORD_HASHES:
+            found_passwords.append(password)
+
+    return found_passwords
+
+
+def get_number_ranges() -> Iterable[tuple[int, int]]:
+    for start in range(0, NUMBER_OF_VARIANTS, CHUNK_SIZE):
+        yield start, min(start + CHUNK_SIZE, NUMBER_OF_VARIANTS)
+
+
 def brute_force_password() -> None:
-    pass
+    found_passwords = []
+
+    with Pool(processes=cpu_count()) as pool:
+        for passwords in pool.imap_unordered(
+            find_passwords_in_range,
+            get_number_ranges(),
+        ):
+            found_passwords.extend(passwords)
+
+            if len(found_passwords) == len(PASSWORD_HASHES):
+                pool.terminate()
+                break
+
+    for password in sorted(found_passwords):
+        print(password)
 
 
 if __name__ == "__main__":
