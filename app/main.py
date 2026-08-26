@@ -1,5 +1,8 @@
 import time
+import os
+
 from hashlib import sha256
+from concurrent.futures import ProcessPoolExecutor, as_completed
 
 
 PASSWORDS_TO_BRUTE_FORCE = [
@@ -20,8 +23,48 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
+def search_range(args: tuple[int, int, set[str]]) -> dict[str, str]:
+    """Test all numeric passwords of 8 digits in the interval [start, end)."""
+    start, end, target_hashes = args
+    found = {}
+
+    for number in range(start, end):
+        candidate = f"{number:08d}"
+        hashed = sha256_hash_str(candidate)
+
+        if hashed in target_hashes:
+            found[hashed] = candidate
+
+    return found
+
+
 def brute_force_password() -> None:
-    pass
+    target_hashes = set(PASSWORDS_TO_BRUTE_FORCE)
+    total_combinations = 10 ** 8
+    num_workers = max(1, os.cpu_count() - 2)
+    chunk_size = total_combinations // num_workers
+
+    ranges = []
+    for i in range(num_workers):
+        start = i * chunk_size
+        end = (
+            total_combinations
+            if i == num_workers - 1
+            else start + chunk_size
+        )
+        ranges.append((start, end, target_hashes))
+
+    results: dict[str, str] = {}
+
+    with ProcessPoolExecutor(max_workers=num_workers) as executor:
+        futures = [executor.submit(search_range, r) for r in ranges]
+
+        for future in as_completed(futures):
+            results.update(future.result())
+
+    print(f"\n🔓 {len(results)}/10 passwords found:\n")
+    for password_hash, password in results.items():
+        print(f"  {password_hash} -> {password}")
 
 
 if __name__ == "__main__":
@@ -29,4 +72,4 @@ if __name__ == "__main__":
     brute_force_password()
     end_time = time.perf_counter()
 
-    print("Elapsed:", end_time - start_time)
+    print("\nElapsed:", end_time - start_time)
