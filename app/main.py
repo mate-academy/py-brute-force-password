@@ -47,7 +47,11 @@ def brute_force_password() -> None:
     ranges = []
     for i in range(num_workers):
         start = i * chunk_size
-        end = total_combinations if i == num_workers - 1 else start + chunk_size
+        end = (
+            total_combinations
+            if i == num_workers - 1
+            else start + chunk_size
+        )
         ranges.append((start, end, target_hashes))
 
     results: dict[str, str] = {}
