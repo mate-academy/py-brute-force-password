@@ -30,7 +30,7 @@ def brute_force_chunk(start: int, end: int) -> list[str]:
 
     for number in range(start, end):
         password = f"{number:08d}"
-        password_hash = sha256_hash_str(password)
+        password_hash = sha256(password.encode("utf-8")).hexdigest()
 
         if password_hash in PASSWORD_HASHES:
             found_passwords.append(password)
@@ -47,12 +47,11 @@ def brute_force_password() -> None:
 
     for worker_number in range(workers):
         start = worker_number * chunk_size
-
-        if worker_number == workers - 1:
-            end = total_passwords
-        else:
-            end = start + chunk_size
-
+        end = (
+            total_passwords
+            if worker_number == workers - 1
+            else start + chunk_size
+        )
         chunks.append((start, end))
 
     found_passwords = []
