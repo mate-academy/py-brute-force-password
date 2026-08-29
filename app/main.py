@@ -16,10 +16,7 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
 
-PASSWORD_HASHES = {
-    bytes.fromhex(password_hash)
-    for password_hash in PASSWORDS_TO_BRUTE_FORCE
-}
+PASSWORD_HASHES = set(PASSWORDS_TO_BRUTE_FORCE)
 
 PASSWORD_LENGTH = 8
 TOTAL_COMBINATIONS = 10 ** PASSWORD_LENGTH
@@ -34,7 +31,7 @@ def find_passwords(start: int, end: int) -> list[str]:
 
     for number in range(start, end):
         password = str(number).zfill(PASSWORD_LENGTH)
-        password_hash = sha256(password.encode("utf-8")).digest()
+        password_hash = sha256_hash_str(password)
 
         if password_hash in PASSWORD_HASHES:
             found_passwords.append(password)
