@@ -22,7 +22,7 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_range(start: int, end: int) -> None:
+def brute_force_range(start: int, end: int) -> list[str]:
     passwords = []
 
     for num in range(start, end):
