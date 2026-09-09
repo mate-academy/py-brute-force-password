@@ -17,12 +17,11 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
 
-
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password(index: int, password_hash: str) -> None:
+def brute_force_password(index: int, password_hash: str, list_of_pass: list) -> bool | str:
         print(f"Start task {index}")
         for i in range(100000000):
 
@@ -34,17 +33,28 @@ def brute_force_password(index: int, password_hash: str) -> None:
             if current_hash == password_hash:
                 print(f"\n[+] Task {index} Great news! For hash: {password_hash} - password is: {i}")
                 print("-" * 50)
-                return True
+                list_of_pass.append(i)
 
         print(f"\n[+] Task {index} password not found")
 
 def main_multiprocess_executor() -> None:
-     futures = []
+  futures = []
 
-     with ProcessPoolExecutor(multiprocessing.cpu_count() - 1) as executor:
-        for index, pass_hash in enumerate(PASSWORDS_TO_BRUTE_FORCE):
-            futures.append(executor.submit(brute_force_password, index, pass_hash))
-        wait(futures)
+  with multiprocessing.Manager() as manager:
+    list_of_pass = manager.list()
+
+    with ProcessPoolExecutor(
+        max_workers=multiprocessing.cpu_count() - 1
+    ) as executor:
+      for index, pass_hash in enumerate(PASSWORDS_TO_BRUTE_FORCE):
+        futures.append(
+            executor.submit(
+                brute_force_password, index, pass_hash, list_of_pass
+            )
+        )
+
+      wait(futures)
+    return list_of_pass
         
 
 if __name__ == "__main__":
