@@ -1,6 +1,7 @@
 import time
 from hashlib import sha256
-
+from concurrent.futures import ProcessPoolExecutor, wait
+import multiprocessing
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -15,18 +16,56 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
 
-
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
+def brute_force_password(index: int, password_hash: str) -> str | None:
+    print(f"Start task {index}")
+    for i in range(100000000):
+        current_password = f"{i:08d}"
+        current_hash = sha256_hash_str(current_password)
 
-def brute_force_password() -> None:
-    pass
+        if current_hash == password_hash:
+            print(f"[+] Task {index} Great news! For hash: {password_hash} - password is: {current_password}")
+            return current_password
+    else:
+        print(f"[-] Task {index} password not found")
+        return None
 
+def main_multiprocess_executor() -> list:
+    futures = []
+    found_passwords = []
+
+    with ProcessPoolExecutor(max_workers=multiprocessing.cpu_count() - 1) as executor:
+        for index, pass_hash in enumerate(PASSWORDS_TO_BRUTE_FORCE):
+            futures.append(
+                executor.submit(
+                    brute_force_password, index, pass_hash
+                )
+            )
+            
+        wait(futures)
+        
+        # Collect results from finished tasks
+        for future in futures:
+            result = future.result()
+            if result is not None:
+                found_passwords.append(result)
+                
+    return found_passwords
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
-    brute_force_password()
+    
+    # Save results
+    found_passwords = main_multiprocess_executor()
+    
     end_time = time.perf_counter()
 
-    print("Elapsed:", end_time - start_time)
+    print("\n" + "="*30)
+    print(f"Found {len(found_passwords)} passwords:")
+    for pwd in found_passwords:
+        print(pwd)
+        
+    print(f"\nTotal collected passwords: {len(found_passwords)} / 10")
+    print(f"Elapsed: {end_time - start_time:.2f} seconds")
