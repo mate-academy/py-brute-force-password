@@ -3,7 +3,6 @@ from hashlib import sha256
 from concurrent.futures import ProcessPoolExecutor, wait
 import multiprocessing
 
-
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
     "cf0b0cfc90d8b4be14e00114827494ed5522e9aa1c7e6960515b58626cad0b44",
@@ -20,46 +19,53 @@ PASSWORDS_TO_BRUTE_FORCE = [
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
+def brute_force_password(index: int, password_hash: str) -> str | None:
+    print(f"Start task {index}")
+    for i in range(100000000):
+        current_password = f"{i:08d}"
+        current_hash = sha256_hash_str(current_password)
 
-def brute_force_password(index: int, password_hash: str, list_of_pass: list) -> bool | str:
-        print(f"Start task {index}")
-        for i in range(100000000):
+        if current_hash == password_hash:
+            print(f"[+] Task {index} Great news! For hash: {password_hash} - password is: {current_password}")
+            return current_password
+    else:
+        print(f"[-] Task {index} password not found")
+        return None
 
-            # Get SHA-256
-            current_hash = sha256_hash_str(f"{i:08d}")
+def main_multiprocess_executor() -> list:
+    futures = []
+    found_passwords = []
 
-
-            # Compare with current_hash with password_hash
-            if current_hash == password_hash:
-                print(f"\n[+] Task {index} Great news! For hash: {password_hash} - password is: {i}")
-                print("-" * 50)
-                list_of_pass.append(i)
-
-        print(f"\n[+] Task {index} password not found")
-
-def main_multiprocess_executor() -> None:
-  futures = []
-
-  with multiprocessing.Manager() as manager:
-    list_of_pass = manager.list()
-
-    with ProcessPoolExecutor(
-        max_workers=multiprocessing.cpu_count() - 1
-    ) as executor:
-      for index, pass_hash in enumerate(PASSWORDS_TO_BRUTE_FORCE):
-        futures.append(
-            executor.submit(
-                brute_force_password, index, pass_hash, list_of_pass
+    with ProcessPoolExecutor(max_workers=multiprocessing.cpu_count() - 1) as executor:
+        for index, pass_hash in enumerate(PASSWORDS_TO_BRUTE_FORCE):
+            futures.append(
+                executor.submit(
+                    brute_force_password, index, pass_hash
+                )
             )
-        )
-
-      wait(futures)
-    return list_of_pass
+            
+        wait(futures)
         
+        # Collect results from finished tasks
+        for future in futures:
+            result = future.result()
+            if result is not None:
+                found_passwords.append(result)
+                
+    return found_passwords
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
-    main_multiprocess_executor()
+    
+    # Save results
+    found_passwords = main_multiprocess_executor()
+    
     end_time = time.perf_counter()
 
-    print("Elapsed:", end_time - start_time)
+    print("\n" + "="*30)
+    print(f"Found {len(found_passwords)} passwords:")
+    for pwd in found_passwords:
+        print(pwd)
+        
+    print(f"\nTotal collected passwords: {len(found_passwords)} / 10")
+    print(f"Elapsed: {end_time - start_time:.2f} seconds")
