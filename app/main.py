@@ -1,6 +1,7 @@
 import time
 from hashlib import sha256
-
+from multiprocessing import cpu_count
+from multiprocessing.pool import Pool
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -19,9 +20,45 @@ PASSWORDS_TO_BRUTE_FORCE = [
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
+def _logic_function(args) -> dict:
+    start, stop, targets = args
+    target_set = set(targets)
+    found = {}
+    for num in range(start, stop):
+        num = f"{num:08d}"
+        hash_num = sha256_hash_str(num)
+        if hash_num in target_set:
+            found[hash_num] = num
+            if len(found) == len(target_set):
+                break
+    return found
+
 
 def brute_force_password() -> None:
-    pass
+    count_cores = cpu_count()
+    to_check = 10**8
+    amount_numbers_for_one_core = to_check // count_cores
+    target_set = set(PASSWORDS_TO_BRUTE_FORCE)
+
+    full_amount = []
+    for i in range(count_cores):
+        start = (i * amount_numbers_for_one_core)
+        if i != count_cores - 1:
+            stop = (i + 1) * amount_numbers_for_one_core
+        else:
+            stop = to_check
+        full_amount.append((start, stop, target_set))
+
+    results = {}
+    with Pool(count_cores) as pool:
+        for result in pool.imap_unordered(_logic_function, full_amount):
+            results.update(result)
+
+            if len(results) == len(target_set):
+                break
+
+    for element in target_set:
+        print(f"Hash password:{element}, password = {results.get(element)}")
 
 
 if __name__ == "__main__":
