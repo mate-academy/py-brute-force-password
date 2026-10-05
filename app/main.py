@@ -1,6 +1,7 @@
+import os
 import time
+from concurrent.futures import ProcessPoolExecutor
 from hashlib import sha256
-
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -14,14 +15,43 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "7e8f0ada0a03cbee48a0883d549967647b3fca6efeb0a149242f19e4b68d53d6",
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
+NUMBER_OF_WORKERS = max(1, (os.cpu_count() or 1))
+TOTAL = 100_000_000
 
 
-def sha256_hash_str(to_hash: str) -> str:
-    return sha256(to_hash.encode("utf-8")).hexdigest()
+def worker(start: int, end: int, target_hashes: set[str]):
+    local_sha256 = sha256
+    found = []
+
+    for num in range(start, end):
+        cand_bytes = f"{num:08d}".encode("utf-8")
+
+        cand_hash = local_sha256(cand_bytes).hexdigest()
+
+        if cand_hash in target_hashes:
+            found.append(f"{num:08d}")
+
+    return found
 
 
 def brute_force_password() -> None:
-    pass
+    futures = []
+    chunk_size = TOTAL // NUMBER_OF_WORKERS
+    target_hashes = set(PASSWORDS_TO_BRUTE_FORCE)
+    all_passwords = []
+
+    with ProcessPoolExecutor(max_workers=NUMBER_OF_WORKERS) as executor:
+        for i in range(NUMBER_OF_WORKERS):
+            start = i * chunk_size
+            end = TOTAL if i == NUMBER_OF_WORKERS - 1 else (i + 1) * chunk_size
+            futures.append(executor.submit(worker, start, end, target_hashes))
+
+        for fut in futures:
+            all_passwords.extend(fut.result())
+
+        print(f"Знайдено паролів ({len(all_passwords)}):")
+        for pwd in sorted(all_passwords):
+            print(pwd)
 
 
 if __name__ == "__main__":
