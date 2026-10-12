@@ -1,16 +1,17 @@
-
-import time
 from hashlib import sha256
 from itertools import product
 from string import digits
+import time
 
 
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password(target_hash: str, length: int = 4) -> str | None:
-    """Find a numeric test password by checking generated candidates."""
+def brute_force_password(
+    target_hash: str,
+    length: int = 8,
+) -> str | None:
     for combination in product(digits, repeat=length):
         candidate = "".join(combination)
 
@@ -21,8 +22,7 @@ def brute_force_password(target_hash: str, length: int = 4) -> str | None:
 
 
 def main() -> None:
-    # Local test data only.
-    test_password = "0427"
+    test_password = "00000427"
     target_hash = sha256_hash_str(test_password)
 
     start_time = time.perf_counter()
