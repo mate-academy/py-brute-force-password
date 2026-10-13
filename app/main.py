@@ -1,8 +1,11 @@
+from concurrent.futures import ProcessPoolExecutor
+from functools import partial
+import multiprocessing
 import time
 from hashlib import sha256
 
 
-PASSWORDS_TO_BRUTE_FORCE = [
+PASSWORDS_TO_BRUTE_FORCE = {
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
     "cf0b0cfc90d8b4be14e00114827494ed5522e9aa1c7e6960515b58626cad0b44",
     "e34efeb4b9538a949655b788dcb517f4a82e997e9e95271ecd392ac073fe216d",
@@ -13,16 +16,38 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "1273682fa19625ccedbe2de2817ba54dbb7894b7cefb08578826efad492f51c9",
     "7e8f0ada0a03cbee48a0883d549967647b3fca6efeb0a149242f19e4b68d53d6",
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
-]
+}
 
 
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
+def check_block(args):
+    start, end = args
+    found = []
+    for i in range(start, end):
+        pw = str(i).zfill(8)
+        if sha256_hash_str(pw) in PASSWORDS_TO_BRUTE_FORCE:
+            found.append(pw)
+    return found
+
+def generate_block(total=100_000_000, block_size=200_000):
+    for start in range(0, total, block_size):
+        yield (start, min(start + block_size, total))
 
 def brute_force_password() -> None:
-    pass
+    total = 100_000_000
+    block_size = 200_000
+    found_set = set()
 
+    with ProcessPoolExecutor(multiprocessing.cpu_count() - 1) as ex:
+        for result in ex.map(check_block, generate_block(total, block_size)):
+            for pw in result:
+                found_set.add(pw)
+                print(pw)
+            if len(found_set) >= 10:
+                break
+    print("Total found:", len(found_set))
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
