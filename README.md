@@ -43,3 +43,42 @@ Find the **10 passwords** (each an 8-character numeric string) and print them to
 - Optimize your brute-force setup as much as possible to speed up the process.
 - Attach a **screenshot of your script results (console output)** to the PR.
 
+
+## Completed local exercise
+
+This solution checks only the ten bundled sample hashes. It has no network,
+login, database, or external hash-input functionality. Run from the repository
+root:
+
+```sh
+python3 app/main.py
+```
+
+The search covers `00000000` through `99999999`, preserving leading zeros.
+Up to eight worker processes check disjoint one-million-candidate ranges.
+Each candidate is hashed once and checked against a set of the ten targets.
+Workers return independent results; the parent combines them without shared
+mutable state or a mutex, then prints answers in the original hash order.
+A missing answer raises an error rather than silently printing partial results.
+
+### Validation
+
+Use Python 3.11 for the repository's pinned development tools (the old
+`flake8-annotations` dependency does not load on Python 3.14):
+
+```sh
+python3.11 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt pytest
+python -m pytest -q
+flake8
+```
+
+Five tests cover hashing, leading zeros, range boundaries, result aggregation,
+output ordering, and missing targets. The complete script also ran successfully
+on Python 3.14.6: all ten answers were independently rehashed and matched the
+original targets in order. The run took approximately 8.6 seconds on this machine;
+timing depends on hardware and system load.
+
+See [captured console output](docs/results.txt), including all ten answers and
+the elapsed time. This is a text transcript of the actual run.
