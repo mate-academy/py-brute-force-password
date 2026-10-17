@@ -1,8 +1,9 @@
-import time
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from hashlib import sha256
+import multiprocessing
+import time
 
-
-PASSWORDS_TO_BRUTE_FORCE = [
+PASSWORDS_TO_BRUTE_FORCE = {
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
     "cf0b0cfc90d8b4be14e00114827494ed5522e9aa1c7e6960515b58626cad0b44",
     "e34efeb4b9538a949655b788dcb517f4a82e997e9e95271ecd392ac073fe216d",
@@ -13,15 +14,60 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "1273682fa19625ccedbe2de2817ba54dbb7894b7cefb08578826efad492f51c9",
     "7e8f0ada0a03cbee48a0883d549967647b3fca6efeb0a149242f19e4b68d53d6",
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
-]
+}
 
 
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
+def brute_force_range(start: int, end: int, target_hashes: set) -> list:
+    found = []
+    for number in range(start, end):
+        pwd = f"{number:08d}"
+        h = sha256_hash_str(pwd)
+        if h in target_hashes:
+            found.append((pwd, h))
+            if len(found) == len(target_hashes):
+                break
+    return found
+
+
 def brute_force_password() -> None:
-    pass
+    total_numbers = 100_000_000
+    num_cores = max(1, multiprocessing.cpu_count() - 1)
+    chunk_size = total_numbers // num_cores
+
+    target_set = set(PASSWORDS_TO_BRUTE_FORCE)
+    found_passwords = {}
+
+    print(f"Starting brute-force on {num_cores} CPU cores...")
+
+    with ProcessPoolExecutor(max_workers=num_cores) as executor:
+        futures = []
+        for i in range(num_cores):
+            start = i * chunk_size
+            end = (
+                total_numbers
+                if i == num_cores - 1
+                else (i + 1) * chunk_size
+            )
+            futures.append(
+                executor.submit(brute_force_range, start, end, target_set)
+            )
+
+        for future in as_completed(futures):
+            result = future.result()
+            for pwd, h in result:
+                found_passwords[h] = pwd
+                print(f"Found! Hash: {h} -> Password: {pwd}")
+                if len(found_passwords) == len(target_set):
+                    executor.shutdown(wait=False, cancel_futures=True)
+                    break
+
+    print("\n--- All Found Passwords ---")
+    for h in PASSWORDS_TO_BRUTE_FORCE:
+        print(f"Hash: {h} -> Password: {found_passwords.get(h)}")
 
 
 if __name__ == "__main__":
@@ -29,4 +75,4 @@ if __name__ == "__main__":
     brute_force_password()
     end_time = time.perf_counter()
 
-    print("Elapsed:", end_time - start_time)
+    print(f"Elapsed: {end_time - start_time:.4f} seconds")
