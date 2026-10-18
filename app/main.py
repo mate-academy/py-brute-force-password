@@ -1,6 +1,7 @@
 import time
+import itertools
 from hashlib import sha256
-
+from typing import List, Set, Optional
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -21,7 +22,33 @@ def sha256_hash_str(to_hash: str) -> str:
 
 
 def brute_force_password() -> None:
-    pass
+    # Convert list to a set for constant time O(1) lookups
+    target_hashes: Set[str] = set(PASSWORDS_TO_BRUTE_FORCE)
+    remaining_targets: int = len(target_hashes)
+    
+    # Define search dictionary characters based on your assignment parameters
+    # (e.g., lowercase alpha, numbers, or specialized combination string parameters)
+    charset: str = "abcdefghijklmnopqrstuvwxyz0123456789"
+    
+    # Run nested structural searches from length 1 up to 6 dynamically
+    for length in range(1, 7):
+        if remaining_targets == 0:
+            break
+            
+        print(f"[Info] Scanning all string combinations of length: {length}...")
+        
+        # itertools.product acts as a highly optimized low-level C-loop execution engine
+        for combination in itertools.product(charset, repeat=length):
+            candidate_str: str = "".join(combination)
+            candidate_hash: str = sha256_hash_str(candidate_str)
+            
+            if candidate_hash in target_hashes:
+                print(f"[SUCCESS] Cracked Hash! '{candidate_hash}' -> '{candidate_str}'")
+                remaining_targets -= 1
+                
+                if remaining_targets == 0:
+                    print("[Info] All target hashes successfully decrypted.")
+                    return
 
 
 if __name__ == "__main__":
