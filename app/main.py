@@ -21,7 +21,24 @@ def sha256_hash_str(to_hash: str) -> str:
 
 
 def brute_force_password() -> None:
-    pass
+    target_hashes = set(PASSWORDS_TO_BRUTE_FORCE)
+    passwords_by_hash = {}
+
+    for number in range(100_000_000):
+        password = str(number).zfill(8)
+        password_hash = sha256_hash_str(password)
+
+        if password_hash in target_hashes:
+            passwords_by_hash[password_hash] = password
+            if len(passwords_by_hash) == len(target_hashes):
+                break
+
+    if len(passwords_by_hash) != len(target_hashes):
+        missing_hashes = target_hashes - passwords_by_hash.keys()
+        raise RuntimeError(f"Could not find passwords for: {missing_hashes}")
+
+    for password_hash in PASSWORDS_TO_BRUTE_FORCE:
+        print(passwords_by_hash[password_hash])
 
 
 if __name__ == "__main__":
