@@ -20,13 +20,11 @@ PASSWORDS_TO_BRUTE_FORCE = [
 def brut_force_chunk(start: int, end: int, hash_passwords: set,):
     for i in range(start, end):
         password = str(i).zfill(8)
-        digest = sha256(password.encode()).hexdigest()
+        digest = sha256(password.encode("utf-8")).hexdigest()
 
         if digest in hash_passwords:
             print(f"Password found: {password} for {digest}")
 
-            if len(found) == len(hash_passwords):
-                break
 
 def main():
     hash_passwords = set(PASSWORDS_TO_BRUTE_FORCE)
@@ -40,6 +38,8 @@ def main():
                 hash_passwords
             ) for start in range(0, 100_000_000, 10_000)
         ]
+
+    wait(futures)
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
