@@ -1,5 +1,7 @@
 import time
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from hashlib import sha256
+from os import cpu_count
 
 
 PASSWORDS_TO_BRUTE_FORCE = [
@@ -15,13 +17,53 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
 
+PASSWORD_LENGTH = 8
+PASSWORDS_AMOUNT = 10 ** PASSWORD_LENGTH
+CHUNK_SIZE = 1_000_000
+
 
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
+def find_passwords_in_range(start: int, end: int) -> dict[str, str]:
+    hashes_to_find = set(PASSWORDS_TO_BRUTE_FORCE)
+    found_passwords = {}
+
+    for number in range(start, end):
+        password = str(number).zfill(PASSWORD_LENGTH)
+        password_hash = sha256_hash_str(password)
+
+        if password_hash in hashes_to_find:
+            found_passwords[password_hash] = password
+            hashes_to_find.remove(password_hash)
+
+    return found_passwords
+
+
 def brute_force_password() -> None:
-    pass
+    ranges = (
+        (start, min(start + CHUNK_SIZE, PASSWORDS_AMOUNT))
+        for start in range(0, PASSWORDS_AMOUNT, CHUNK_SIZE)
+    )
+    found_passwords = {}
+
+    with ProcessPoolExecutor(max_workers=cpu_count() or 1) as executor:
+        futures = [
+            executor.submit(find_passwords_in_range, start, end)
+            for start, end in ranges
+        ]
+
+        for future in as_completed(futures):
+            found_passwords.update(future.result())
+
+            if len(found_passwords) == len(PASSWORDS_TO_BRUTE_FORCE):
+                for pending_future in futures:
+                    pending_future.cancel()
+                break
+
+    for password_hash in PASSWORDS_TO_BRUTE_FORCE:
+        print(found_passwords[password_hash])
 
 
 if __name__ == "__main__":
