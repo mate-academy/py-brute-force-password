@@ -1,4 +1,6 @@
+import os
 import time
+from concurrent.futures import ProcessPoolExecutor
 from hashlib import sha256
 
 
@@ -20,8 +22,39 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
+PASSWORD_LENGTH = 8
+SEARCH_SPACE = 10 ** PASSWORD_LENGTH
+CHUNK_SIZE = 1_000_000
+
+
+def search_range(start: int, stop: int) -> dict[str, str]:
+    """Check a disjoint range against only the bundled exercise hashes."""
+    targets = set(PASSWORDS_TO_BRUTE_FORCE)
+    matches = {}
+    for number in range(start, stop):
+        password = f"{number:08d}"
+        digest = sha256_hash_str(password)
+        if digest in targets:
+            matches[digest] = password
+    return matches
+
+
 def brute_force_password() -> None:
-    pass
+    """Print the ten local exercise answers in the original hash order."""
+    matches = {}
+    # Processes can run CPU-bound hashing in parallel without shared state.
+    workers = min(os.cpu_count() or 1, 8)
+    starts = range(0, SEARCH_SPACE, CHUNK_SIZE)
+    stops = range(CHUNK_SIZE, SEARCH_SPACE + CHUNK_SIZE, CHUNK_SIZE)
+    with ProcessPoolExecutor(max_workers=workers) as executor:
+        for result in executor.map(search_range, starts, stops):
+            matches.update(result)
+
+    missing = set(PASSWORDS_TO_BRUTE_FORCE) - matches.keys()
+    if missing:
+        raise RuntimeError(f"Could not find {len(missing)} exercise passwords")
+    for digest in PASSWORDS_TO_BRUTE_FORCE:
+        print(matches[digest])
 
 
 if __name__ == "__main__":
