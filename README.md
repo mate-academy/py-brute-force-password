@@ -1,7 +1,7 @@
 # Brute Force Passwords
 
 > 💡 Read [the guideline](https://github.com/mate-academy/py-task-guideline/blob/main/README.md)
-before starting.
+> before starting.
 
 Imagine you're a hacker. You've successfully SQL-injected some website's DB and got hashed passwords of 10 users:
 
@@ -21,9 +21,9 @@ PASSWORDS_TO_BRUTE_FORCE = [
 ```
 
 Of course, your first thought was to look through rainbow tables and test your luck.  
-But after visiting the website, you realized that its password field only accepts numeric symbols from `0` to `9`.  
+But after visiting the website, you realized that its password field only accepts numeric symbols from `0` to `9`.
 
-There’s a limitation — the password must always be **8 numeric symbols long** (*extremely weak security — you must agree*).  
+There’s a limitation — the password must always be **8 numeric symbols long** (_extremely weak security — you must agree_).  
 Also, it seems that this website doesn’t use any additional security while hashing their passwords (like salting).
 
 So, as a hacker, you quickly figured out that you can brute force all possible password variants  
@@ -39,7 +39,6 @@ def sha256_hash_str(to_hash: str) -> str:
 
 Find the **10 passwords** (each an 8-character numeric string) and print them to the console.
 
-- You should find **10** passwords (*not 9*) — double-check your results.
+- You should find **10** passwords (_not 9_) — double-check your results.
 - Optimize your brute-force setup as much as possible to speed up the process.
 - Attach a **screenshot of your script results (console output)** to the PR.
-
