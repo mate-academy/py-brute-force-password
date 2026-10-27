@@ -1,6 +1,7 @@
 import time
 from hashlib import sha256
-
+from os import cpu_count
+from multiprocessing import Process
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -14,17 +15,50 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "7e8f0ada0a03cbee48a0883d549967647b3fca6efeb0a149242f19e4b68d53d6",
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
+PASSWORDS_TO_BRUTE_FORCE = set(PASSWORDS_TO_BRUTE_FORCE)
 
 
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
+def brute_force_range(start: int, end: int) -> None:
+    for i in range(start, end):
+        password = str(i).zfill(8)
+        hash_pass = sha256_hash_str(password)
+        if hash_pass in PASSWORDS_TO_BRUTE_FORCE:
+            print(password)
+
+
 def brute_force_password() -> None:
-    pass
+    count_cpu = cpu_count()
+    numbers = 100000000 // count_cpu
+
+    processes = []
+    for i in range(count_cpu):
+        start = i * numbers
+        if i == count_cpu - 1:
+            end = 100000000
+        else:
+            end = (i + 1) * numbers
+        processes.append(
+            Process(
+                target=brute_force_range,
+                args=(
+                    start,
+                    end
+                )
+            )
+        )
+        processes[-1].start()
+
+    for process in processes:
+        process.join()
 
 
 if __name__ == "__main__":
+    print(f"CPU count: {cpu_count()}")
+
     start_time = time.perf_counter()
     brute_force_password()
     end_time = time.perf_counter()
