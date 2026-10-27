@@ -19,7 +19,7 @@ PASSWORDS_TO_BRUTE_FORCE = [
 PASSWORDS = set(PASSWORDS_TO_BRUTE_FORCE)
 
 def sha256_hash_str(num: int) -> tuple[int, str] | None:
-    password_str = str(num)
+    password_str = str(num).zfill(8)
     current_hash = sha256(password_str.encode("utf-8")).hexdigest()
 
     if current_hash in PASSWORDS:
@@ -35,7 +35,7 @@ def brute_force_password() -> None:
         ):
             if res is not None:
                 num, found_hash = res
-                print(f"Pass founded! Num: {num:08d} | Hash: {found_hash}")
+                print(f"Pass founded! Num: {num} | Hash: {found_hash}")
 
 
 if __name__ == "__main__":
