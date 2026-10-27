@@ -1,3 +1,4 @@
+import multiprocessing
 import time
 from hashlib import sha256
 
@@ -20,8 +21,43 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
+def _brute_force_worker(args: tuple) -> list:
+    start, end, target_set = args
+    found = []
+    hasher = sha256_hash_str
+
+    for num in range(start, end):
+        pwd = f"{num:08d}"
+        if hasher(pwd) in target_set:
+            found.append(pwd)
+            if len(found) == len(target_set):
+                break
+    return found
+
+
 def brute_force_password() -> None:
-    pass
+    target_set = set(PASSWORDS_TO_BRUTE_FORCE)
+    num_workers = multiprocessing.cpu_count()
+    total_passwords = 100_000_000
+    chunk_size = total_passwords // num_workers
+
+    tasks = [
+        (
+            i * chunk_size, total_passwords
+            if i == num_workers - 1
+            else (i + 1) * chunk_size, target_set
+        )
+        for i in range(num_workers)
+    ]
+
+    with multiprocessing.Pool(num_workers) as pool:
+        results = pool.map(_brute_force_worker, tasks)
+
+    found_passwords = [pwd for res in results for pwd in res]
+
+    print(f"\nЗнайдено паролів: {len(found_passwords)} / 10\n")
+    for pwd in found_passwords:
+        print(f"Password: {pwd} | Hash: {sha256_hash_str(pwd)}")
 
 
 if __name__ == "__main__":
