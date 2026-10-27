@@ -22,25 +22,33 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 def check_range(start: int, end: int):
+    found = []
     for i in range(start, end + 1):
         password = f"{i:08d}"
         result = sha256_hash_str(password)
         if result in PASSWORDS_TO_BRUTE_FORCE:
             print(password)
+            found.append(result)
+    return found
 
 
 
 
 def brute_force_password() -> None:
-    num_processes = multiprocessing.cpu_count() - 1
+    num_processes = multiprocessing.cpu_count()
     total = 100_000_000
     chunk = total // num_processes
     feature = []
-    with ProcessPoolExecutor(multiprocessing.cpu_count() - 1) as executor:
+    with ProcessPoolExecutor(multiprocessing.cpu_count()) as executor:
         for i in range(num_processes):
             feature.append(executor.submit(check_range, i * chunk, (i + 1) * chunk - 1))
     wait(feature)
 
+    all_passwords = []
+    for f in feature:
+        all_passwords.extend(f.result())
+    if len(all_passwords) == 10:
+        print("Was find 10 passwords!")
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
