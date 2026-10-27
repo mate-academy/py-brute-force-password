@@ -1,6 +1,6 @@
 import time
 from hashlib import sha256
-from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures import ProcessPoolExecutor, wait
 import multiprocessing
 
 
@@ -30,14 +30,16 @@ def check_range(start: int, end: int):
 
 
 
+
 def brute_force_password() -> None:
-    num_processes = 8
+    num_processes = multiprocessing.cpu_count() - 1
     total = 100_000_000
     chunk = total // num_processes
-    with ProcessPoolExecutor(multiprocessing.cpu_count() - 4) as executor:
+    feature = []
+    with ProcessPoolExecutor(multiprocessing.cpu_count() - 1) as executor:
         for i in range(num_processes):
-            executor.submit(check_range, i * chunk, (i + 1) * chunk - 1)
-
+            feature.append(executor.submit(check_range, i * chunk, (i + 1) * chunk - 1))
+    wait(feature)
 
 
 if __name__ == "__main__":
