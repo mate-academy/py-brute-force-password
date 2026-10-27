@@ -29,8 +29,8 @@ def interval_search(start: int, end: int) -> list:
     found = []
 
     for i in range(start, end):
-        h = sha256_hash_str(str(i))
-        if h in passwords:
+        hash_ = sha256_hash_str(str(i))
+        if hash_ in passwords:
             found.append(i)
 
     return found
