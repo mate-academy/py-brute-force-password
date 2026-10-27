@@ -1,4 +1,6 @@
 import time
+from concurrent.futures import ProcessPoolExecutor, as_completed
+import multiprocessing
 from hashlib import sha256
 
 
@@ -15,18 +17,51 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
 
+TOTAL = 100_000_000
+
 
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
-    pass
+def brute_force_chunk(start: int, end: int) -> list[str]:
+    hashes = set(PASSWORDS_TO_BRUTE_FORCE)
+    found = []
+
+    for number in range(start, end):
+        candidate = f"{number:08d}"
+        if sha256_hash_str(candidate) in hashes:
+            found.append(candidate)
+
+    return found
+
+
+def brute_force_password() -> list[str]:
+    workers = multiprocessing.cpu_count()
+    chunk_size = TOTAL // workers
+    found = []
+
+    with ProcessPoolExecutor(max_workers=workers) as executor:
+        futures = []
+
+        for i in range(workers):
+            start = i * chunk_size
+            end = TOTAL if i == workers - 1 else start + chunk_size
+            futures.append(executor.submit(brute_force_chunk, start, end))
+
+        for future in as_completed(futures):
+            found.extend(future.result())
+
+    return found
 
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
-    brute_force_password()
+    passwords = brute_force_password()
     end_time = time.perf_counter()
 
+    for password in passwords:
+        print(password)
+
+    print("Found:", len(passwords))
     print("Elapsed:", end_time - start_time)
