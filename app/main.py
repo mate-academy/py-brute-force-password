@@ -21,7 +21,7 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def _brute_force_worker(args: list) -> list:
+def _brute_force_worker(args: tuple) -> list:
     start, end, target_set = args
     found = []
     hasher = sha256_hash_str
