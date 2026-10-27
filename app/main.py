@@ -28,7 +28,7 @@ def brute_force_chunk(bounds: tuple[int, int]) -> list[str]:
     targets, found = set(PASSWORDS_TO_BRUTE_FORCE), []
     for number in range(start, end):
         password = f"{number:08d}"
-        if sha256(password.encode("utf-8")).hexdigest() in targets:
+        if sha256_hash_str(password) in targets:
             found.append(password)
             if len(found) == len(targets):
                 break
