@@ -1,3 +1,4 @@
+import multiprocessing
 import time
 from hashlib import sha256
 
@@ -15,13 +16,26 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
 
+PASSWORDS = set(PASSWORDS_TO_BRUTE_FORCE)
 
-def sha256_hash_str(to_hash: str) -> str:
-    return sha256(to_hash.encode("utf-8")).hexdigest()
+def sha256_hash_str(num: int) -> tuple[int, str] | None:
+    password_str = str(num).zfill(8)
+    current_hash = sha256(password_str.encode("utf-8")).hexdigest()
+
+    if current_hash in PASSWORDS:
+        return num, current_hash
+    return None
 
 
 def brute_force_password() -> None:
-    pass
+    numbers_to_check = range(100_000_000)
+    with multiprocessing.Pool() as pool:
+        for res in pool.imap(
+            sha256_hash_str, numbers_to_check, chunksize=10000
+        ):
+            if res is not None:
+                num, found_hash = res
+                print(f"Pass founded! Num: {num} | Hash: {found_hash}")
 
 
 if __name__ == "__main__":
