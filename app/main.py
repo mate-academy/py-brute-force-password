@@ -47,7 +47,7 @@ def brute_force_password() -> None:
     ]
 
     with ProcessPoolExecutor(
-        max_workers=max(1, multiprocessing.cpu_count()),
+        max_workers=max(1, multiprocessing.cpu_count() - 1),
     ) as executor:
         for start, end in bounds:
             future = executor.submit(interval_search, start, end)
