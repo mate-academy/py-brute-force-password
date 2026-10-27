@@ -17,7 +17,7 @@ PASSWORDS_TO_BRUTE_FORCE = [
 ]
 START_NUM = 10_000_000
 END_NUM = 100_000_000
-CHUNK = 250_000
+CHUNK = 100_000
 
 
 def sha256_hash_str(to_hash: str) -> str:
