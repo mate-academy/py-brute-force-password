@@ -32,7 +32,7 @@ def interval_search(start: int, end: int) -> list:
         i_format = f"{i:08d}"
         hash_ = sha256_hash_str(i_format)
         if hash_ in passwords:
-            found.append(i)
+            found.append(i_format)
 
     return found
 
@@ -56,7 +56,7 @@ def brute_force_password() -> None:
         for future in futures:
             result = future.result()
             if result:
-                reveal_passwords.append(result)
+                reveal_passwords.extend(result)
 
     for reveal_password in reveal_passwords:
         print(reveal_password)
