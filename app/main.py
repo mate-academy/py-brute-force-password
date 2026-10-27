@@ -21,8 +21,16 @@ def sha256_hash_str(to_hash: str) -> str:
 
 
 def brute_force_password() -> None:
-    pass
+    targets = set(PASSWORDS_TO_BRUTE_FORCE)
+    found = []
 
+    for i in range(100_000_000):
+        candidate = f"{i:08d}"
+        if sha256_hash_str(candidate) in targets:
+            found.append(candidate)
+            print(candidate)
+            if len(found) == len(targets):
+                break
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
