@@ -15,9 +15,9 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "7e8f0ada0a03cbee48a0883d549967647b3fca6efeb0a149242f19e4b68d53d6",
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
-START_NUM = 10_000_000
+START_NUM = 0
 END_NUM = 100_000_000
-CHUNK = 100_000
+CHUNK = 1_000_000
 
 
 def sha256_hash_str(to_hash: str) -> str:
@@ -29,7 +29,8 @@ def interval_search(start: int, end: int) -> list:
     found = []
 
     for i in range(start, end):
-        hash_ = sha256_hash_str(str(i))
+        i_format = f"{i:08d}"
+        hash_ = sha256_hash_str(i_format)
         if hash_ in passwords:
             found.append(i)
 
@@ -46,7 +47,7 @@ def brute_force_password() -> None:
     ]
 
     with ProcessPoolExecutor(
-        max_workers=max(1, multiprocessing.cpu_count())
+        max_workers=max(1, multiprocessing.cpu_count()),
     ) as executor:
         for start, end in bounds:
             future = executor.submit(interval_search, start, end)
@@ -57,7 +58,8 @@ def brute_force_password() -> None:
             if result:
                 reveal_passwords.append(result)
 
-    print(reveal_passwords)
+    for reveal_password in reveal_passwords:
+        print(reveal_password)
 
 
 if __name__ == "__main__":
