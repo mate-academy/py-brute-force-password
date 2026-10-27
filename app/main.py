@@ -1,5 +1,6 @@
 import time
 from hashlib import sha256
+from multiprocessing import Pool, cpu_count
 
 
 PASSWORDS_TO_BRUTE_FORCE = [
@@ -15,13 +16,38 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
 
+total = 100_000_000
+
 
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
+def brute_force_chunk(bounds: tuple[int, int]) -> list[str]:
+    start, end = bounds
+    targets, found = set(PASSWORDS_TO_BRUTE_FORCE), []
+    for number in range(start, end):
+        password = f"{number:08d}"
+        if sha256_hash_str(password) in targets:
+            found.append(password)
+            if len(found) == len(targets):
+                break
+    return found
+
+
 def brute_force_password() -> None:
-    pass
+    workers = cpu_count()
+    chunk_size = total // workers
+    bounds = [
+        (i * chunk_size, (i + 1) * chunk_size)
+        for i in range(workers)
+    ]
+    bounds[-1], passw = (bounds[-1][0], total), []
+    with Pool(workers) as pool:
+        for chunk_result in pool.imap_unordered(brute_force_chunk, bounds):
+            passw.extend(chunk_result)
+    for pas in passw:
+        print(pas)
 
 
 if __name__ == "__main__":
