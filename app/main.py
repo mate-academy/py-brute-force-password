@@ -1,6 +1,6 @@
 import time
 from hashlib import sha256
-
+from multiprocessing import Process, Queue
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -20,8 +20,43 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
+def worker(start: int, end: int, queue: Queue) -> None:
+    targets = set(PASSWORDS_TO_BRUTE_FORCE)
+    found = {}
+
+    for number in range(start, end):
+        candidate = str(number).zfill(8)
+        candidate_hash = sha256_hash_str(candidate)
+
+        if candidate_hash in targets:
+            found[candidate_hash] = candidate
+
+        if (number - start) % 1_000_000 == 0:
+            print(f"[{start}-{end}] checked {number - start:,}", flush=True)
+
+    queue.put(found)
+
+
 def brute_force_password() -> None:
-    pass
+    mid = (10 ** 8) // 2
+    queue = Queue()
+
+    p1 = Process(target=worker, args=(0, mid, queue))
+    p2 = Process(target=worker, args=(mid, 10 ** 8, queue))
+
+    p1.start()
+    p2.start()
+
+    results = {}
+    results.update(queue.get())
+    results.update(queue.get())
+
+    p1.join()
+    p2.join()
+
+    print("\nResult:")
+    for original_hash in PASSWORDS_TO_BRUTE_FORCE:
+        print(f"{original_hash} -> {results.get(original_hash, 'not found')}")
 
 
 if __name__ == "__main__":
