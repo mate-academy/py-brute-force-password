@@ -21,32 +21,29 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password(target_hash: str) -> None:
-    password = "00000000"
-
-    while True:
-        if sha256_hash_str(password) == target_hash:
-            return password
-
-        int_password = int(password) + 1
-
-        if int_password > 99999999:
-            print("Password not found")
-            return None
-
+def brute_force_password(start: int) -> list[str]:
+    found = []
+    for int_password in range(start, start + 10_000_000):
         password = str(int_password).zfill(8)
+        if sha256_hash_str(password) in PASSWORDS_TO_BRUTE_FORCE:
+            found.append(password)
+
+    return found
 
 
 def multi_process_brute_force_password() -> None:
     results = []
     with ProcessPoolExecutor() as executor:
-        for target_hash in PASSWORDS_TO_BRUTE_FORCE:
-            results.append(executor.submit(brute_force_password, target_hash))
+        for start in range(0, 100_000_000, 10_000_000):
+            results.append(executor.submit(brute_force_password, start))
 
+        found = []
         for future in results:
-            password = future.result()
-            if password:
+            for password in future.result():
+                found.append(password)
                 print(f"Password found: {password}")
+
+    assert len(found) == 10, f"Expected 10 passwords, found {len(found)}"
 
 
 if __name__ == "__main__":
