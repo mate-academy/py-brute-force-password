@@ -28,14 +28,14 @@ def sha256_hash_str(num: int) -> tuple[int, str] | None:
 
 
 def brute_force_password() -> None:
-    numbers_to_check = range(10_000_000, 100_000_000)
+    numbers_to_check = range(100_000_000)
     with multiprocessing.Pool() as pool:
         for res in pool.imap(
             sha256_hash_str, numbers_to_check, chunksize=10000
         ):
             if res is not None:
                 num, found_hash = res
-                print(f"Pass founded! Num: {num} | Hash: {found_hash}")
+                print(f"Pass founded! Num: {num:08d} | Hash: {found_hash}")
 
 
 if __name__ == "__main__":
