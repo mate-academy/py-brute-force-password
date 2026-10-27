@@ -1,8 +1,10 @@
 import time
+from concurrent.futures import ProcessPoolExecutor
 from hashlib import sha256
+import os
 
 
-PASSWORDS_TO_BRUTE_FORCE = [
+PASSWORDS_TO_BRUTE_FORCE = {
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
     "cf0b0cfc90d8b4be14e00114827494ed5522e9aa1c7e6960515b58626cad0b44",
     "e34efeb4b9538a949655b788dcb517f4a82e997e9e95271ecd392ac073fe216d",
@@ -13,7 +15,7 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "1273682fa19625ccedbe2de2817ba54dbb7894b7cefb08578826efad492f51c9",
     "7e8f0ada0a03cbee48a0883d549967647b3fca6efeb0a149242f19e4b68d53d6",
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
-]
+}
 
 
 def sha256_hash_str(to_hash: str) -> str:
@@ -21,7 +23,36 @@ def sha256_hash_str(to_hash: str) -> str:
 
 
 def brute_force_password() -> None:
-    pass
+    number_of_cpus = os.cpu_count() - 1
+    start = 0
+    total = 99_999_999
+    chunk = (total + number_of_cpus) // number_of_cpus
+    futures = []
+    result_passwords = []
+
+    with ProcessPoolExecutor(number_of_cpus) as executor:
+        for _ in range(number_of_cpus):
+            futures.append(executor.submit(
+                check_chunk,
+                start,
+                min(start + chunk, total)))
+            start += chunk
+
+    for future in futures:
+        res = future.result()
+        if len(res) != 0:
+            result_passwords.extend(res)
+    print(result_passwords)
+
+
+def check_chunk(start: int, end: int) -> list:
+    result = []
+    for num in range(start, end + 1):
+        password = str(num).zfill(8)
+        hashed_password = sha256_hash_str(password)
+        if hashed_password in PASSWORDS_TO_BRUTE_FORCE:
+            result.append(password)
+    return result
 
 
 if __name__ == "__main__":
