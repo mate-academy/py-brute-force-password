@@ -1,6 +1,8 @@
+from concurrent.futures import ProcessPoolExecutor, wait
 import time
 from hashlib import sha256
 
+import itertools
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -20,8 +22,35 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
+def find_needed_eight_digit_sequence(
+    hashed_password,
+    pw_number,
+):
+    digits = "0123456789"
+    combinations = itertools.product(digits, repeat=8)
+
+    for combination in combinations:
+        combination = "".join(combination)
+        sequence_to_compare = sha256_hash_str(combination)
+
+        if hashed_password == sequence_to_compare:
+            print(f"Password number {pw_number + 1}: {combination}")
+            break
+
+
 def brute_force_password() -> None:
-    pass
+    futures = []
+    with ProcessPoolExecutor() as executor:
+        for pw_number, password in enumerate(PASSWORDS_TO_BRUTE_FORCE):
+            futures.append(
+                executor.submit(
+                    find_needed_eight_digit_sequence,
+                    password,
+                    pw_number,
+                )
+            )
+
+    wait(futures)
 
 
 if __name__ == "__main__":
