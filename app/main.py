@@ -1,5 +1,6 @@
 import time
 from hashlib import sha256
+from multiprocessing import Pool, cpu_count
 
 
 PASSWORDS_TO_BRUTE_FORCE = [
@@ -15,13 +16,43 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
 
+# Шукані хеші тримаємо у множині (set) — перевірка належності O(1).
+TARGET_HASHES = set(PASSWORDS_TO_BRUTE_FORCE)
+
 
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
-    pass
+def check_chunk(chunk_index: int) -> list[str]:
+    """Перебирає всі паролі, що починаються з chunk_index (0..9).
+
+    Один воркер відповідає за 10_000_000 комбінацій:
+    від chunk_index * 10_000_000 до (chunk_index + 1) * 10_000_000.
+    """
+    found = []
+    start = chunk_index * 10_000_000
+    end = start + 10_000_000
+
+    for number in range(start, end):
+        password = f"{number:08d}"
+        if sha256_hash_str(password) in TARGET_HASHES:
+            found.append(password)
+
+    return found
+
+
+def brute_force_password() -> list[str]:
+    with Pool(processes=cpu_count()) as pool:
+        # Кожен із 10 воркерів бере свій діапазон за першою цифрою.
+        results = pool.map(check_chunk, range(10))
+
+    found = sorted(password for chunk in results for password in chunk)
+
+    for password in found:
+        print(password)
+
+    return found
 
 
 if __name__ == "__main__":
