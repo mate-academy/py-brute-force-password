@@ -1,5 +1,8 @@
 import time
+from concurrent.futures import ProcessPoolExecutor
 from hashlib import sha256
+from multiprocessing import cpu_count, get_context
+from typing import List, Set, Tuple
 
 
 PASSWORDS_TO_BRUTE_FORCE = [
@@ -15,13 +18,63 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
 
+PASSWORD_LENGTH = 8
+TOTAL_PASSWORDS = 10 ** PASSWORD_LENGTH
+TARGET_HASHES: Set[str] = set(PASSWORDS_TO_BRUTE_FORCE)
+
 
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
+def search_password_range(
+    range_bounds: Tuple[int, int],
+) -> List[str]:
+    start_number, end_number = range_bounds
+    hash_password = sha256_hash_str
+    target_hashes = TARGET_HASHES
+    found_passwords: List[str] = []
+
+    for number in range(start_number, end_number):
+        candidate = f"{number:08d}"
+        if hash_password(candidate) in target_hashes:
+            found_passwords.append(candidate)
+
+    return found_passwords
+
+
+def build_ranges(worker_count: int) -> List[Tuple[int, int]]:
+    chunk_size = TOTAL_PASSWORDS // worker_count
+    ranges: List[Tuple[int, int]] = []
+
+    for worker_index in range(worker_count):
+        start_number = worker_index * chunk_size
+        if worker_index == worker_count - 1:
+            end_number = TOTAL_PASSWORDS
+        else:
+            end_number = start_number + chunk_size
+        ranges.append((start_number, end_number))
+
+    return ranges
+
+
 def brute_force_password() -> None:
-    pass
+    worker_count = cpu_count()
+    ranges = build_ranges(worker_count)
+    found_passwords: List[str] = []
+
+    with ProcessPoolExecutor(
+        max_workers=worker_count,
+        mp_context=get_context("fork"),
+    ) as executor:
+        for chunk_passwords in executor.map(
+            search_password_range,
+            ranges,
+        ):
+            found_passwords.extend(chunk_passwords)
+
+    for password in sorted(found_passwords):
+        print(password)
 
 
 if __name__ == "__main__":
