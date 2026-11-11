@@ -1,4 +1,5 @@
 import time
+from concurrent.futures import ProcessPoolExecutor
 from hashlib import sha256
 from multiprocessing import cpu_count, get_context
 from typing import List, Set, Tuple
@@ -19,10 +20,7 @@ PASSWORDS_TO_BRUTE_FORCE = [
 
 PASSWORD_LENGTH = 8
 TOTAL_PASSWORDS = 10 ** PASSWORD_LENGTH
-TARGET_DIGESTS: Set[bytes] = {
-    bytes.fromhex(password_hash)
-    for password_hash in PASSWORDS_TO_BRUTE_FORCE
-}
+TARGET_HASHES: Set[str] = set(PASSWORDS_TO_BRUTE_FORCE)
 
 
 def sha256_hash_str(to_hash: str) -> str:
@@ -33,14 +31,13 @@ def search_password_range(
     range_bounds: Tuple[int, int],
 ) -> List[str]:
     start_number, end_number = range_bounds
-    hash_password = sha256
-    target_digests = TARGET_DIGESTS
+    hash_password = sha256_hash_str
+    target_hashes = TARGET_HASHES
     found_passwords: List[str] = []
 
     for number in range(start_number, end_number):
         candidate = f"{number:08d}"
-        digest = hash_password(candidate.encode("utf-8")).digest()
-        if digest in target_digests:
+        if hash_password(candidate) in target_hashes:
             found_passwords.append(candidate)
 
     return found_passwords
@@ -66,8 +63,14 @@ def brute_force_password() -> None:
     ranges = build_ranges(worker_count)
     found_passwords: List[str] = []
 
-    with get_context("fork").Pool(processes=worker_count) as pool:
-        for chunk_passwords in pool.map(search_password_range, ranges):
+    with ProcessPoolExecutor(
+        max_workers=worker_count,
+        mp_context=get_context("fork"),
+    ) as executor:
+        for chunk_passwords in executor.map(
+            search_password_range,
+            ranges,
+        ):
             found_passwords.extend(chunk_passwords)
 
     for password in sorted(found_passwords):
