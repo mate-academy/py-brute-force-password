@@ -44,7 +44,8 @@ def brute_force_password() -> list:
         for res in pool.imap(worker, chunks, chunksize=1):
             if res:
                 results.extend(res)
-                print(res[0])
+                for password in res:
+                    print(password)
 
     return results
 
