@@ -23,19 +23,28 @@ def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def worker(num: int) -> list:
+def worker(bounds: tuple[int, int]) -> list:
     res = []
-    str_num = f"{num:08d}"
-    if sha256_hash_str(str_num) in target_set:
-        res.append(str_num)
+    start, end = bounds
+    for num in range(start, end):
+        str_num = f"{num:08d}"
+        if sha256_hash_str(str_num) in target_set:
+            res.append(str_num)
     return res
 
 
 def brute_force_password() -> list:
+    chunks = [
+        (i, min(i + 100000, 100_000_000))
+        for i in range(0, 100_000_000, 100000)
+    ]
+
     results = []
     with multiprocessing.Pool() as pool:
-        for res in pool.imap(worker, range(100_000_000), chunksize=1000000):
-            results.extend(res)
+        for res in pool.imap(worker, chunks, chunksize=1):
+            if res:
+                results.extend(res)
+                print(res[0])
 
     return results
 
