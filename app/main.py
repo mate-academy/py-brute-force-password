@@ -1,6 +1,8 @@
+from concurrent.futures import ProcessPoolExecutor, wait
 import time
+import multiprocessing
 from hashlib import sha256
-
+from typing import List, FrozenSet
 
 PASSWORDS_TO_BRUTE_FORCE = [
     "b4061a4bcfe1a2cbf78286f3fab2fb578266d1bd16c414c650c5ac04dfc696e1",
@@ -15,18 +17,84 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
 
+TOTAL_CANDIDATES = 100_000_000  # 00000000 .. 99999999
+CHECK_EVERY = 15_000
 
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
-def brute_force_password() -> None:
-    pass
+def brute_force_chunk(
+    start: int,
+    end: int,
+    target_hashes: FrozenSet[str],
+    found_counter,
+    counter_lock,
+    total_targets: int,
+    stop_event,
+) -> None:
+    remaining = set(target_hashes)
+
+    for i in range(start, end):
+
+        if i % CHECK_EVERY == 0 and stop_event.is_set():
+            break
+
+        guess = f"{i:08d}"
+        digest = sha256_hash_str(guess)
+
+        if digest in remaining:
+            print(guess)
+            remaining.discard(digest)
+
+            with counter_lock:
+                found_counter.value += 1
+                if found_counter.value >= total_targets:
+                    stop_event.set()
+
+            if not remaining:
+                break
+
+def main_multiprocessing_executor(target_hashes: List[str]) -> None:
+    targets = frozenset(target_hashes)
+    workers = max(1, multiprocessing.cpu_count() - 1)
+    chunk_size = TOTAL_CANDIDATES // workers
+
+    manager = multiprocessing.Manager()
+    stop_event = manager.Event()
+    found_counter = manager.Value("i", 0)
+    counter_lock = manager.Lock()
+
+    futures = []
+
+    with ProcessPoolExecutor(workers) as executor:
+        for worker in range(workers):
+            start = worker * chunk_size
+            end = (
+                TOTAL_CANDIDATES
+                if worker == workers - 1 else (worker + 1) * chunk_size
+            )
+            futures.append(
+                executor.submit(
+                    brute_force_chunk,
+                    start,
+                    end,
+                    targets,
+                    found_counter,
+                    counter_lock,
+                    len(target_hashes),
+                    stop_event,
+                )
+            )
+
+    wait(futures)
+    for future in futures:
+        future.result()
 
 
 if __name__ == "__main__":
     start_time = time.perf_counter()
-    brute_force_password()
+    main_multiprocessing_executor(PASSWORDS_TO_BRUTE_FORCE)
     end_time = time.perf_counter()
 
     print("Elapsed:", end_time - start_time)
