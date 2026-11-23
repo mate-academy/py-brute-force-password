@@ -1,6 +1,5 @@
 from concurrent.futures import ProcessPoolExecutor, wait
 from hashlib import sha256
-import multiprocessing
 import time
 import os
 
@@ -49,12 +48,11 @@ def brute_force_password() -> None:
 def worker(start: int, end: int) -> None:
     local_hash_func = sha256_hash_str
     local_target_hashes = TARGET_HASHES
-    for n in range(start, end):
-        password_str = f"{n:08d}"
+    for i in range(start, end):
+        password_str = f"{i:08d}"
         hash_str = local_hash_func(password_str)
         if hash_str in local_target_hashes:
             print(f"the password was found: {password_str}")
-
 
 
 if __name__ == "__main__":
