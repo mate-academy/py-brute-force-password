@@ -1,5 +1,6 @@
 import time
 from hashlib import sha256
+from multiprocessing import Pool, cpu_count
 
 
 PASSWORDS_TO_BRUTE_FORCE = [
@@ -15,13 +16,45 @@ PASSWORDS_TO_BRUTE_FORCE = [
     "e5f3ff26aa8075ce7513552a9af1882b4fbc2a47a3525000f6eb887ab9622207",
 ]
 
+# every password is exactly 8 numeric symbols, so the whole search
+# space is 0 -> 99_999_999
+TOTAL_VARIANTS = 100_000_000
+
+TARGET_HASHES = set(PASSWORDS_TO_BRUTE_FORCE)
+
 
 def sha256_hash_str(to_hash: str) -> str:
     return sha256(to_hash.encode("utf-8")).hexdigest()
 
 
+def brute_force_chunk(bounds: tuple[int, int]) -> list[str]:
+    start, end = bounds
+    found = []
+    for number in range(start, end):
+        password = f"{number:08d}"
+        if sha256_hash_str(password) in TARGET_HASHES:
+            found.append(password)
+    return found
+
+
+def split_into_chunks(total: int, parts: int) -> list[tuple[int, int]]:
+    step = total // parts
+    bounds = [(i * step, (i + 1) * step) for i in range(parts)]
+    # make the last chunk reach the end in case of a remainder
+    bounds[-1] = (bounds[-1][0], total)
+    return bounds
+
+
 def brute_force_password() -> None:
-    pass
+    processes = cpu_count()
+    chunks = split_into_chunks(TOTAL_VARIANTS, processes)
+
+    with Pool(processes) as pool:
+        results = pool.map(brute_force_chunk, chunks)
+
+    passwords = [password for chunk in results for password in chunk]
+    for password in sorted(passwords):
+        print(password)
 
 
 if __name__ == "__main__":
