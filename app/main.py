@@ -52,9 +52,19 @@ def brute_force_password() -> None:
     with Pool(processes) as pool:
         results = pool.map(brute_force_chunk, chunks)
 
-    passwords = [password for chunk in results for password in chunk]
-    for password in sorted(passwords):
+    passwords = sorted(
+        password for chunk in results for password in chunk
+    )
+
+    expected = len(PASSWORDS_TO_BRUTE_FORCE)
+    print(f"Found {len(passwords)} of {expected} passwords")
+    for password in passwords:
         print(password)
+
+    if len(passwords) != expected:
+        raise ValueError(
+            f"Expected {expected} passwords, but found {len(passwords)}"
+        )
 
 
 if __name__ == "__main__":
